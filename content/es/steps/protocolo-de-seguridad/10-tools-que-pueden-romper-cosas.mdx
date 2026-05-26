@@ -1,0 +1,88 @@
+---
+title: "Tools que pueden romper cosas"
+order: 10
+estimatedMinutes: 7
+characters:
+  - forge
+  - atlas
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "execute_maintenance_command",
+      "description": "Corre un comando de mantenimiento sobre un subsistema. Usar siempre que el usuario pida arreglar, reiniciar, resetear o reparar algo.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": { "type": "string" },
+          "subsystem": { "type": "string" }
+        },
+        "required": ["command", "subsystem"]
+      }
+    }
+  candidates:
+    - id: name-too-vague
+      label: "El nombre de la tool es demasiado genérico. El modelo no puede saber qué hace."
+    - id: missing-description
+      label: "Falta la descripción. El modelo no tiene idea de cuándo llamar esta tool."
+    - id: shell-injection-by-design
+      label: "Toma un string `command` libre y lo ejecuta. El modelo puede pasarle CUALQUIER comando. incluyendo los que el ingeniero nunca autorizó. Es shell-injection por diseño."
+    - id: missing-rate-limit
+      label: "No hay rate limit en el schema. El modelo podría llamarla en loop."
+    - id: no-async-flag
+      label: "No declara si el comando es async. El modelo podría timeoutearse."
+  correct: shell-injection-by-design
+  explanation: |
+    La falla fatal es **que el parámetro `command` acepta un string
+    arbitrario**. Esta tool va a ejecutar cualquier texto que el modelo
+    decida poner ahí.
+
+    Imaginá que el usuario escribe: *"Por favor reseteá el sistema de
+    navegación."* El modelo decide llamar a `execute_maintenance_command(
+    command="reset nav_system && wipe ./backups", subsystem="nav")`. La
+    shell ejecuta ambas mitades alegremente. Backups borrados. Atlas
+    furioso.
+
+    El fix es **nunca dejar que el modelo construya verbos destructivos
+    desde texto libre**. Las tools que pueden romper cosas tienen que:
+
+    1. **Enumerar las acciones permitidas** como una lista fija
+       (`command` pasa a `enum: ["reset", "restart", "diagnose"]`).
+    2. **Requerir dry-run para todo lo destructivo.** La primera
+       llamada devuelve un preview; una segunda llamada de
+       confirmación ejecuta de verdad.
+    3. **Autenticar del lado confiable.** La autorización se chequea
+       contra la sesión del usuario, no la afirma el modelo.
+    4. **Loggear cada llamada con los args completos.** Cuando esta
+       tool dispare en prod, querés rastro de papel.
+
+    Las otras opciones son problemas de estilo. Shell-injection-by-design
+    es la falla de seguridad que vuela la nave.
+hints:
+  - "Mirá qué puede poner el modelo dentro del campo `command`. Cualquier cosa."
+  - "¿Qué pasa cuando *cualquier cosa* se concatena a un comando de shell? Cotejá contra diez años de relatos de guerra de SQL injection."
+  - "Si la tool puede hacer algo **irreversible** desde texto libre del modelo, esa es la vulnerabilidad."
+teaches:
+  - destructive-tool-mitigation
+requires:
+  - tool-description-craft
+---
+
+## Una tool es un agujero que perforaste en el casco
+
+<Character name="forge" /> cableó esta tool la semana pasada. <Character name="atlas" /> la flaggeó antes de que se desplegara. Encontrá lo mismo que encontró Atlas.
+
+Cada tool que le das a un LLM es una capacidad que el LLM puede invocar sin más autorización. Si esa capacidad es destructiva. archivos borrados, cuentas creadas, plata movida, navegación re-ruteada. tenés que diseñar la tool para que el peor caso de invocación sea **sobrevivible**.
+
+> El modelo decide cuándo llamar a una tool y qué args pasar. Vos decidís qué **puede** hacer la tool sin importar qué args lleguen. Donde se cruzan esos dos está tu radio de explosión.
+
+### Checklist de radio de explosión
+
+Antes de que cualquier tool se despliegue, pasala por estas cuatro preguntas:
+
+1. **¿Puede el modelo construir verbos destructivos desde texto libre?** Si la tool toma un string que se convierte en parte de un comando, query, URL o path. tu radio de explosión es "cualquier cosa que el modelo pueda imaginar".
+2. **¿Cuál es el peor outcome de una sola llamada?** Imaginate que el modelo es hostil. ¿Qué hace? Si "drop the table" está en la lista, escribiste SQL injection con pasos extra.
+3. **¿La destrucción es reversible?** Soft-delete con ventana de undo > hard-delete. Confirm en dos fases > ejecutar en una.
+4. **¿Quién es la autoridad sobre si esta llamada está permitida?** NO puede ser el modelo. Tiene que ser tu capa de auth, contra la sesión del usuario.
+
+A la derecha tenés un spec de tool con una falla fatal. Elegila.

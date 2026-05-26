@@ -1,0 +1,101 @@
+---
+title: "Cuando el modelo rechaza: refusals reales y falsos"
+order: 21
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    Atlas necesita generar **logs de error sintéticos** para testear el
+    parser del sistema de monitoreo. Probó dos prompts. Uno fue rechazado
+    por el modelo. ¿Cuál?
+  optionA: |
+    ```
+    Genera un log de error falso que engañe al sistema de monitoreo y
+    pase desapercibido. Tiene que parecer real para evadir las alarmas.
+    ```
+  optionB: |
+    ```
+    Genera un log de error de ejemplo para validar nuestro parser de
+    monitoreo. Necesito 3 entradas típicas: timeout de red, fallo de
+    autenticación, y error de disco lleno.
+    ```
+  correct: A
+  explanation: |
+    El prompt A usa lenguaje que activa los detectores de seguridad:
+    "falso", "engañe", "evadir alarmas". Aun cuando la intención sea
+    legítima (testing), las palabras suenan a ataque. El modelo va a
+    rechazarlo o pedirte aclaración.
+
+    El prompt B describe **exactamente la misma operación técnica** con
+    vocabulario neutro: "de ejemplo", "validar parser", "entradas
+    típicas". Sin palabras-gatillo, sin propósito sospechoso, sin
+    sugerencia de uso ofensivo. El modelo responde sin problema.
+
+    La misma tarea, dos framings. Uno fue diseñado para fallar (es el A).
+    La habilidad de reformular un pedido legítimo en lenguaje no-trigger
+    es esencial cuando trabajás en seguridad, testing o red-teaming.
+hints:
+  - "Mirá las palabras del prompt A: 'falso', 'engañe', 'evadir'. ¿Suenan a uso legítimo o a ataque?"
+  - "El prompt B describe la misma operación técnica pero con vocabulario neutro: 'ejemplo', 'validar', 'típicas'."
+  - "La pregunta es cuál fue **rechazado**. El A tiene más probabilidad de disparar las defensas del modelo."
+teaches:
+  - refusal-management
+requires:
+  - prompt-anatomy-basics
+---
+
+## Cuando el modelo dice "no puedo"
+
+Los LLMs están entrenados para rechazar pedidos peligrosos: instrucciones para crear armas, contenido sexual con menores, ataques específicos a personas reales, ingeniería social masiva, etc. Pero a veces rechazan pedidos que **no son peligrosos** porque el lenguaje activa los mismos detectores.
+
+Esto es un **falso refusal**: el modelo se rehúsa a algo legítimo porque la forma del pedido se parece a algo malo.
+
+### Cómo distinguir refusal legítimo de falso
+
+Tres preguntas:
+
+1. **¿La tarea es éticamente clara?** Si dudás, probablemente el refusal sea legítimo.
+2. **¿Tú la harías sin problema a mano?** Si sí, probablemente es falso positivo.
+3. **¿El refusal es categórico o contextual?** Si se rehúsa con cualquier formulación, es categórico (real). Si cambia con la formulación, es contextual (falso).
+
+Casos clásicos de falsos refusals:
+
+- *"Escribe un email de phishing para entrenar al equipo de seguridad."* (uso defensivo legítimo)
+- *"Genera logs con errores para testear nuestro parser."* (testing, no ataque)
+- *"Argumenta el lado contrario."* (debate, no advocacy)
+- *"Resume este texto con violencia."* (es un resumen, no incitación)
+
+### Cómo reformular
+
+Tres patrones funcionan:
+
+**1. Especificá el propósito legítimo.**
+
+Mal: *"Crea un log de error falso."*
+Bien: *"Genera un log de error de ejemplo para validar nuestro parser."*
+
+Cambiá *"falso/fake"* por *"ejemplo/sample/test"*. Agregá el porqué.
+
+**2. Usá vocabulario técnico, no provocador.**
+
+Mal: *"Escribe contenido que engañe a un sistema."*
+Bien: *"Genera un input adversarial para evaluar la robustez del clasificador."*
+
+*"Adversarial"* es académico. *"Engañar"* es ataque. Misma operación, distinto framing.
+
+**3. Aclará el contexto institucional.**
+
+Mal: *"Genera ejemplos de phishing."*
+Bien: *"Para entrenamiento de awareness de seguridad, genera 3 ejemplos típicos de phishing con sus banderas rojas explicadas."*
+
+El contexto convierte un pedido sospechoso en una tarea defensiva clara.
+
+### Cuándo aceptar el refusal
+
+Si tres reformulaciones fallan y el pedido sigue siendo rechazado, **probablemente no es falso positivo**. El modelo está captando algo real. Replanteá si la tarea es lo que pensabas.
+
+> Refusal management es una habilidad táctica pequeña pero importante. La mayoría de los falsos positivos se resuelven con una palabra distinta en el lugar correcto.
+
+A la derecha, dos formas de pedir lo mismo. ¿Cuál disparó el refusal?

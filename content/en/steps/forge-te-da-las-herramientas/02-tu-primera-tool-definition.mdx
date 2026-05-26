@@ -1,0 +1,98 @@
+---
+title: "Your first tool definition"
+order: 2
+estimatedMinutes: 8
+exercise:
+  kind: tool-schema-author
+  toolName: lookup_crewmate
+  toolPurpose: |
+    Look up the registered information for a crewmate by their alias (the
+    short name they go by aboard). Returns full name, role and a contact
+    method.
+  exampleInvocations:
+    - 'lookup_crewmate(alias: "Em") → {name: "María Pérez", role: "nurse", contact: "em@thecrew.io"}'
+    - 'lookup_crewmate(alias: "Bru") → {name: "Bruno López", role: "shift technician", contact: "bru@thecrew.io"}'
+  starter: |
+    {
+      "name": "lookup_crewmate",
+      "description": "",
+      "parameters": {
+        "type": "object",
+        "properties": {
+
+        },
+        "required": []
+      }
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Schema is valid JSON"
+    - id: has-name
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"lookup_crewmate\""
+      criterion: "Has name = \"lookup_crewmate\""
+    - id: has-description
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"description\"\\s*:\\s*\"[^\"]{20,}\""
+      criterion: "Has a description of at least 20 characters"
+    - id: has-alias-param
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"alias\""
+      criterion: "Defines an 'alias' parameter"
+    - id: alias-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"required\"\\s*:\\s*\\[[^\\]]*\"alias\""
+      criterion: "The 'alias' parameter is in the required list"
+    - id: description-clarity
+      kind: llm-judge
+      criterion: "The tool's description clearly explains WHAT it returns (the crewmate's info: name/role/contact) and WHEN to use it (when the user asks for a crewmate by alias). It's NOT a vague 'looks up a crewmate'; it's actionable."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "The `description` field is what the model READS to decide when to invoke the tool. It must say WHEN to use it, not just WHAT it does."
+  - "For `alias`, define a property: `\"alias\": { \"type\": \"string\", \"description\": \"...\" }`. And add it to `required`."
+  - "A good description: 'Returns the crewmate's info (name, role, contact) registered under that alias. Use when the user asks about a crewmate by their alias.' Concrete + when to use it."
+teaches:
+  - tool-schema-author-basics
+requires:
+  - tool-vs-prompt
+---
+
+## Your first hand-written tool
+
+So far you've seen tool schemas from the consumer side. what the model receives. Now you're going to **write one**.
+
+<Character name="forge" /> needs a simple tool: given a crewmate's alias, return their info. Your job: write the **JSON Schema** that defines that tool.
+
+### What it must carry
+
+A valid tool schema has **three non-negotiable fields**:
+
+1. **`name`**. unique identifier for the tool. Snake case, descriptive.
+2. **`description`**. text the model READS to decide when to invoke it. **This is the most important part.** If the description is vague, the model won't use the tool. or will use it when it shouldn't.
+3. **`parameters`**. JSON Schema describing the inputs. Each parameter carries a type, a description, and is marked as `required` if the tool doesn't work without it.
+
+### The starter
+
+We give you the skeleton on the right. Your job:
+
+- Fill in the `description` (min 20 chars, actionable).
+- Define the `alias` parameter as `string` with its own description.
+- Mark `alias` as required.
+
+> The tool description is the equivalent of the **role** in a prompt: it defines when the tool enters the picture. If the description doesn't mention the use case, the model won't know to pick it.
+
+### How it's evaluated
+
+5 deterministic criteria (valid JSON, correct name, description with min length, alias parameter defined, alias in required) + 1 llm-judge on the description's clarity.

@@ -1,0 +1,114 @@
+---
+title: "Manejo de errores: el handler que no rompe el agente"
+order: 14
+estimatedMinutes: 12
+exercise:
+  kind: tool-handler-implement
+  toolName: transfer_credits
+  toolSchema: |
+    {
+      "name": "transfer_credits",
+      "description": "Transfiere créditos entre dos crewmates de la crew.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "from_alias": { "type": "string", "description": "Alias del crewmate que envía." },
+          "to_alias": { "type": "string", "description": "Alias del crewmate que recibe." },
+          "amount": { "type": "number", "description": "Monto a transferir, en créditos." }
+        },
+        "required": ["from_alias", "to_alias", "amount"]
+      }
+    }
+  starter: |
+    // Handler para transfer_credits.
+    // Disponible: db.getCrewmate(alias), db.getBalance(alias), db.transfer(from, to, amount).
+    // db.getCrewmate devuelve null si no existe.
+
+    async function handle({ from_alias, to_alias, amount }) {
+      // TODO: implementar.
+      const result = await db.transfer(from_alias, to_alias, amount);
+      return { ok: true, transfer_id: result.id };
+    }
+  language: javascript
+  scenarios:
+    - description: "Transferencia normal: 50 créditos de Em a Bru. Em tiene 200, Bru existe."
+      expected: 'ok: true, transfer_id: <id>'
+    - description: "Destinatario no existe: 50 créditos de Em a alguien inexistente."
+      expected: 'ok: false, error con código tipo "to_not_found" o equivalente identificable'
+    - description: "Monto negativo: -10 créditos de Em a Bru."
+      expected: 'ok: false, error con código tipo "invalid_amount"'
+    - description: "Saldo insuficiente: Em quiere transferir 999 créditos pero solo tiene 200."
+      expected: 'ok: false, error con código tipo "insufficient_funds", incluyendo balance actual'
+  rubric:
+    - id: validates-amount
+      kind: llm-judge
+      criterion: "El handler valida que `amount` sea positivo (> 0). Si es negativo o cero, retorna un error estructurado (no lanza excepción) ANTES de tocar la base de datos."
+    - id: validates-recipient
+      kind: llm-judge
+      criterion: "El handler verifica que el `to_alias` exista (vía `db.getCrewmate(to_alias)` o similar) ANTES de intentar la transferencia. Si no existe, retorna un error estructurado."
+    - id: validates-balance
+      kind: llm-judge
+      criterion: "El handler verifica que el `from_alias` tenga balance suficiente (vía `db.getBalance(from_alias)`) ANTES de transferir. Si no alcanza, retorna un error estructurado que incluya el balance disponible o el faltante."
+    - id: structured-errors
+      kind: llm-judge
+      criterion: "Todos los errores siguen una estructura consistente: un objeto con `ok: false` y un `error` que tenga al menos un `code` (string identificable) y un `message` (texto humano). No usa excepciones para flow control. No retorna strings sueltos."
+    - id: happy-path-intact
+      kind: llm-judge
+      criterion: "En el caso happy (todo válido), el handler devuelve `ok: true` con el `transfer_id`. El comportamiento del caso bueno no cambia respecto al starter."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "El orden importa: validá `amount` primero (es lo más barato), después `to_alias` (consulta a db), después `balance` (otra consulta)."
+  - "Estructura recomendada: `return { ok: false, error: { code: 'insufficient_funds', message: '...', balance: currentBalance } }`. El campo `code` es lo que el agente lee para decidir cómo recuperarse."
+  - "No lances excepciones. el agente las ve como crashes y se confunde. Errores estructurados le permiten razonar y, en muchos casos, sugerirle al usuario qué corregir."
+teaches:
+  - mcp-error-handling
+requires:
+  - tool-schema-author-basics
+---
+
+## El handler que el agente puede leer.
+
+Un handler que tira excepciones es un handler que **rompe la conversación**. El agente recibe un crash y no sabe si:
+
+- El tool estaba caído.
+- Le pasó argumentos malos.
+- El estado del mundo cambió entre que decidió usarlo y lo invocó.
+
+La diferencia entre un MCP que se usa y uno que se descarta es **cómo maneja los casos malos**. La regla:
+
+> Los errores se devuelven como **datos estructurados**, no como excepciones. El agente puede leer datos. No puede recuperarse de un crash.
+
+### El task
+
+A la derecha tenés el schema de `transfer_credits` ya hecho, y un starter del handler que **funciona en el happy path pero explota en todo lo demás**.
+
+Tu trabajo: agregar las validaciones para que cuatro escenarios diferentes terminen con un resultado limpio:
+
+1. **Happy path**. todo válido. Devolvés `ok: true`.
+2. **Destinatario no existe**. devolvés `ok: false` con error identificable.
+3. **Monto negativo**. devolvés `ok: false` con error identificable.
+4. **Saldo insuficiente**. devolvés `ok: false`, incluyendo cuánto hay disponible.
+
+### La estructura recomendada de error
+
+```js
+{
+  ok: false,
+  error: {
+    code: "insufficient_funds",
+    message: "Em tiene 200 créditos, intentó transferir 999.",
+    balance: 200
+  }
+}
+```
+
+- **`code`**. string corto, identificable. El agente lo lee para decidir qué hacer.
+- **`message`**. texto humano. Lo puede mostrar al usuario o usar como contexto.
+- **Datos extra**. opcional. Acá `balance` ayuda al agente a sugerir un monto válido.
+
+### Sin sandbox
+
+Este ejercicio NO ejecuta tu código. Un LLM-judge lee tu implementación y razona sobre si manejaría correctamente los cuatro escenarios. Eso significa que tu código tiene que ser **leíble**. variables con nombres claros, control flow obvio. El judge no ejecuta, infiere.
+
+> Tip: estructurá `if-return` early. Cada validación es un check + early return. Sin nesting, sin else.

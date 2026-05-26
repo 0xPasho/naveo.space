@@ -1,0 +1,117 @@
+---
+title: "Solo respóndeme con X: cortar el preamble"
+order: 16
+estimatedMinutes: 6
+exercise:
+  kind: prompt-task
+  task: |
+    Forge automatiza un pipeline que toma el output de tu prompt y lo
+    parsea como JSON directamente. sin limpiar, sin trimming, sin
+    nada. Eso significa que si el modelo agrega `Aquí está el JSON:`
+    al principio o pone el output dentro de un bloque ```json ... ```,
+    el parser explota.
+
+    Tu trabajo: escribir un prompt que extraiga `dia`, `hora` y `bay`
+    de un reporte corto y devuelva **EXACTAMENTE** este JSON, sin
+    una sola línea más:
+
+    ```
+    {"dia": "...", "hora": "...", "bay": "..."}
+    ```
+
+    Sin preamble. Sin "Aquí tienes". Sin markdown fences. Sin saltos
+    de línea antes o después. El output completo debe empezar con `{`
+    y terminar con `}`.
+
+    Donde vaya el reporte, usá `{{input}}`.
+  starter: |
+    <task>
+      Extrae dia, hora y bay del reporte. Devuelve el JSON.
+    </task>
+
+    <report>
+      {{input}}
+    </report>
+  testCases:
+    - input: "Lunes 22:00. chequeo de presión en bay 3, todo nominal."
+    - input: "Sábado 03:15: Forge atendió reciclador en bay 7. Reanudado."
+    - input: "Reporte de turno. miércoles, 09:00. Inspección rutinaria, bay 1."
+  rubric:
+    - id: starts-with-brace
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^\\s*\\{"
+      criterion: "El output empieza con `{` (sin preamble, sin texto antes)"
+    - id: ends-with-brace
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\\}\\s*$"
+      criterion: "El output termina con `}` (sin texto después)"
+    - id: no-markdown-fence
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^(?!.*```)"
+        flags: "s"
+      criterion: "No contiene bloques de código markdown (` ``` `)"
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "El output es JSON válido"
+    - id: keys-present
+      kind: deterministic
+      check: has-keys
+      args: ["dia", "hora", "bay"]
+      criterion: "Contiene las tres llaves: dia, hora, bay"
+    - id: values-correct
+      kind: llm-judge
+      criterion: "Los valores de `dia`, `hora` y `bay` se extraen correctamente del reporte (sin inventar; sin confundir formato de hora)."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Decile al modelo, literalmente: 'Tu output empieza con `{` y termina con `}`. Nada más.'"
+  - "Las frases que más cortan preamble: 'Responde SOLO con el JSON.' / 'Sin explicación, sin markdown.' / 'El primer carácter debe ser `{`.'"
+  - "Si sigue agregando ```json``` al inicio, escribilo explícito: 'Sin code fences. Sin triple backtick.' El modelo respeta restricciones explícitas mucho más que las implícitas."
+teaches:
+  - suppress-preamble
+  - strict-output-format
+requires:
+  - prompt-task-basics
+---
+
+## El modelo es un perro grande: simpático pero charlatán
+
+<Character name="forge" /> tiene una regla simple en su pipeline: el output del modelo entra **directo** a `JSON.parse(...)`. Sin limpieza, sin regex previos, sin "quitemos los backticks que mete a veces".
+
+Eso significa que outputs como estos revientan el sistema:
+
+- **Output con preamble:** primero el modelo escribe "Aquí está el JSON que pediste:", después el JSON en la línea de abajo. `JSON.parse` ve la primera línea y muere.
+- **Output envuelto en bloque markdown:** el modelo agrega tres backticks seguidos de `json` antes del JSON y otros tres backticks después. `JSON.parse` lee el primer backtick y muere.
+- **Output con cierre conversacional:** el JSON viene en medio, con texto antes ("Claro, basado en el reporte:") y después ("¿Necesitas algo más?"). `JSON.parse` muere en el primer carácter no-JSON.
+
+Los tres tienen el JSON correcto adentro. pero el parser solo ve la primera línea y se cae. Tu trabajo: **forzar al modelo a callarse**.
+
+### Tres técnicas que funcionan
+
+1. **Decirlo explícito en el prompt.** "Responde SOLO con el JSON, sin texto antes ni después." Suena obvio, pero la mayoría de prompts no lo dicen y el modelo defaultea a ser servicial.
+
+2. **Mostrar el primer carácter.** Una línea como "Tu output empieza con llave abierta y termina con llave cerrada. Nada más." ata al modelo a una restricción sintáctica, no una pragmática. Funciona mucho mejor.
+
+3. **Prohibir el code fence específicamente.** Claude tiende a envolver JSON en bloques markdown. Si tu pipeline no los espera, escribilo: "Sin code fences. Sin triple backtick. Solo el JSON crudo."
+
+### Cómo se evalúa
+
+6 criterios deterministas + 1 judge:
+
+1. El output empieza con llave abierta.
+2. El output termina con llave cerrada.
+3. No contiene triple backtick en ningún lado.
+4. Es JSON parseable.
+5. Tiene las 3 llaves correctas.
+6. Los valores son los correctos para cada reporte.
+
+Los 3 casos tienen que pasar **todos** los criterios. El judge ya es barato porque si fallaste lo determinista, no se invoca.
+
+> Tip: pasá primero los criterios deterministas. Cuando todos esos estén verdes, el judge casi nunca falla. el modelo ya está siendo ordenado.

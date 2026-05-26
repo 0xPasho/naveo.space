@@ -1,0 +1,88 @@
+---
+title: "Cuándo NO partir en varios pasos"
+order: 2
+estimatedMinutes: 6
+characters:
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Orbit te pone a prueba antes de seguir. Te llega un pedido nuevo:
+    *"Dado un nombre completo y un email, devolveme un saludo formal en
+    español: 'Estimado/a {nombre}, te escribimos a {email}.'"*. Dos
+    diseños sobre la pizarra. ¿Cuál mandarías a producción?
+  optionA: |
+    UN SOLO PROMPT:
+
+    "Eres un generador de saludos formales. Recibís un nombre y un email.
+    Devolvé exactamente: 'Estimado/a {nombre}, te escribimos a {email}.'
+    Sin texto extra, sin variaciones. Si el nombre está vacío, devolvé
+    'Estimado/a cliente, te escribimos a {email}.'"
+  optionB: |
+    CADENA DE 3 PASOS:
+
+    Paso 1. detect_gender(nombre) → "M" | "F" | "N"
+    Paso 2. validate_email(email) → ok | invalid
+    Paso 3. compose_greeting(nombre, gender, email) → "Estimado/a ..."
+  correct: A
+  explanation: |
+    Esta es la trampa del track: **partir cuando no hace falta cuesta
+    más de lo que rinde**. La opción B tiene tres llamadas LLM (o dos
+    LLM + una de código) cuando la tarea es **una sola decisión
+    determinística**: formatear una plantilla.
+
+    Cuatro señales de que NO necesitás multi-step:
+
+    1. **El output es una transformación directa del input.** Sin
+       ramificación, sin condicionales heterogéneas, sin combinación
+       de fuentes externas.
+    2. **El criterio de éxito es chequeable con regex/parser.** Si
+       podés validar el output con código, no necesitás un LLM-judge.
+    3. **El prompt cabe cómodo en 15 líneas.** No tenés que listar
+       N reglas distintas para N tipos de input.
+    4. **No hay datos que traer de afuera.** Sin retrieval, sin tools,
+       sin info que no esté ya en el input.
+
+    Multi-step paga cuando el problema se ramifica, depende del
+    contexto externo, o necesita decisiones intermedias evaluables.
+    Para un format string, cualquier llamada extra es ruido, costo,
+    y latencia regalada.
+hints:
+  - "Contá cuántas decisiones REALES tiene la tarea. Formatear un template es UNA decisión. Partirla en 3 inventa decisiones que no existen."
+  - "Cada llamada LLM que agregás suma latencia (200-2000ms), costo (tokens in + out), y puntos de falla nuevos. Tiene que pagar por sí sola."
+  - "¿Necesitás 'detectar género' para decir 'Estimado/a'? El barra ya cubre los dos casos. Una llamada LLM para eso es over-engineering puro."
+teaches:
+  - when-not-to-chain
+requires:
+  - chain-vs-mono-prompt
+---
+
+## La lección 01 al revés
+
+En la 01 viste cuándo un prompt no alcanza. Ahora, antes de aprender a construir cadenas, <Character name="orbit" /> te frena en seco: **la mayoría de las tareas no son multi-step**. Si partís todo, vas a sumar costo, latencia y bugs sin ganar nada.
+
+> La regla de Orbit: *un buen prompt único le gana a cinco prompts mediocres encadenados*. Multi-step paga cuando el problema **realmente** se ramifica. No cuando vos te imaginás que se podría.
+
+### Las cuatro señales de "no partir"
+
+1. **Output = transformación directa del input.** Format string, parseo de un JSON conocido, traducción literal. Una llamada al modelo o una función pura. No tres.
+2. **Validable con regex/parser.** Si el éxito es chequeable con código, no necesitás juez ni cadena. Un prompt bien escrito + un test determinístico es todo.
+3. **Prompt corto y enfocable.** Si todas las reglas caben en 10-15 líneas sin contradecirse, una llamada las maneja.
+4. **Sin datos externos.** Sin retrieval, sin tools, sin condicional sobre el mundo. Si todo lo necesario está en el input, no hay nada que orquestar.
+
+### Costos reales de partir de más
+
+Cada step que agregás trae:
+
+- **Latencia.** 200-2000ms por llamada LLM. Tres steps = posible respuesta a 5 segundos.
+- **Costo.** Cada step cobra tokens in + out. Tres steps repiten el mismo contexto tres veces.
+- **Puntos de falla.** Cada step puede fallar, alucinar, o devolver un formato inesperado.
+- **Mantenimiento.** Tres prompts que mantener, tres rúbricas que escribir, tres versiones que controlar.
+
+> Si la tarea cabe en un prompt y la podés validar con un regex, **mantenela en un prompt**. La complejidad se gana, no se regala.
+
+### El truco para decidir
+
+Antes de partir, escribí la tarea en una línea. Si la línea tiene **una sola decisión real**, queda en un prompt. Si tiene varias decisiones genuinamente independientes (clasificar Y extraer Y resumir), partís.
+
+Mirá los dos diseños a la derecha. Uno es honesto: una sola decisión, un solo prompt. El otro inventa pasos para parecer ingeniería. Elegí cuál mandarías a producción.

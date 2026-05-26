@@ -1,0 +1,38 @@
+tracks:
+  - slug: pre-flight
+    title: "Pre-flight"
+    order: 0
+    description: "Optional bridge for crewmates without a programming background. Twenty-one short rituals across six units: steps, decisions, variables and data, functions, how the model thinks, and your first prompt. Vega walks you through it. Skip if you already code."
+    optional: true
+    courses:
+      - pre-flight
+  - slug: anatomia-del-prompt
+    title: "Anatomy of the prompt"
+    order: 1
+    description: "The crew only understands you if you know how to talk to them. Twenty-six rituals across seven units: anatomy and clarity, input shape, examples, asking for the output well, reasoning, debugging, and hardening for production."
+    courses:
+      - te-incorporas-a-la-crew
+  - slug: coordinacion-con-la-crew
+    title: "Coordinating with the crew"
+    order: 2
+    description: "Sustain a conversation with the model when one prompt isn't enough. Twenty-four lessons across seven units: insist with specific questions, correct surgically, manage drift, compress history, and negotiate to the yes."
+    courses:
+      - tu-primera-conversacion
+  - slug: tools-y-mcps
+    title: "Tools and MCPs"
+    order: 3
+    description: "Forge teaches you to give the model hands. Twenty-seven lessons across seven units: typed schemas, descriptions the agent actually picks, handlers with rich errors, idempotency, authorization, and MCPs an agent uses on its own."
+    courses:
+      - forge-te-da-las-herramientas
+  - slug: flujos-complejos
+    title: "Complex flows: multi-step systems"
+    order: 4
+    description: "Multi-step LLM system design. Twenty-two lessons across seven units: when to split a problem into chains (and when not to), parallelize and cache, route by rules or by LLM, cost cascades, agent loops with budgets and retries, graceful degradation, RAG, traces, evals, judges, and A/B testing. Orbit guides, Atlas signs."
+    courses:
+      - sistemas-multi-step
+  - slug: seguridad-de-sistemas-ia
+    title: "Security: the model, the data, and you"
+    order: 5
+    description: "Every model can be tricked. Every tool can be weaponized. Every output is a confident lie until proven otherwise. Hex trains you across twenty rituals: classifying incidents, breaking direct and indirect injection, scrubbing PII, keeping secrets out of the model, scoping destructive tools, validating output, calibrating hallucination, and red-team. Atlas signs when the system holds."
+    courses:
+      - protocolo-de-seguridad

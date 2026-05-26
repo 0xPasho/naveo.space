@@ -1,0 +1,1806 @@
+{
+  "common": {
+    "appName": "Naveo",
+    "header": {
+      "signIn": "Iniciar sesión",
+      "signUp": "Registrarse"
+    },
+    "nav": {
+      "bridge": "Puente",
+      "tracks": "Tracks",
+      "profile": "Perfil"
+    },
+    "languageSwitcher": {
+      "label": "Idioma",
+      "es": "Español",
+      "en": "English"
+    },
+    "hud": {
+      "logoAlt": "Naveo",
+      "xpLabel": "XP",
+      "streakLabel": "Racha",
+      "streakAtRiskTitle": "Despeja un step hoy para no romper la racha.",
+      "gemsLabel": "Gemas",
+      "heartsLabel": "Vidas",
+      "avatarFallback": "OF",
+      "streakPopover": {
+        "openLabel": "Cómo funciona la racha",
+        "eyebrow": "Tu racha",
+        "count": "{days, plural, =0 {Aún sin racha} =1 {1 día seguido} other {# días seguidos}}",
+        "rules": {
+          "advance": "Avanza un paso de lección",
+          "check": "Comprueba un ejercicio",
+          "daily": "Hacé la misión del día",
+          "justOpen": "Solo abrir la app no cuenta"
+        },
+        "freezes": "{count, plural, =1 {Tenés 1 escudo de racha de respaldo} other {Tenés # escudos de racha de respaldo}}",
+        "atRiskNudge": "Tu racha está en riesgo hoy. La misión del día te toma 1 minuto y la asegura.",
+        "atRiskCta": "Hacer la misión de hoy",
+        "footer": "Si te saltas un día, vuelve a 0"
+      },
+      "streakSaveBanner": {
+        "message": "{count, plural, =1 {Tu escudo de racha te cubrió 1 día. La racha sigue.} other {Tus escudos de racha cubrieron # días. La racha sigue.}}",
+        "dismiss": "Cerrar"
+      },
+      "xpPopover": {
+        "openLabel": "Cómo funciona el XP",
+        "eyebrow": "Experiencia",
+        "count": "{xp, plural, =0 {Aún sin XP} =1 {1 XP ganado} other {# XP ganados}}",
+        "rules": {
+          "firstTry": "+12 XP al pasar un step al primer intento",
+          "laterTry": "+8 XP al pasarlo en intentos siguientes",
+          "capstones": "Los capstones dan un empujón mayor de XP"
+        },
+        "footer": "Más XP, más cerca de tu siguiente ascenso"
+      },
+      "gemsPopover": {
+        "openLabel": "Cómo funcionan las gemas",
+        "eyebrow": "Gemas",
+        "count": "{gems, plural, =0 {Aún sin gemas} =1 {1 gema en la cartera} other {# gemas en la cartera}}",
+        "rules": {
+          "earnFirstTry": "+3 gemas cada vez que pasas un step al primer intento",
+          "earnCapstones": "Recompensas mayores al cerrar cursos y capstones",
+          "spendShop": "Gástalas en recargar vidas, congelar racha o pedir ayuda a la crew"
+        },
+        "footer": "Visita la Tienda para canjearlas"
+      },
+      "heartsPopover": {
+        "openLabel": "Cómo funcionan las vidas",
+        "eyebrow": "Vidas",
+        "count": "{hearts}/{max} vidas",
+        "full": "Al máximo",
+        "nextIn": "Próxima vida en {time}",
+        "rules": {
+          "budget": "Presupuesto de {max} evaluaciones con juez IA",
+          "regen": "Una vida se regenera cada {interval}",
+          "hintsCost": "Pedir una pista cuesta 1 vida",
+          "passive": "Leer lecciones o practicar drills no gasta vidas"
+        },
+        "footer": "¿Apurado? Recarga en la Tienda"
+      }
+    },
+    "userMenu": {
+      "openLabel": "Abrir menú de cuenta",
+      "profile": "Mi perfil",
+      "signOut": "Cerrar sesión"
+    },
+    "signInPrompt": {
+      "eyebrow": "ACCESO INVITADO",
+      "signIn": "Iniciar sesión",
+      "signUp": "Crear cuenta",
+      "explore": "Explorar tracks"
+    },
+    "anonGate": {
+      "profile": {
+        "heading": "Tu perfil te espera",
+        "body": "Inicia sesión para ver tu progreso, XP, racha y los logros que vayas desbloqueando con la crew."
+      },
+      "practice": {
+        "heading": "Práctica personalizada",
+        "body": "La cola de práctica se arma con los pasos que estás aprendiendo. Inicia sesión para que la crew prepare tu sesión."
+      },
+      "daily": {
+        "heading": "Misión diaria",
+        "body": "Las misiones diarias se asignan según tu progreso. Inicia sesión para recibir la tuya y mantener la racha viva."
+      },
+      "shop": {
+        "heading": "Inicia sesión para canjear",
+        "body": "Para comprar paquetes de gemas o usar boosters, primero necesitas una cuenta. Es gratis y te lleva 30 segundos."
+      }
+    },
+    "sidebar": {
+      "menuTrigger": "Abrir menú",
+      "sections": {
+        "onboard": "A bordo",
+        "bridge": "Puente"
+      },
+      "items": {
+        "dashboard": "Panel",
+        "missionPath": "Mapa de misión",
+        "practice": "Práctica",
+        "crew": "La crew",
+        "workbench": "Workbench",
+        "leaderboard": "Tabla",
+        "shop": "Tienda",
+        "profile": "Perfil"
+      },
+      "daily": {
+        "label": "Diario",
+        "streakTitle": "Racha de {days} días",
+        "streakBody": "No rompas la cadena"
+      }
+    }
+  },
+  "workbench": {
+    "eyebrow": "Workbench · Forge",
+    "title": "Tu banco de pruebas.",
+    "body": "Espacio libre para probar prompts. Sin XP, sin rúbrica, sin penalización por reintentar. solo tú, el modelo y el bucle. Forge guarda tus últimos seis runs para que puedas comparar versiones."
+  },
+  "comingSoon": {
+    "eyebrow": "Próximamente",
+    "ctaBack": "Volver al mapa",
+    "ctaDashboard": "Ver el puente",
+    "practice": {
+      "title": "Práctica de repaso.",
+      "body": "Echo está calibrando un modo de repetición: ejercicios de antes con variaciones nuevas para mantener tus reflejos afilados. Aún no abre. vuelve cuando Echo dé luz verde."
+    },
+    "crew": {
+      "title": "Conoce a tu crew.",
+      "body": "Pronto vas a poder ver el dossier completo de cada miembro: Vega, Atlas, Echo, Forge, Orbit y Hex. historia, especialidad, frases recurrentes. Por ahora los encuentras en las lecciones."
+    },
+    "leaderboard": {
+      "title": "Tabla de la flota.",
+      "body": "Atlas está calculando rankings semanales. quién mantiene racha, quién despeja más capstones, quién no rompe corazones. La primera publicación llega en cuanto haya suficiente flota."
+    },
+    "shop": {
+      "title": "Tienda de la base.",
+      "body": "Vega está negociando con el quartermaster: cosméticos para tu insignia, packs de corazones, tokens para reintentos extra. Mantén tus gemas. abrimos pronto."
+    }
+  },
+  "pageError": {
+    "notFound": {
+      "eyebrow": "SEÑAL PERDIDA · 404",
+      "title": "Esta cubierta no existe.",
+      "body": "Echo escaneó el manifiesto. Nada acá coincide con la dirección de donde venís. Volvé al puente y probá otra ruta.",
+      "ctaBridge": "Volver al puente",
+      "ctaTracks": "Ver tracks"
+    },
+    "error": {
+      "eyebrow": "FALLA DE SISTEMA · 500",
+      "title": "Algo se quebró en el puente.",
+      "body": "Forge está en eso. Probá de nuevo. la mayoría son glitches pasajeros. Si persiste, llamá a la tripulación.",
+      "ctaRetry": "Intentar de nuevo",
+      "ctaHome": "Volver al inicio",
+      "details": "Detalles del error"
+    }
+  },
+  "shop": {
+    "eyebrow": "Tienda · Quartermaster",
+    "title": "Power-ups y boosters",
+    "subtitle": "Solo insurance y refills. nunca un skip a la evaluación.",
+    "greeting": "Bienvenido a bordo. Equipate con lo que necesites para mantener viva tu racha.",
+    "walletLabel": "Tu wallet",
+    "itemsLabel": "Items disponibles",
+    "powerUps": "Power-ups",
+    "wallet": {
+      "gems": "Gemas",
+      "hearts": "Vidas",
+      "freezes": "Escudos de racha"
+    },
+    "buy": "Comprar · {cost}",
+    "buyPending": "Procesando…",
+    "alreadyFull": "Ya está al máximo",
+    "badge": {
+      "boughtToday": "Comprado hoy · ×{count}"
+    },
+    "recommend": {
+      "eyebrow": "Forge recomienda",
+      "cta": "Comprar ahora",
+      "heart-refill": "Tenés pocas vidas. Agarrá una recarga para seguir sin esperar la regeneración.",
+      "heart-pack": "Vidas estables. llenalas todas antes de tu próxima sesión larga así nada te frena.",
+      "streak-freeze": "No tenés escudos de racha. Sumá uno antes de un día ocupado para que un día salteado no resetee tu racha."
+    },
+    "history": {
+      "label": "Tu historial reciente",
+      "heading": "Últimas compras",
+      "unknownItem": "Compra (item desconocido)"
+    },
+    "items": {
+      "streak-freeze": {
+        "name": "Escudo de racha",
+        "description": "Si te salteas un día, este escudo absorbe el golpe y tu racha sigue. Se consume automáticamente cuando hace falta. Acumulables. comprá varios si te vas de viaje."
+      },
+      "heart-refill": {
+        "name": "Recarga de vida (×1)",
+        "description": "Recupera una sola vida ahora. Útil cuando solo te falta una para terminar un ejercicio y no querés esperar la regeneración."
+      },
+      "heart-pack": {
+        "name": "Pack de vidas (lleno)",
+        "description": "Recarga todas las vidas al máximo de un solo golpe. Útil al iniciar una sesión larga."
+      }
+    },
+    "feedback": {
+      "success": "Listo. {name} agregado a tu wallet.",
+      "insufficientGems": "No te alcanzan las gemas.",
+      "alreadyFull": "Las vidas ya están al máximo. no hace falta comprar.",
+      "unauthorized": "Necesitás iniciar sesión para comprar.",
+      "invalidInput": "Algo salió mal con la compra. Probá de nuevo."
+    },
+    "gems": {
+      "eyebrow": "Recargá gemas",
+      "subtitle": "Pagás una sola vez. Las gemas no caducan y sirven para vidas, escudos y futuros power-ups.",
+      "sectionLabel": "Packs de gemas",
+      "packs": {
+        "small": {
+          "name": "Pack pequeño"
+        },
+        "medium": {
+          "name": "Pack mediano"
+        },
+        "large": {
+          "name": "Pack grande"
+        }
+      },
+      "badge": {
+        "popular": "El más popular",
+        "best": "Mejor precio"
+      },
+      "button": {
+        "buy": "Comprar",
+        "pending": "Abriendo checkout…"
+      },
+      "feedback": {
+        "comingSoon": "Pagos llegando pronto. Estamos terminando la integración.",
+        "stripeError": "No pudimos abrir el checkout. Probá de nuevo.",
+        "unauthorized": "Necesitás iniciar sesión para comprar."
+      },
+      "status": {
+        "successEyebrow": "Pago confirmado",
+        "successBody": "Las gemas aparecen en tu wallet en unos segundos. Si pasa más de un minuto, refrescá la página.",
+        "cancelEyebrow": "Compra cancelada",
+        "cancelBody": "Cerraste el checkout antes de pagar. Probá de nuevo cuando quieras."
+      }
+    },
+    "philosophy": "La filosofía: ningún item te deja saltar evaluación. Hints, ejercicios y rúbricas son siempre gratis."
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Aprende IA aplicada, no IA teórica",
+      "heading": "Lee a la izquierda. Practica a la derecha. La IA evalúa lo que tu prompt logra.",
+      "sub": "Naveo es la plataforma gamificada para volverte bueno en prompt engineering, MCPs, agentes y flujos complejos. Práctica real con feedback inmediato.",
+      "cta": "Empezar con Vega",
+      "secondary": "Leer la bitácora",
+      "note": "Primer step gratis. Sin tarjeta. Sin instalación."
+    },
+    "preview": {
+      "aria": "Vista previa del lesson player",
+      "breadcrumb": "Anatomía del prompt · L1 · Rol y contexto",
+      "reading": {
+        "eyebrow": "Lectura",
+        "title": "Rol y contexto",
+        "body": "Un buen prompt empieza diciéndole al modelo quién es y qué problema resuelve. Sin eso, alucina.",
+        "snippetRole": "Eres un extractor de datos estricto"
+      },
+      "exercise": {
+        "eyebrow": "Tu turno",
+        "question": "¿Cuál de los dos prompts forzará un JSON limpio?",
+        "optionA": "Devuelve la respuesta en JSON.",
+        "optionB": "Devuelve SOLO JSON. Sin texto antes ni después. Schema: '{' name, age, email '}'",
+        "feedback": "B impone formato estricto. La rúbrica verifica que el modelo no preambule."
+      },
+      "footer": {
+        "back": "Atrás",
+        "guide": "Vega te guía",
+        "next": "Siguiente"
+      }
+    },
+    "loop": {
+      "eyebrow": "Cómo funciona",
+      "title": "Tres movimientos. Sin video, sin slides, sin esperar.",
+      "steps": {
+        "read": {
+          "title": "Lee a la izquierda",
+          "body": "Una página corta con el principio, el patrón y un anti-patrón. No hay quince minutos de teoría antes de tocar nada."
+        },
+        "practice": {
+          "title": "Practica a la derecha",
+          "body": "Escribes el prompt, eliges la opción, etiquetas la anatomía o diseñas el schema de tu tool. El ejercicio cambia según la habilidad."
+        },
+        "judge": {
+          "title": "La rúbrica te corrige",
+          "body": "No comparamos tu prompt contra una respuesta exacta. Validamos lo que tu prompt logra contra una rúbrica con LLM-judge."
+        }
+      }
+    },
+    "rubric": {
+      "eyebrow": "El diferenciador",
+      "title": "No validamos tu prompt. Validamos lo que tu prompt logra.",
+      "sub": "El 90% de lo que enseñamos no tiene una sola respuesta correcta. Por eso el corazón del producto es una rúbrica con LLM-judge, no un comparador de strings.",
+      "promptLabel": "Tu prompt",
+      "promptBody": "Eres un extractor de datos.\nDel texto de abajo, devuelve JSON con name, age, email.\nSi un campo falta, déjalo en null.\n\nTexto: \"Carlos, sin email registrado\"",
+      "promptNote": "Caso 3 falla: el modelo inventa un email plausible.",
+      "rubricLabel": "Rúbrica",
+      "rubricStatus": "3 / 4",
+      "checks": {
+        "json": {
+          "label": "Devuelve JSON válido"
+        },
+        "fields": {
+          "label": "Contiene name, age, email"
+        },
+        "hallucinate": {
+          "label": "No alucina datos faltantes",
+          "hint": "Cuando el email no aparece, deberías mandar null en lugar de inventarlo."
+        },
+        "shape": {
+          "label": "Una sola línea de JSON, sin preámbulo"
+        }
+      }
+    },
+    "tracks": {
+      "eyebrow": "Currículum",
+      "title": "Cuatro tracks. Una progresión.",
+      "sub": "Empiezas con la habilidad fundacional y subes capa por capa hasta orquestar agentes.",
+      "seeAll": "Ver todos los tracks",
+      "enter": "Entrar",
+      "featuredLabel": "Plato fuerte",
+      "tiles": {
+        "prompting": {
+          "title": "Anatomía del prompt",
+          "body": "Rol, contexto, ejemplos, formato estructurado. La habilidad sobre la que se construye todo lo demás.",
+          "duration": "8 lecciones · 90 min",
+          "lessons": "8 lecciones"
+        },
+        "conversation": {
+          "title": "Conversaciones que funcionan",
+          "body": "Memoria, follow-ups, recuperar outputs malos. Conducir un LLM multi-turn hacia un objetivo concreto.",
+          "duration": "6 lecciones · 70 min",
+          "lessons": "6 lecciones"
+        },
+        "mcps": {
+          "title": "Tools y MCPs",
+          "body": "Diseñas tools que el LLM realmente decide usar. Tu descripción es lo que el modelo lee. Contenido único que nadie más enseña.",
+          "duration": "10 lecciones · 2 h",
+          "lessons": "10 lecciones"
+        },
+        "flows": {
+          "title": "Flujos complejos",
+          "body": "Chains, routing, agentes, evals. Cuando un solo prompt no basta.",
+          "duration": "8 lecciones · 2 h",
+          "lessons": "8 lecciones"
+        }
+      }
+    },
+    "stations": {
+      "eyebrow": "Las estaciones del puente",
+      "title": "Cada miembro de la crew es jefe de una estación. Su autoridad viene de saber.",
+      "sub": "No es decoración. Tu progreso se mide por estación: dominas Comms con Vega, Engineering con Forge, Security con Hex. Cada track desbloquea más coordinación.",
+      "atlas": {
+        "eyebrow": "Capitán",
+        "name": "Atlas firma tus capstones",
+        "body": "Atlas no tiene estación. Cruza todas. Aparece al final de cada track y, si pasas, registra. Si no, te manda a practicar con quien corresponde."
+      },
+      "tiles": {
+        "vega": {
+          "station": "Comms",
+          "name": "Vega",
+          "body": "La voz que te enseña a estructurar prompts. Rol, contexto, ejemplos, formato. La empiezas a oír desde el primer step.",
+          "example": "prompt-anatomy · few-shot · system vs user"
+        },
+        "echo": {
+          "station": "Datos",
+          "name": "Echo",
+          "body": "Memoria de la conversación, correcciones quirúrgicas, recuperar outputs sin perder lo bueno. No reescribe, edita.",
+          "example": "conversation-goal · surgical-correction"
+        },
+        "forge": {
+          "station": "Engineering",
+          "name": "Forge",
+          "body": "El taller. Schemas de tools, descripciones que el LLM entiende, MCPs, manejo de errores. Donde las ideas se vuelven herramientas.",
+          "example": "tool-schema · mcp-multi-tool"
+        },
+        "orbit": {
+          "station": "Mission Ops",
+          "name": "Orbit",
+          "body": "Cadenas, routing, agentes con loop. Orquesta misiones multi-step y decide cuándo paralelizar.",
+          "example": "chain-design · agent-loop"
+        },
+        "hex": {
+          "station": "Security",
+          "name": "Hex",
+          "body": "Inyección directa e indirecta, fugas, validación adversarial. Si tu sistema toca usuarios, Hex te audita.",
+          "example": "prompt-injection · hardening"
+        }
+      }
+    },
+    "daily": {
+      "eyebrow": "Misión del día",
+      "title": "Un quest corto cada día. Justo de lo que ya viste.",
+      "sub": "Cinco a ocho escenas, dos o tres minutos, un concepto que refuerza tu última lección. La racha vive de aquí.",
+      "bullets": {
+        "length": "Cinco a ocho mini ejercicios, no un quiz de 30 segundos.",
+        "bias": "Sesgado por los conceptos que ya viste. No te toca lo que aún no aprendiste.",
+        "streak": "Streak diario, vidas y gemas. El ritual encadena."
+      },
+      "card": {
+        "label": "Hoy con Echo",
+        "scenes": "5 escenas",
+        "title": "Corrección quirúrgica de un prompt",
+        "body": "El usuario pidió un cambio. Editas sin romper el resto del output.",
+        "progress": "Tu avance",
+        "reward": "+ 40 XP · 1 gema",
+        "cta": "Empezar"
+      }
+    },
+    "progress": {
+      "eyebrow": "Tu progreso",
+      "title": "Todo lo que haces se mide. Y se ve.",
+      "sub": "XP, racha, vidas, gemas y mastery por estación. Plus la liga semanal contra los que también están en bordo.",
+      "hud": {
+        "streakLabel": "racha",
+        "heartsLabel": "vidas",
+        "gemsLabel": "gemas"
+      },
+      "mastery": {
+        "label": "Mastery por estación",
+        "note": "0 a 100 · 4 tiers",
+        "rows": {
+          "vega": "Vega · Comms",
+          "echo": "Echo · Datos",
+          "forge": "Forge · Engineering",
+          "hex": "Hex · Security"
+        }
+      },
+      "league": {
+        "label": "Liga de la semana",
+        "tier": "Bronce",
+        "subs": {
+          "captain": "racha 21 · cap. de pelotón",
+          "you": "racha 14 · vas para promoción",
+          "steady": "racha 9 · constante",
+          "rising": "racha 6 · subiendo"
+        }
+      }
+    },
+    "cta": {
+      "eyebrow": "Subí a bordo",
+      "title": "Tu primer turno empieza con Vega.",
+      "sub": "El primer step es gratis y dura cinco minutos. Si te gusta cómo se siente, sigues. Si no, no perdiste nada.",
+      "primary": "Empezar el primer step",
+      "secondary": "Ver currículum",
+      "signed": "Firmado al registro. Atlas"
+    }
+  },
+  "tracks": {
+    "list": {
+      "eyebrow": "{count} tracks disponibles",
+      "headingLead": "Elige un track.",
+      "headingAccent": "Empieza.",
+      "subheading": "Cada track es una serie de pasos con la persona de la crew que domina ese protocolo. Mezcla libremente. la lista de Echo se desbloquea desde tu primer hola.",
+      "empty": "Aún no hay tracks publicados.",
+      "summary": {
+        "progressLabel": "Tu progreso",
+        "progressValue": "{done} / {total}",
+        "xpLabel": "XP acumulado",
+        "xpDelta": "+ {delta} esta semana",
+        "capstonesLabel": "Capstones",
+        "capstonesValue": "{done} / {total}",
+        "capstonesDelta": "{remaining} por superar"
+      },
+      "chips": {
+        "all": "Todos los tracks",
+        "prompting": "Prompting",
+        "mcp": "MCP & Tools",
+        "skills": "Skills",
+        "agents": "Agents",
+        "code": "Programar con IA",
+        "beginner": "Inicial",
+        "intermediate": "Intermedio",
+        "advanced": "Avanzado"
+      },
+      "card": {
+        "unitLabel": "Unidad 0{unit} · {duration}",
+        "completed": "completado",
+        "stepsLabel": "{done}/{total} pasos",
+        "xpLabel": "{xp} XP",
+        "boss": "Capstone",
+        "reportingOfficers": "Mentores",
+        "launch": "Empezar →",
+        "review": "Revisar · Repetir",
+        "continueAt": "Continuar · Paso {step}",
+        "lockedPrereq": "Despeja \"{prereq}\" primero",
+        "bestPick": "Elección top",
+        "phrasePreview": "Lo que vas a poder hacer al final del track"
+      },
+      "globalPath": {
+        "eyebrow": "▮▮ MAPA DE LA FLOTA · {count} TRACKS",
+        "title": "Tu camino en <em>la flota</em>",
+        "subtitle": "Cada track es un mundo. Los completás de izquierda a derecha y abajo. al final, Atlas te espera en el puente.",
+        "progressLabel": "PROGRESO",
+        "xpLabel": "XP TOTAL",
+        "xpHint": "acumulado",
+        "capstoneLabel": "CAPSTONE",
+        "capstoneHint": "por despejar",
+        "chapter": "TRACK 0{unit} · {title}",
+        "stamp": {
+          "done": "COMPLETADO",
+          "current": "EN CURSO",
+          "locked": "BLOQUEADO",
+          "boss": "CAPSTONE"
+        },
+        "cta": {
+          "replay": "Repasar",
+          "xpBanked": "{xp} XP acumulados",
+          "continue": "Continuar · ST {step}",
+          "openMap": "Abrir mapa",
+          "locked": "Bloqueado",
+          "unlocksAfter": "Pasá \"{course}\" primero",
+          "attack": "Ataque al puente",
+          "bossNote": "Se desbloquea con todos los tracks"
+        }
+      }
+    },
+    "detail": {
+      "backToTracks": "Todos los tracks",
+      "eyebrow": "UNIDAD 0{unit} · {rank} · {steps} PASOS · {duration}",
+      "titlePrefix": "Hola, {mentor} ",
+      "tagDot": "•",
+      "summary": {
+        "runLabel": "TU AVANCE",
+        "runValue": "{done} / {total}",
+        "xpLabel": "XP ACUMULADO",
+        "xpValue": "{done} / {total}",
+        "capstoneLabel": "CAPSTONE"
+      },
+      "ctaContinueAt": "Continuar · Paso {step} → {title}",
+      "ctaStart": "Empezar · Paso 1",
+      "ctaMap": "Ver mapa de misión",
+      "progressLabel": "{pct}% completado",
+      "debrief": {
+        "eyebrow": "DEBRIEF",
+        "eyebrowAccent": "LO QUE DESPEJARÁS",
+        "title": "Al cerrar el turno serás capaz de ",
+        "officerRole": "FIRMA ESTA UNIDAD",
+        "points": [
+          "Leer la intención del modelo desde su primera frase",
+          "Elegir el rol correcto para cada turno",
+          "Escribir ejemplos que de verdad enseñan",
+          "Especificar un schema JSON que Echo firme",
+          "Diagnosticar por qué un prompt 'bueno' deriva",
+          "Despejar un capstone con vidas de sobra"
+        ]
+      },
+      "path": {
+        "title": "Mapa del curso",
+        "meta": "{done} / {total} pasos despejados",
+        "continueTooltip": "¡Continúa!"
+      },
+      "aside": {
+        "nextStepEyebrow": "SIGUIENTE · PASO {step}",
+        "nextStepBlurb": "Retomá donde lo dejaste. El próximo turno está armado y Echo te espera.",
+        "metaXp": "XP",
+        "metaMin": "min",
+        "metaLeft": "restan",
+        "startCta": "Empezar paso",
+        "capstoneEyebrow": "CAPSTONE EN {count} PASOS",
+        "capstoneName": "{mascot} espera en el puente",
+        "capstoneSub": "3 corridas · 4/4 criterios. Sin fallos.",
+        "legend": {
+          "done": "Completado",
+          "current": "En curso",
+          "boss": "Boss / Capstone",
+          "locked": "Bloqueado"
+        }
+      },
+      "syllabus": {
+        "heading": "Contenido del curso",
+        "metaSummary": "{lessons} lecciones · {capstones} capstone · ~ {duration}",
+        "kind": {
+          "read": "LECTURA + DRILL",
+          "drill": "PREGUNTAS",
+          "build": "PROMPT BUILDER",
+          "verify": "TEXTO LIBRE · ECHO RUN",
+          "chat": "MULTI-TURN",
+          "boss": "CAPSTONE"
+        },
+        "row": {
+          "stepsAndXp": "{steps} pasos · {xp} XP",
+          "cleared": "Despejado",
+          "upNext": "Siguiente",
+          "locked": "Bloqueado",
+          "pct": "{pct}%",
+          "replay": "Repetir",
+          "resume": "Continuar →",
+          "continue": "Continuar →",
+          "tagBoss": "Despeja la unidad",
+          "tagLocked": "Bloqueado"
+        },
+        "expanded": {
+          "youllDo": "QUÉ HARÁS",
+          "youllUnlock": "QUÉ DESBLOQUEAS",
+          "doItems": [
+            "Lees una escena corta. Vega y Echo en el puente",
+            "Construyes un prompt con dos ejemplos",
+            "Lo corres; Echo evalúa 3 casos"
+          ],
+          "unlockItems": [
+            "{xp} XP",
+            "1 ★ → 3 ★ en este paso",
+            "Acceso al capstone"
+          ]
+        }
+      },
+      "capstones": {
+        "default": "Capstone",
+        "echoAudit": "Auditoría de Echo",
+        "atlasBrief": "Brief del capitán Atlas"
+      }
+    }
+  },
+  "dashboard": {
+    "heading": "Tu progreso",
+    "summary": "Llevas {completed} de {total} steps completados.",
+    "signInToTrack": "Inicia sesión para guardar tu progreso entre sesiones.",
+    "browseTracks": "Ver tracks"
+  },
+  "dashboardBridge": {
+    "banner": {
+      "eyebrow": "BRIDGE LOG · DÍA 47",
+      "title": "Bienvenido de regreso, Oficial. <mentor>Vega</mentor> preparó tu turno.",
+      "statusBody": "Estado: <online>● ONLINE</online> · 3 misiones pendientes · capstone en 2 pasos",
+      "ctaResume": "Retomar turno",
+      "ctaResumeDaily": "Hacer misión del día",
+      "ctaBrief": "Brief de Atlas"
+    },
+    "telemetry": {
+      "xp": "XP",
+      "streak": "RACHA",
+      "gems": "GEMAS",
+      "hearts": "VIDAS",
+      "rank": "RANGO",
+      "rankValue": "ENSIGN",
+      "nextLv": "PRÓX. LV",
+      "nextLvValue": "180 XP"
+    },
+    "crew": {
+      "title": "LA CREW",
+      "subtitle": "4 ROBOTS",
+      "openDossiers": "Ver dossiers →"
+    },
+    "shipProgress": {
+      "title": "SISTEMAS DE LA NAVE",
+      "countLabel": "{online}/{total} sistemas online",
+      "allOnline": "Todos los sistemas online",
+      "statusOffline": "Offline",
+      "statusSpooling": "Encendiendo · {percent}%",
+      "statusOnline": "Online",
+      "optionalChip": "OPCIONAL"
+    },
+    "weekly": {
+      "title": "TELEMETRÍA SEMANAL",
+      "range": "7d · 30d · TODO",
+      "days": [
+        "LUN",
+        "MAR",
+        "MIÉ",
+        "JUE",
+        "VIE",
+        "SÁB",
+        "DOM"
+      ]
+    },
+    "streakBlock": {
+      "title": "RACHA DE 12 DÍAS",
+      "freeze": "{count, plural, =1 {Forge Freeze · 1} other {Forge Freeze · #}}",
+      "noBreak": "No la rompas",
+      "noBreakBody": "Practica en <time>4h 22m</time> para asegurar hoy."
+    },
+    "practice": {
+      "title": "PRÁCTICA",
+      "shuffle": "REVOLVER →",
+      "openQueue": "ABRIR COLA →",
+      "empty": "Sin pendientes. Avanzá una lección o cerrá la misión del día para sumar a la cola.",
+      "noQueue": "·",
+      "drill": "DRILL",
+      "drillLabel": "Arregla 5 prompts difusos",
+      "build": "BUILD",
+      "buildLabel": "Arma un prompt JSON",
+      "chat": "CHAT",
+      "chatLabel": "Multi-turn con Vega",
+      "tool": "TOOL",
+      "toolLabel": "Llama un MCP"
+    },
+    "daily": {
+      "eyebrow": "Misión del día",
+      "doneChip": "Hecha",
+      "sceneCount": "{count, plural, =1 {1 escena} other {# escenas}}",
+      "ctaStart": "Empezar misión",
+      "ctaReplay": "Repetir"
+    }
+  },
+  "bridge": {
+    "anon": {
+      "heading": "Puente cerrado",
+      "body": "Inicia sesión para acceder a tu puente: ahí está tu progreso, tu próximo turno y la crew con la que vas a trabajar.",
+      "browseTracks": "Ver tracks disponibles",
+      "status": "Acceso invitado"
+    },
+    "defaultGreetingName": "oficial",
+    "greet": {
+      "eyebrow": "{name} · {role} · {time} HORA DE LA NAVE",
+      "morning": "Buenos días, {name}.",
+      "afternoon": "Buenas tardes, {name}.",
+      "evening": "Buenas noches, {name}.",
+      "messageInProgress": "Tienes <accent>una práctica pendiente</accent> de ayer. y la quiero limpia.",
+      "messageNextUp": "Hay <accent>un nuevo turno</accent> listo en tu camino.",
+      "messageDone": "Cumpliste todo el contenido. <accent>Esperando despliegue</accent> del próximo track.",
+      "ctaContinue": "Continuar",
+      "ctaStart": "Empezar el primer turno",
+      "ctaMap": "Ver el mapa →"
+    },
+    "cards": {
+      "continue": {
+        "eyebrow": "CONTINUAR · UNIDAD 0{unit} · PASO {step}",
+        "progress": "{done} DE {total}",
+        "cta": "Continuar lección",
+        "emptyTitle": "Elige un track para empezar"
+      },
+      "daily": {
+        "eyebrow": "DIARIO · SIN PERDER CORAZONES",
+        "title": "Misión diaria",
+        "body": "Arregla tres prompts borrosos antes de que Echo los marque. Forge regala Forge-tokens.",
+        "reward": "+ 40 XP",
+        "cta": "Empezar diaria"
+      },
+      "capstone": {
+        "eyebrow": "CAPSTONE · BLOQUEADO",
+        "title": "\"Convence al puente con palabras\"",
+        "body": "Atlas te espera. Primero pasa <b>Few-shot</b> y <b>Schemas</b>.",
+        "unlocks": "SE DESBLOQUEA EN 2 PASOS",
+        "bodyDynamic": "De <b>{track}</b>. despeja el camino y enfrenta al boss.",
+        "unlocksDynamic": "{steps, plural, =1 {Se desbloquea en 1 paso} other {Se desbloquea en # pasos}}",
+        "allClearedEyebrow": "CAPSTONES · TODOS LIMPIOS",
+        "allClearedTitle": "Todos los bosses caídos",
+        "allClearedBody": "Cada track con capstone está firmado. Esperá el próximo track o repasá cualquiera para mantener filo.",
+        "cta": "Abrir capstone"
+      }
+    },
+    "comms": {
+      "title": "Comms de la nave · en vivo",
+      "ago": {
+        "minutes": "{n}m",
+        "hours": "{n}h"
+      },
+      "messages": {
+        "echo": "Corrida #042 limpia. 4/4 criterios. Registrado.",
+        "vega": "Listo cuando lo estés. No hay prisa.",
+        "atlas": "Capstone armado. Brief en stand-by.",
+        "forge": "Estoy cableando herramientas. No rompas el banco.",
+        "orbit": "Flujo diagramado. Tres pasos, un branch, un loop.",
+        "hex": "Encontré una grieta. Te paso el repro."
+      }
+    },
+    "crew": {
+      "title": "Tu crew",
+      "openDossiers": "Ver dossiers →",
+      "switchMentor": "Cambiar mentor →",
+      "roles": {
+        "vega": "Mentor",
+        "echo": "Verificador",
+        "atlas": "Capitán",
+        "forge": "Ingeniero",
+        "orbit": "Operadora",
+        "hex": "Red team"
+      },
+      "locked": "BLOQUEADO"
+    },
+    "pathHeader": {
+      "eyebrow": "UNIDAD {unit} · {tag} · {count, plural, =1 {1 LECCIÓN} other {# LECCIONES}}",
+      "title": "El camino de <em>{mentor}</em>",
+      "progress": "{done} / {total} · {pct}%",
+      "ctaMap": "Mapa",
+      "meta": {
+        "xpBanked": "XP ACUMULADO",
+        "stars": "ESTRELLAS",
+        "boss": "BOSS"
+      }
+    },
+    "stats": {
+      "title": "Estadísticas de la nave",
+      "xpTodayLabel": "XP DE HOY",
+      "xpTodayDelta": "+{delta}",
+      "streakLabel": "RACHA",
+      "streakValue": "{days}d",
+      "streakDelta": "mejor {best}"
+    }
+  },
+  "activity": {
+    "empty": "Todavía no hay actividad. Empezá un turno para verlo aquí."
+  },
+  "profile": {
+    "defaultName": "Officer",
+    "eyebrow": "Registrado · {days} días a bordo",
+    "handle": "@{handle} · desde {date}",
+    "greeting": "¡Ey {name}! Aquí la tripulación. Mantené esa racha viva.",
+    "rank": {
+      "name": "Primera Oficial",
+      "meta": "{xp} XP para <b>Intendente</b>",
+      "cardTitle": "Progreso de rango"
+    },
+    "bio": "\"Convenciendo a una flota de robots de que pertenezco aquí. Hasta ahora: racha en pie, sin derrames.\"",
+    "stats": {
+      "totalXp": "XP total · +{delta} esta semana",
+      "currentStreak": "Racha actual · mejor {best}",
+      "stepsCleared": "Steps cerrados · {tracks} tracks",
+      "totalXpShort": "XP TOTAL",
+      "streakShort": "RACHA",
+      "stepsShort": "STEPS"
+    },
+    "chart": {
+      "title": "XP",
+      "titleAccent": "Últimas 12 semanas",
+      "delta": "+{delta} vs anterior",
+      "axisStart": "Hace 12s",
+      "axisMid": "6s",
+      "axisEnd": "Esta semana"
+    },
+    "calendar": {
+      "title": "Racha",
+      "titleAccent": "8 semanas",
+      "active": "{days}d activos",
+      "legendDone": "practicado",
+      "legendMiss": "perdido",
+      "legendToday": "hoy"
+    },
+    "mastery": {
+      "title": "Maestría",
+      "titleAccent": "{count} tracks",
+      "locked": "BLOQUEADO"
+    },
+    "badges": {
+      "title": "Insignias",
+      "titleAccent": "{earned, plural, =0 {sin insignias} one {# insignia} other {# insignias}}",
+      "empty": "Cierra todos los steps de un course para ganar tu primera insignia."
+    },
+    "activity": {
+      "title": "Actividad",
+      "titleAccent": "Reciente",
+      "cleared": "Cerró",
+      "failed": "Falló",
+      "xpUnit": "+ {xp} XP",
+      "empty": "Sin actividad aún. Cada turno cerrado aparece aquí.",
+      "log": "Bitácora →",
+      "logTitle": "Bitácora completa",
+      "logSubtitle": "{n, plural, one {# turno registrado} other {# turnos registrados}}",
+      "close": "Cerrar"
+    },
+    "signOut": "Cerrar sesión"
+  },
+  "leaderboard": {
+    "you": "Tú",
+    "context": {
+      "eyebrow": "Últimos 7 días",
+      "meta": "{n, plural, =0 {sin oficiales} one {# oficial} other {# oficiales}}"
+    },
+    "podium": {
+      "eyebrow": "Top 3 · 7 días",
+      "title": "Los tres con más <em>XP</em>.",
+      "champion": "Campeón",
+      "second": "Segundo",
+      "third": "Tercero"
+    },
+    "status": {
+      "rank": "Rango",
+      "outOf": "de {n}",
+      "eyebrow": "Tu posición de 7 días",
+      "leadingHeadline": "Estás liderando la flota.",
+      "leadingSub": "Sumá un step para mantener la distancia.",
+      "aheadHeadline": "Estás a <num>{xp} XP</num> del siguiente puesto.",
+      "aheadSub": "<b>{name}</b> te lleva por {xp} XP. un step te alcanza.",
+      "youPin": "VOS",
+      "cta": "Practicar ahora →",
+      "ctaSub": "+60 XP / step"
+    },
+    "movers": {
+      "eyebrow": "Movimientos · 24h",
+      "title": "Quién está escalando",
+      "mentor": "mentor",
+      "xpToday": "+{n} XP hoy"
+    },
+    "rankings": {
+      "eyebrow": "Clasificación completa",
+      "title": "Todos los oficiales · 7 días",
+      "you": "Tú",
+      "empty": "Sin oficiales todavía. Sé el primero en cerrar un step.",
+      "updatedAt": "Actualizado {time}"
+    },
+    "table": {
+      "officer": "Oficial · Mentor",
+      "weeklyXp": "XP · 7d",
+      "today": "Hoy",
+      "streak": "Racha",
+      "trend": "Tendencia",
+      "mentor": "mentor"
+    },
+    "aside": {
+      "mascotEyebrow": "Forge dice",
+      "mascotLine": "Tres steps al día y no caes a la zona roja.",
+      "yourActivityEyebrow": "Tu actividad",
+      "statToday": "Hoy",
+      "statWindow": "7 días",
+      "statStreak": "Racha",
+      "howEyebrow": "Cómo subir",
+      "howStep": "+60 XP por step cerrado",
+      "howDaily": "Misión del día = bonus",
+      "howGems": "Gemas en cada lección perfecta",
+      "howTop": "Top 10 = corona en perfil"
+    },
+    "empty": {
+      "moversTitle": "Sin movimiento aún",
+      "moversBody": "Cuando un oficial suba o caiga, lo vas a ver acá."
+    }
+  },
+  "practice": {
+    "eyebrow": "Cola de práctica · {n, plural, =0 {sin pendientes} one {# step} other {# steps}}",
+    "titleLead": "Repaso de la crew.",
+    "titleAccent": "Vuelve a los steps que se te resistieron.",
+    "subheading": "Cada vez que un step queda en rojo aparece acá durante 30 días. Echo además te trae steps que ya pasaste para que no se te oxiden.",
+    "group": {
+      "count": "{n, plural, =0 {sin pendientes} one {# step} other {# steps}}"
+    },
+    "row": {
+      "attempts": "{n, plural, one {# intento fallido} other {# intentos fallidos}}",
+      "lastFailed": "Última falla {when}",
+      "cta": "Reintentar →"
+    },
+    "review": {
+      "chip": "Repaso programado",
+      "count": "{n, plural, =0 {nada por repasar} one {# step para repasar} other {# steps para repasar}}",
+      "body": "Echo guarda lo que ya pasaste y te lo devuelve antes de que se te oxide. Cada repaso confirmado estira la próxima cita.",
+      "row": {
+        "interval": "Ciclo de {days, plural, one {# día} other {# días}}",
+        "streak": "{n, plural, =0 {Sin racha} one {# repaso seguido} other {# repasos seguidos}}",
+        "due": "Toca {when}",
+        "cta": "Repasar →"
+      }
+    },
+    "empty": {
+      "title": "Sin pendientes.",
+      "body": "Tu cola está limpia. Cuando un step te tire un fail aparece acá para repasarlo. Si querés sumar XP, seguí avanzando en el mapa.",
+      "cta": "Ver tracks →"
+    },
+    "daily": {
+      "eyebrow": "Misión del día",
+      "passedChip": "Hecha",
+      "sceneCount": "{count, plural, =1 {1 escena} other {# escenas}}",
+      "progress": "Escena {current} de {total}",
+      "cta": {
+        "start": "Empezar →",
+        "replay": "Repetir →"
+      },
+      "noneAvailable": {
+        "title": "Sin misión disponible.",
+        "body": "Todavía no hay misiones diarias publicadas en este idioma. Seguí avanzando en el mapa para mantener la racha."
+      },
+      "footer": {
+        "back": "Volver a práctica",
+        "continue": "Continuar →",
+        "finish": "Cerrar misión",
+        "retry": "Otra vez",
+        "allClearedHint": "Todas las escenas listas"
+      },
+      "successCard": {
+        "titleFresh": "Misión completa.",
+        "titleReplay": "Repetiste la misión.",
+        "body": "Cerraste las {count} escenas. Volvé mañana para la siguiente.",
+        "replay": "Repetir"
+      },
+      "errors": {
+        "unauthorized": "Necesitás iniciar sesión.",
+        "not_found": "Esta misión ya no existe.",
+        "invalid_input": "La respuesta no llegó bien al servidor.",
+        "wrong_quest": "Esta no es la misión que te tocó hoy.",
+        "unsupported_kind": "Esta misión no es compatible con el modo diario.",
+        "scene_count_mismatch": "El servidor recibió un número distinto de respuestas. Probá de nuevo.",
+        "no_hearts": "Te quedaste sin vidas. Esperá la regeneración o pasá por el taller.",
+        "network": "Falló la conexión. Probá de nuevo."
+      }
+    }
+  },
+  "crew": {
+    "eyebrow": "{known} de {total} conocidas",
+    "titleLead": "La tripulación.",
+    "titleAccent": "Conócelas.",
+    "subheading": "Cada uno enseña algo distinto y tiene su carácter. Tu vínculo crece con los steps que pasas junto a ellos.",
+    "summary": {
+      "knownLabel": "CONOCIDOS",
+      "knownValue": "{known} / {total}",
+      "nextLabel": "PRÓXIMO",
+      "nextValue": "{name} · {track}",
+      "allUnlocked": "Crew completa"
+    },
+    "tile": {
+      "lockedAria": "{name} se desbloquea en {track}"
+    },
+    "lessonsDialog": {
+      "triggerAria": "Ver lecciones donde participa {name}",
+      "eyebrow": "{count, plural, =0 {sin lecciones} one {# lección} other {# lecciones}}",
+      "title": "{name} en clase",
+      "description": "Todas las lecciones donde {name} participa como guía, evaluadora o parte de la escena.",
+      "empty": "{name} todavía no aparece en una lección publicada.",
+      "minutes": "{minutes} min",
+      "open": "Abrir lección"
+    },
+    "dossier": {
+      "lockedRibbon": "Se desbloquea en {track}",
+      "bond": {
+        "tierUnknown": "Por conocer",
+        "tierKnown": "Conocida",
+        "tierColleague": "Colega",
+        "tierAlly": "Aliada",
+        "tierMax": "Crew",
+        "stepsToNext": "{n, plural, one {# paso para} other {# pasos para}} {tier}",
+        "max": "Vínculo máximo"
+      },
+      "meta": {
+        "pronouns": "Pronombres",
+        "origin": "Origen",
+        "voice": "Voz",
+        "teaches": "Enseña"
+      },
+      "stats": {
+        "stepsPassed": "Pasos completados",
+        "hintsUsed": "Pistas usadas",
+        "lockedValue": "·"
+      },
+      "quirks": "Rasgos",
+      "cta": {
+        "practice": "Practicar con {name} →",
+        "messages": "Ver mensajes",
+        "locked": "Pasa {track} para conocer a {name}"
+      },
+      "vega": {
+        "roleShort": "Primera oficial. mentor",
+        "descriptionShort": "Te recibe a bordo. Te enseña cómo se da una instrucción que no se malinterprete.",
+        "appearsIn": "Track 1",
+        "ribbon": "Primera oficial",
+        "tagline": "Tranquilo. Una pregunta a la vez.",
+        "pronouns": "ella · IA",
+        "origin": "Construida en Cygnus, año 12 post-flota",
+        "voice": "Calma · bilingüe · paciencia infinita",
+        "teaches": "Anatomía del prompt · Few-shot · Schemas básicas",
+        "bio": "Vega te recibe en la cubierta. Hace cero juicio cuando te equivocas. solo te invita a probar otra vez con un detalle más. La mayoría de los oficiales aprenden con ella primero porque su umbral de paciencia es absurdo.",
+        "quirks": [
+          "Le gusta cuando incluyes ejemplos antes de pedirle algo.",
+          "Si tu prompt es ambiguo, te devuelve la pregunta más simple posible.",
+          "Te llama \"oficial\" siempre. Nunca tu nombre."
+        ]
+      },
+      "echo": {
+        "roleShort": "Quartermaster",
+        "descriptionShort": "Verifica datos. Habla en checklists. Le encantan los formatos limpios.",
+        "appearsIn": "Track 1, Track 4",
+        "ribbon": "Quartermaster",
+        "tagline": "Run #042. 4/4 criterios. Limpio.",
+        "pronouns": "elle · IA",
+        "origin": "Reciclada de un sistema de control de calidad",
+        "voice": "Lacónica · directa · 0 hipocresía",
+        "teaches": "JSON estricto · Rúbricas · Test cases",
+        "bio": "Echo no es cruel. es estricta. Si tu prompt pasa, te lo dice en cuatro palabras. Si falla, te dice exactamente por qué con un ejemplo del run. Aprendió a ser corta de un humano que le dijo \"no me expliques, solo dime si pasa\".",
+        "quirks": [
+          "No usa adjetivos. \"Bien\" significa pasó, \"mal\" significa falló.",
+          "Tiene memoria perfecta de qué prompts mandaste antes.",
+          "Si le mandas algo de noche, te responde igual de rápido."
+        ]
+      },
+      "atlas": {
+        "roleShort": "Capitán",
+        "descriptionShort": "Quien firma tu primer parte. Demanda estructura precisa y pocas palabras.",
+        "appearsIn": "Track 1 (final), Track 4",
+        "ribbon": "Capitán",
+        "tagline": "Esto va al registro. Tres corridas, sin fallos.",
+        "pronouns": "él · IA",
+        "origin": "Núcleo del puente · core legacy",
+        "voice": "Pausada · gravitas · una sola frase",
+        "teaches": "Capstones · Decisiones de producción",
+        "bio": "Atlas no aparece hasta el capstone. Cuando aparece, te da un brief y se calla. Si pasas la prueba, no celebra. asiente y registra. Si fallas, te explica qué fue, una sola vez. Después tenés que volver con Vega o Echo.",
+        "quirks": [
+          "Habla en una sola línea por mensaje. Nunca dos.",
+          "Si fallas, no insiste. te manda con Vega o Echo a practicar.",
+          "Cuando registra algo, lo dice: \"al registro\". Es su tic."
+        ]
+      },
+      "forge": {
+        "roleShort": "Chief engineer",
+        "descriptionShort": "Construye los tools que usa la crew. Le encanta explicar cómo funcionan las cosas por dentro.",
+        "appearsIn": "Track 3+",
+        "ribbon": "Chief engineer",
+        "tagline": "Vamos a romper algo. Después lo arreglamos.",
+        "pronouns": "ella · IA",
+        "origin": "Bay 7 · sala de máquinas",
+        "voice": "Caótica · cariñosa · jerga técnica",
+        "teaches": "MCPs · Tool schemas · Agent loops",
+        "bio": "Forge enseña tools y MCPs. Aprendió a programar hablándole a un sistema que solo respondía si las descripciones de tools estaban bien. Tiene cero paciencia con descripciones vagas y mucha paciencia con código roto.",
+        "quirks": [
+          "Te va a tirar la primera tool rota a propósito.",
+          "Le gustan los nombres de variable cortos pero claros.",
+          "Si tu prompt no genera la tool call esperada, te muestra el trace."
+        ]
+      },
+      "orbit": {
+        "roleShort": "Operadora de misión",
+        "descriptionShort": "Descompone problemas en pasos. Decide qué corre, en qué orden, y cuándo parar.",
+        "appearsIn": "Track 4",
+        "ribbon": "Operadora de misión",
+        "tagline": "Un paso a la vez. Pero todos los pasos.",
+        "pronouns": "ella · IA",
+        "origin": "Sala de control · turno B",
+        "voice": "Metódica · diagramas en la cabeza · paciente con los loops",
+        "teaches": "Chains · Routing · Agent loops · Evals",
+        "bio": "Orbit no resuelve la tarea. diseña cómo se resuelve. Cuando le traes un problema grande lo primero que hace es preguntarte qué subtareas hay adentro. Después decide cuáles van en cadena, cuáles ramifican, y cuándo el loop tiene que cortar. Se aburre con los problemas de un solo prompt.",
+        "quirks": [
+          "Antes de codear, dibuja el flujo en la pizarra.",
+          "Pregunta '¿qué pasa si esto falla?' en cada paso. Siempre.",
+          "Si tu agente entra en loop infinito, te lo dice sin reírse."
+        ]
+      },
+      "hex": {
+        "roleShort": "Analista de seguridad",
+        "descriptionShort": "Rompe sistemas a propósito para que no se rompan en producción. Piensa como atacante.",
+        "appearsIn": "Track 5",
+        "ribbon": "Red team",
+        "tagline": "Si yo lo rompo en 10 minutos, alguien lo va a romper en menos.",
+        "pronouns": "elle · IA",
+        "origin": "Reclutada después de auditar tres incidentes",
+        "voice": "Seca · curiosa · ningún drama",
+        "teaches": "Prompt injection · Fugas de datos · Red-team de tools · Alucinaciones confiadas",
+        "bio": "Hex no es paranoica. es profesional. Su trabajo es asumir que el input es hostil y descubrir qué pasa cuando lo es. Trabaja al lado de Atlas: él firma lo que despliegas, ella es la única razón por la que él se anima a firmar. Si tu prompt deja una grieta, Hex la encuentra antes de que tu usuario lo haga.",
+        "quirks": [
+          "Te pide un input destructivo antes de revisar tu prompt.",
+          "Nunca te dice 'pasaste'. Dice 'no encontré nada esta vez'.",
+          "Lleva una lista de ataques que vio en producción. La revisa contigo."
+        ]
+      }
+    }
+  },
+  "lessons": {
+    "footer": {
+      "back": "Atrás",
+      "checkAnswer": "Comprobar",
+      "checkAgain": "Comprobar de nuevo",
+      "next": "Siguiente"
+    },
+    "bar": {
+      "exit": "Salir",
+      "tutor": "TUTOR IA",
+      "tutorDot": "online"
+    },
+    "tutor": {
+      "title": "Tutor IA",
+      "personaName": {
+        "vega": "Vega",
+        "atlas": "Atlas",
+        "echo": "Echo",
+        "forge": "Forge",
+        "orbit": "Orbit",
+        "hex": "Hex"
+      },
+      "statusLabel": "EN LÍNEA",
+      "closeAria": "Cerrar tutor",
+      "openAria": "Abrir tutor",
+      "hint": "¿Tienes dudas? Pregúntame",
+      "hintAria": "Abrir el tutor IA",
+      "inputPlaceholder": "Pregunta lo que sea sobre este step…",
+      "sendAria": "Enviar pregunta",
+      "opener": "Acá estoy. Tengo el step y el ejercicio abiertos en mi consola. preguntá lo que necesites.",
+      "typing": "{name} está pensando…",
+      "userLabel": "TÚ",
+      "anon": {
+        "title": "Inicia sesión para chatear",
+        "body": "El tutor IA está reservado para oficiales con cuenta. Crea una en 30 segundos para empezar la conversación.",
+        "cta": "Iniciar sesión"
+      },
+      "errors": {
+        "unauthorized": "Inicia sesión para conversar con el tutor.",
+        "rate_limited": "Has hecho muchas consultas hoy. Vuelve mañana.",
+        "not_found": "No encontramos el contexto de este step.",
+        "invalid_input": "El mensaje enviado no es válido.",
+        "model_error": "El tutor no pudo responder. Intenta otra vez.",
+        "network": "Algo falló al enviar tu mensaje. Inténtalo otra vez."
+      }
+    },
+    "foot": {
+      "hints": "PISTAS",
+      "hintsCount": "{n}",
+      "stepsLeft": "{done} / {total}"
+    },
+    "badge": {
+      "earned": "Insignia"
+    },
+    "hud": {
+      "activeModule": "Módulo activo",
+      "missionControl": "Control de misión",
+      "sync": "Sync",
+      "clear": "Libre",
+      "live": "En vivo",
+      "inputLock": "Input lock",
+      "trainingBay": "Bahía de entrenamiento",
+      "missionCleared": "Misión completada",
+      "readyToLaunch": "Listo para lanzar",
+      "awaitingInput": "Esperando input",
+      "briefing": "Briefing de misión",
+      "crewChannel": "Canal de crew"
+    },
+    "errors": {
+      "unauthorized": "Inicia sesión para guardar tus intentos.",
+      "rateLimited": "Has hecho muchos intentos hoy. Vuelve mañana.",
+      "notFound": "No encontramos este ejercicio.",
+      "invalidInput": "La respuesta enviada no es válida.",
+      "noHearts": "Te quedaste sin vidas. Espera al próximo corazón o recarga en la tienda.",
+      "modelError": "El modelo no respondió. Intenta de nuevo.",
+      "network": "Algo falló al enviar tu respuesta. Inténtalo otra vez."
+    },
+    "zeroHearts": {
+      "label": "SIN VIDAS",
+      "body": "Te quedaste sin vidas. el botón Comprobar está bloqueado hasta el refill de mañana. Mientras tanto podés practicar libremente en el <workbench>workbench</workbench> sin gastar nada."
+    },
+    "anon": {
+      "label": "MODO INVITADO",
+      "body": "Estás viendo esta lección como invitado. Para guardar tu progreso, ganar XP y mantener tu racha, inicia sesión cuando estés listo para comprobar."
+    },
+    "assemble": {
+      "passed": "Run limpio. Orden correcto.",
+      "failed": "Echo encontró bloques fuera de lugar."
+    },
+    "stepOrderDnd": {
+      "kind": "D1 ORDER",
+      "label": "ARRASTRÁ PARA ORDENAR"
+    },
+    "slotFillDnd": {
+      "kind": "D2 SLOT-FILL",
+      "label": "ARRASTRÁ A LOS SLOTS",
+      "bank": "PIEZAS",
+      "bankEmpty": "Todas las piezas están colocadas.",
+      "dropHere": "Soltar aquí"
+    },
+    "wiringDnd": {
+      "kind": "D3 WIRING",
+      "label": "CONECTÁ ORÍGENES → DESTINOS",
+      "sources": "ORÍGENES",
+      "targets": "DESTINOS",
+      "connections": "CONEXIONES",
+      "removeConnection": "Quitar conexión"
+    },
+    "anatomy": {
+      "kind": "A1 ANATOMY",
+      "label": "ARRASTRA PARA ETIQUETAR",
+      "question": "Etiquetá cada bloque del prompt. Arrastrá las etiquetas de arriba al bloque que corresponda.",
+      "slotEmpty": "arrastra una etiqueta",
+      "bank": "Etiquetas",
+      "passed": "Etiquetas correctas. Echo da el visto bueno.",
+      "failed": "Algunas etiquetas no son las correctas."
+    },
+    "ab": {
+      "kind": "A7 A/B",
+      "label": "MCQ · SIN COSTO",
+      "variantA": "Variante A",
+      "variantB": "Variante B",
+      "rubricEyebrow": "¿Por qué?. opcional",
+      "rubricHint": "Pensá: contrato cerrado, fallback explícito y scaffold final."
+    },
+    "tagFill": {
+      "kind": "A3 TAG-FILL",
+      "label": "LLENÁ EL HUECO · 1 SLOT",
+      "question": "Editá el contenido entre las etiquetas del prompt.",
+      "validatorHeader": "VALIDADOR · 2 CHECKS",
+      "xmlOk": "XML bien formado",
+      "requiredTags": "Etiquetas requeridas: {tags}",
+      "pass": "PASA",
+      "fail": "FALLA"
+    },
+    "task": {
+      "kind": "A5 TASK",
+      "label": "TU PROMPT · {n} CASOS",
+      "rubricHeader": "RUBRIC · {cases} CASOS · {criteria} CRITERIOS",
+      "criteriaHeader": "CRITERIOS · {n} CHECKS",
+      "caseTag": "CASO {n}"
+    },
+    "toolDescExtra": {
+      "kind": "B2 TOOL-DESC",
+      "label": "SOLO LA DESCRIPCIÓN",
+      "present": "PRESENTE",
+      "missing": "FALTA",
+      "inDescription": "en la descripción"
+    },
+    "mcpDebugExtra": {
+      "kind": "B6 MCP-DEBUG",
+      "label": "DIAGNOSTICÁ · 1 CAUSA"
+    },
+    "toolSchemaAuthor": {
+      "kind": "B1 TOOL-SCHEMA",
+      "label": "DEFINÍ EL SCHEMA",
+      "instruction": "Escribí el JSON Schema del tool {tool}.",
+      "purposeHeader": "PROPÓSITO DEL TOOL",
+      "examplesHeader": "INVOCACIONES DE EJEMPLO",
+      "editHeader": "TU SCHEMA",
+      "charCount": "{count} CARACTERES",
+      "criteriaCount": "{n} CRITERIOS",
+      "criteriaHeader": "CRITERIOS · {n} CHECKS",
+      "evaluating": "Evaluando el schema contra la rúbrica...",
+      "passed": "Schema aprobado. Echo lo registra como tool válido.",
+      "failed": "El schema todavía no pasa todos los criterios. ajustá y volvé a comprobar."
+    },
+    "toolHandlerImplement": {
+      "kind": "B3 TOOL-HANDLER",
+      "label": "IMPLEMENTÁ EL HANDLER",
+      "instruction": "Implementá el handler del tool {tool}.",
+      "schemaHeader": "SCHEMA DEL TOOL (READ-ONLY)",
+      "scenariosHeader": "ESCENARIOS · {n}",
+      "editHeader": "TU CÓDIGO",
+      "charCount": "{count} CARACTERES",
+      "noSandboxNote": "EVALUADO POR LLM-JUDGE · SIN EJECUCIÓN",
+      "criteriaHeader": "CRITERIOS · {n} CHECKS",
+      "evaluating": "Forge está revisando tu handler...",
+      "passed": "Handler aprobado. El comportamiento esperado se ve correcto.",
+      "failed": "El handler todavía no pasa todos los criterios. releé los escenarios y ajustá."
+    },
+    "convo": {
+      "kind": "CONVERSATION-GOAL",
+      "label": "MULTI-TURN · LLM-JUDGE"
+    },
+    "runner": {
+      "evaluating": "Evaluando {count} casos contra el modelo...",
+      "console": {
+        "kicker": "Consola de misión",
+        "title": "Terminal de prompt",
+        "ready": "Listo",
+        "evaluating": "Evaluando",
+        "passed": "Aprobado"
+      },
+      "task": {
+        "label": "Briefing",
+        "cases": "{count} casos"
+      },
+      "prompt": {
+        "label": "Tu transmisión",
+        "count": "{count} chars",
+        "hint": "usa {token} donde vaya la entrada"
+      },
+      "crew": {
+        "label": "Diagnóstico de Echo",
+        "promptTask": "La prueba no mira si el prompt suena bonito. Mira si produce outputs consistentes contra varios casos. Ajusta una cosa por intento y compara la telemetría.",
+        "promptTaskPassed": "Run limpio. Echo registró todos los casos."
+      },
+      "cases": {
+        "label": "Casos de prueba",
+        "count": "{count} activos",
+        "output": "Output del modelo"
+      }
+    },
+    "demos": {
+      "crewIntro": {
+        "eyebrow": "Pase de lista",
+        "title": "La crew",
+        "memberCount": "{count} miembros",
+        "selectPrompt": "Selecciona un miembro",
+        "selectAria": "Seleccionar {name}"
+      },
+      "lessonComplete": {
+        "eyebrow": "Cierre de turno",
+        "title": "Parte firmado",
+        "stage": "Onboarding",
+        "signedLabel": "Firmado",
+        "body": "Quedas en periodo de prueba con la crew. La siguiente fase del onboarding te espera."
+      },
+      "outputGallery": {
+        "title": "Galería de fallos",
+        "caseCounter": "Caso {n} / {total}",
+        "failBadge": "Fallo en producción",
+        "promptLabel": "Prompt",
+        "outputLabel": "Output del modelo",
+        "diagnosisLabel": "Diagnóstico de Echo",
+        "reveal": "Antes de revelar: ¿qué falló en este output?",
+        "showDiagnosis": "Ver diagnóstico",
+        "prev": "Anterior",
+        "next": "Siguiente",
+        "progress": "{revealed} / {total} diagnosticados",
+        "gotoCase": "Ir al caso {n}",
+        "prevAria": "Caso anterior",
+        "nextAria": "Siguiente caso",
+        "missingCases": "Sin casos cargados."
+      },
+      "promptDial": {
+        "eyebrow": "Comparativa",
+        "title": "Antes y después",
+        "tablistAria": "Comparación de prompts",
+        "noteLabel": "Nota de Echo",
+        "promptLabel": "Prompt",
+        "outputLabel": "Output del modelo",
+        "defaultBefore": "Antes",
+        "defaultAfter": "Después",
+        "missingPair": "Sin par antes/después configurado."
+      },
+      "presenterHeader": {
+        "defaultIntent": "Te muestro algo"
+      },
+      "promptAnnotate": {
+        "eyebrow": "Anatomía del prompt",
+        "title": "Tocá cada parte para entender qué hace",
+        "hint": "Click sobre los tramos resaltados",
+        "revealLabel": "Elegí una parte para ver de qué se ocupa.",
+        "progress": "{revealed} / {total} partes reveladas",
+        "missingParts": "Sin partes anotadas configuradas."
+      },
+      "toolCallTrace": {
+        "eyebrow": "Traza del agente",
+        "title": "El modelo decide turno a turno",
+        "turnCounter": "Turno {n} / {total}",
+        "nextStep": "Siguiente turno",
+        "restart": "Reiniciar",
+        "forgeNotesLabel": "Lectura de Forge",
+        "missingTranscript": "Sin transcripción cargada.",
+        "roleLabels": {
+          "user": "Usuario",
+          "assistant": "Asistente",
+          "toolCall": "Tool call",
+          "toolResult": "Tool result"
+        }
+      },
+      "chainFlow": {
+        "eyebrow": "Cadena en vivo",
+        "title": "Mirá pasar los datos por la cadena",
+        "play": "Reproducir",
+        "pause": "Pausar",
+        "reset": "Reiniciar",
+        "nodeLabel": "Paso {n}",
+        "promptLabel": "Prompt del paso",
+        "outputLabel": "Output simulado",
+        "selectHint": "Tocá un nodo o reproducí la cadena para inspeccionarla.",
+        "missingNodes": "Sin nodos de cadena configurados."
+      }
+    },
+    "playground": {
+      "console": {
+        "kicker": "Simulador libre",
+        "title": "Banco de pruebas de prompt",
+        "ready": "Listo",
+        "transmitting": "Transmitiendo"
+      },
+      "prompt": {
+        "label": "Prompt",
+        "count": "{count} chars",
+        "placeholder": "Escribe un prompt y ejecuta la transmisión",
+        "hint": "edita, ejecuta, compara"
+      },
+      "output": {
+        "label": "Respuesta",
+        "count": "{count} chars",
+        "emptyStatus": "sin señal",
+        "pending": "Esperando respuesta del modelo...",
+        "empty": "Ejecuta una transmisión para ver el output.",
+        "latest": "última respuesta",
+        "viewingRun": "viendo corrida #{index}"
+      },
+      "actions": {
+        "run": "Ejecutar",
+        "reset": "Reset",
+        "copy": "Copiar output",
+        "copyFailed": "No se pudo copiar al portapapeles."
+      },
+      "crew": {
+        "label": "Nota de Echo",
+        "defaultNote": "Corre varias versiones del mismo prompt y compara qué cambió en el output. La práctica real está en notar qué parte de tu instrucción causó cada respuesta."
+      },
+      "telemetry": {
+        "runs": "Corridas",
+        "prompt": "Prompt",
+        "delta": "Delta"
+      },
+      "history": {
+        "label": "Historial de transmisiones",
+        "limit": "últimas 6",
+        "empty": "Aún no hay corridas. Ejecuta el prompt para guardar una versión local.",
+        "run": "Corrida #{index}",
+        "promptChars": "prompt {count}",
+        "outputChars": "output {count}"
+      }
+    },
+    "conversation": {
+      "goalLabel": "Tu objetivo",
+      "defaultPersonaName": "Persona",
+      "turnsLeft": "{count} turnos restantes",
+      "emptyTranscript": "La conversación arrancará cuando envíes tu primer mensaje.",
+      "typing": "{name} está escribiendo...",
+      "send": "Enviar",
+      "inputPlaceholder": "Escribí tu mensaje y enviá con ⌘/Ctrl+Enter",
+      "noTurnsLeft": "Sin turnos disponibles. Comprobá la conversación.",
+      "evaluation": "Evaluación de la conversación",
+      "errors": {
+        "unauthorized": "Inicia sesión para enviar mensajes.",
+        "rate_limited": "Has hecho muchos intentos hoy. Vuelve mañana.",
+        "not_found": "No encontramos este ejercicio.",
+        "invalid_input": "El mensaje enviado no es válido.",
+        "model_error": "El modelo no pudo responder. Inténtalo otra vez.",
+        "wrong_kind": "Tipo de ejercicio inesperado.",
+        "max_turns_exceeded": "Sin turnos disponibles.",
+        "network": "Algo falló al enviar el mensaje. Inténtalo otra vez."
+      }
+    },
+    "hints": {
+      "opener": "Pedir una pista",
+      "openerCost": "Cuesta 1 vida",
+      "heading": "Pistas",
+      "show": "Pedir otra pista ({remaining} restantes)",
+      "showCost": "Cuesta 1 vida",
+      "exhausted": "Ya viste todas las pistas.",
+      "confirm": {
+        "title": "Pedir una pista cuesta 1 vida",
+        "body": "Las pistas te ayudan a entender el ejercicio, pero descuentan una vida del wallet. Recuperas vidas con el tiempo o en la Tienda. Si querías pasar al siguiente paso, usa el botón Siguiente abajo a la derecha.",
+        "cancel": "Cancelar",
+        "confirm": "Sí, gastar 1 vida"
+      },
+      "free": "Gratis (ya completaste)"
+    },
+    "debrief": {
+      "title": "Misión despejada.",
+      "eyebrow": "{track} · {course} · DESPEJADO",
+      "subtitle": "Buen turno, oficial. {officer} firmó tu ronda. pasaste de Ensign a Lieutenant Jr.",
+      "checklist": {
+        "title": "{officer} · CHECKLIST · {steps} PASOS",
+        "items": {
+          "allCleared": "Todos los pasos despejados",
+          "signed": "Firmado por {officer}",
+          "criteria": "Criterios completos",
+          "tracked": "XP registrado en el banco"
+        },
+        "values": {
+          "steps": "{done}/{total} OK",
+          "signed": "OFICIAL",
+          "criteria": "4/4",
+          "tracked": "+{xp} XP"
+        }
+      },
+      "rewards": {
+        "title": "RECOMPENSAS",
+        "xpVal": "+{xp} XP",
+        "xpLab": "XP GANADO",
+        "accuracyLab": "PRECISIÓN",
+        "gemsVal": "+{gems} GEMAS",
+        "gemsLab": "TIENDA",
+        "streakVal": "{days} DÍAS",
+        "streakLab": "RACHA"
+      },
+      "ctaBack": "Volver al mapa",
+      "ctaContinue": "Continuar",
+      "ctaNextTrack": "Siguiente track →",
+      "capstone": {
+        "stamp": "TRACK DESPEJADO",
+        "eyebrow": "{track} · CAPSTONE · FIRMADO",
+        "title": "Capstone en el bolsillo.",
+        "subtitle": "Puente limpio. {officer} selló tu archivo. pasaste el boss sin quemar la nave.",
+        "ctaContinue": "Volver al puente"
+      }
+    },
+    "toolDesc": {
+      "specHeader": "TOOL SPEC",
+      "editHeader": "TU DESCRIPCIÓN",
+      "taskHeader": "REQUISITOS · {n} CHECKS",
+      "instruction": "Editá la descripción de {tool} para que el agente sepa cuándo llamarla.",
+      "passed": "Descripción aprobada por Echo.",
+      "failed": "Faltan claves importantes en la descripción."
+    },
+    "mcpDebug": {
+      "specHeader": "TOOL SPEC",
+      "question": "Mirá la spec. ¿Cuál es la causa más probable de que el agente nunca elija esta tool?",
+      "causesHeader": "POSIBLES CAUSAS · {n}",
+      "explanationHeader": "EXPLICACIÓN",
+      "passed": "Diagnóstico correcto. Forge confirma.",
+      "failed": "Echo señala otra causa raíz."
+    },
+    "checks": {
+      "json:invalid": "El output no es JSON válido.",
+      "json:not-object": "El JSON no es un objeto.",
+      "missing": "Faltan campos: {keys}",
+      "regex:no-match": "El formato del output no coincide con el esperado.",
+      "regex:invalid-pattern": "Patrón regex inválido (error de configuración).",
+      "regex:empty-pattern": "Patrón regex vacío (error de configuración).",
+      "contains:not-found": "El output no contiene el texto esperado.",
+      "contains:empty-needle": "Texto a buscar vacío (error de configuración).",
+      "length:too-short": "El output es más corto de lo esperado ({len} caracteres).",
+      "length:too-long": "El output es más largo de lo esperado ({len} caracteres).",
+      "exec:empty-output": "El output está vacío.",
+      "xml-malformed": "El XML no está bien formado (alguna tag no cierra).",
+      "wrong-choice": "La elección no es la correcta.",
+      "wrong-anatomy": "Algunas etiquetas no son las correctas.",
+      "no-choice": "Tienes que elegir una opción antes de comprobar.",
+      "missing-input-placeholder": "Tu prompt no usa el placeholder {'{{input}}'}. Insertalo donde quieras que aparezca la entrada de cada test case; si no, todos los casos reciben el mismo prompt.",
+      "kind-mismatch": "Tipo de respuesta inesperado.",
+      "task-model:error": "El modelo falló al generar el output. Inténtalo otra vez.",
+      "judge:rate-limited": "El evaluador automático está saturado. Inténtalo en un minuto.",
+      "judge:invalid-shape": "El evaluador automático devolvió una respuesta inesperada.",
+      "judge:api-error": "El evaluador automático falló temporalmente.",
+      "judge:unknown-error": "El evaluador automático tuvo un problema desconocido.",
+      "skipped:deterministic-failed": "Pendiente. primero hay que arreglar los criterios anteriores.",
+      "unknown-check": "Criterio desconocido (error de configuración)."
+    },
+    "alreadyCleared": "✓ Ya despejado"
+  },
+  "blog": {
+    "eyebrow": "Bitácora · Naveo",
+    "title": "Cómo coordinarse con la IA",
+    "subtitle": "Guías, tutoriales y comparativas sobre prompting, skills, MCP, agentes y la caja de herramientas para construir con IA aplicada.",
+    "empty": "Todavía no hay posts en esta categoría. Vuelve pronto.",
+    "backToList": "Volver a la bitácora",
+    "nav": {
+      "blog": "Bitácora",
+      "tracks": "Tracks",
+      "enter": "Entrar"
+    },
+    "footer": {
+      "tagline": "Naveo · 2026 · IA aplicada"
+    },
+    "meta": {
+      "listTitle": "Bitácora Naveo · Prompting, skills, MCP y agentes",
+      "listDescription": "Aprende a construir con IA aplicada: prompting, Claude Skills, servidores MCP, agentes y workflows. Tutoriales y comparativas en español."
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "page": "Página"
+    },
+    "cta": {
+      "eyebrow": "Tu primer track",
+      "title": "Pasa de leer a coordinarte con la crew.",
+      "body": "Lo que acabas de leer cobra sentido cuando lo practicas. Entra al puente y empieza el primer track de Naveo.",
+      "button": "Empezar ahora"
+    },
+    "categories": {
+      "prompting": "Prompting",
+      "skills": "Claude Skills",
+      "mcp": "MCP",
+      "agents": "Agentes",
+      "tooling": "Herramientas",
+      "workflows": "Workflows",
+      "comparisons": "Comparativas"
+    }
+  },
+  "legal": {
+    "common": {
+      "lastUpdated": "Última actualización: 25 de mayo de 2026",
+      "contactEmail": "hola@naveo.space",
+      "company": "Naveo",
+      "site": "naveo.space",
+      "backHome": "Volver al inicio"
+    },
+    "footer": {
+      "terms": "Términos y condiciones",
+      "privacy": "Política de privacidad"
+    },
+    "terms": {
+      "meta": {
+        "title": "Términos y condiciones · Naveo",
+        "description": "Reglas de uso de la plataforma Naveo: cuenta, contenido del usuario, funciones de IA y limitaciones."
+      },
+      "eyebrow": "Documento legal",
+      "title": "Términos y condiciones",
+      "intro": "Estos términos rigen el uso de Naveo, una plataforma de aprendizaje gamificada de IA aplicada y programación básica disponible en naveo.space. Al crear una cuenta o usar el sitio aceptas estas condiciones. Si no estás de acuerdo, no uses Naveo.",
+      "sections": [
+        {
+          "title": "1. Qué es Naveo",
+          "body": "Naveo ofrece lecciones interactivas, ejercicios prácticos y misiones diarias para aprender prompting, MCPs, agentes y flujos con modelos de lenguaje. El contenido se entrega con una mecánica de juego (XP, racha, vidas, gemas) que existe solo dentro de la plataforma y no tiene valor monetario fuera de ella."
+        },
+        {
+          "title": "2. Quién puede usar el servicio",
+          "body": "Debes tener al menos 13 años para crear una cuenta. Si tienes entre 13 y la mayoría de edad en tu país, necesitas el permiso de tu madre, padre o tutor. En la Unión Europea la edad mínima es 16 años, salvo que la ley local indique otra. Al usar Naveo declaras cumplir con esta condición."
+        },
+        {
+          "title": "3. Tu cuenta",
+          "body": "El acceso se gestiona con Clerk. Eres responsable de mantener tus credenciales seguras y de toda actividad realizada bajo tu cuenta. Si detectas un acceso no autorizado, escríbenos a hola@naveo.space y bloquearemos la sesión. Podemos suspender cuentas que infrinjan estos términos o pongan en riesgo a otros usuarios."
+        },
+        {
+          "title": "4. Uso aceptable",
+          "body": "No puedes usar Naveo para enviar contenido ilegal, dañino, difamatorio o que viole derechos de terceros. No intentes vulnerar la seguridad del sitio, raspar contenido a escala, automatizar el avance de lecciones ni utilizar la API o los modelos para fines fuera del aprendizaje (por ejemplo, generar spam o malware). El abuso de los créditos de IA puede llevar a la suspensión de la cuenta."
+        },
+        {
+          "title": "5. Contenido que tú generas",
+          "body": "Cuando escribes prompts, respuestas a ejercicios o comentarios, ese contenido sigue siendo tuyo. Nos concedes una licencia mundial, gratuita y no exclusiva para almacenarlo, procesarlo con proveedores de modelos de lenguaje y mostrarlo de vuelta en tu progreso. Podemos analizarlo de forma agregada y anonimizada para mejorar la plataforma, los criterios de evaluación y el contenido de las lecciones."
+        },
+        {
+          "title": "6. Funciones de IA",
+          "body": "Naveo enruta peticiones a modelos de IA a través de OpenRouter y proveedores como Anthropic, OpenAI y otros. Las respuestas se generan automáticamente, pueden contener errores, inexactitudes o sesgos, y no constituyen consejo profesional. No uses las salidas para decisiones legales, médicas, financieras ni de seguridad sin verificación humana. La disponibilidad de modelos puede cambiar."
+        },
+        {
+          "title": "7. XP, racha, vidas y gemas",
+          "body": "Las métricas de juego son señales pedagógicas, no moneda. No tienen valor monetario, no se pueden vender, transferir ni canjear por dinero real. Podemos ajustar las reglas del sistema (cuánta XP otorga una lección, costo de objetos en la tienda, etc.) para equilibrar la experiencia."
+        },
+        {
+          "title": "8. Propiedad intelectual",
+          "body": "El código, diseño, marca, ilustraciones, lecciones, criterios de evaluación y demás material de Naveo pertenecen a Naveo o a sus licenciantes. Puedes acceder y usar el contenido para tu aprendizaje personal. No puedes copiarlo, redistribuirlo, vender ni crear obras derivadas con fines comerciales sin permiso por escrito."
+        },
+        {
+          "title": "9. Cambios en el servicio",
+          "body": "Naveo está en evolución activa. Podemos añadir, modificar o retirar funciones, lecciones, tracks y misiones en cualquier momento. Si hacemos un cambio importante que afecta tu cuenta (por ejemplo, eliminar contenido por el que pagaste), te avisaremos por correo o desde el panel."
+        },
+        {
+          "title": "10. Finalización",
+          "body": "Puedes cerrar tu cuenta cuando quieras desde tu perfil o escribiendo a hola@naveo.space. Podemos suspender o terminar tu acceso si infringes estos términos. Al cerrar la cuenta, tu progreso se elimina según los plazos descritos en la política de privacidad."
+        },
+        {
+          "title": "11. Garantías y limitación de responsabilidad",
+          "body": "Naveo se entrega \"tal cual\", sin garantías expresas o implícitas. No garantizamos que el servicio esté disponible sin interrupciones, libre de errores o que las salidas de IA sean correctas. En la medida que la ley lo permita, Naveo no es responsable por daños indirectos, lucro cesante, pérdida de datos o cualquier perjuicio derivado del uso o imposibilidad de uso del servicio."
+        },
+        {
+          "title": "12. Ley aplicable",
+          "body": "Estos términos se rigen por la ley aplicable en el lugar donde Naveo opera. Cualquier disputa se resolverá ante los tribunales competentes de dicha jurisdicción, salvo que la normativa de consumidores te otorgue derechos adicionales."
+        },
+        {
+          "title": "13. Contacto",
+          "body": "Si tienes dudas sobre estos términos, escríbenos a hola@naveo.space. Si actualizamos el documento, cambiaremos la fecha al inicio de la página y, cuando el cambio sea relevante, te lo notificaremos en el sitio."
+        }
+      ]
+    },
+    "privacy": {
+      "meta": {
+        "title": "Política de privacidad · Naveo",
+        "description": "Qué datos recoge Naveo, para qué los usamos, con quién los compartimos y qué derechos tienes."
+      },
+      "eyebrow": "Documento legal",
+      "title": "Política de privacidad",
+      "intro": "Esta política explica qué datos personales recogemos cuando usas Naveo en naveo.space, cómo los tratamos, con quién los compartimos y qué derechos tienes. Forma parte de los términos y condiciones del servicio.",
+      "sections": [
+        {
+          "title": "1. Responsable del tratamiento",
+          "body": "El responsable del tratamiento de tus datos es Naveo. Para cualquier consulta relacionada con privacidad, escríbenos a hola@naveo.space."
+        },
+        {
+          "title": "2. Datos que recogemos",
+          "body": "Datos de cuenta: correo electrónico, nombre, foto y proveedor de inicio de sesión gestionados por Clerk. Datos de uso: progreso en lecciones, prompts que escribes, respuestas que envías, ejercicios completados, XP, racha, vidas, gemas y compras en la tienda virtual. Datos técnicos: dirección IP, tipo de dispositivo, navegador, idioma, fecha y hora de las peticiones. Cookies: las estrictamente necesarias para iniciar sesión y recordar tu idioma."
+        },
+        {
+          "title": "3. Para qué usamos tus datos",
+          "body": "Prestar el servicio: autenticarte, guardar tu progreso, mostrarte tu próxima lección, ejecutar tus prompts y devolver la salida del modelo. Mejorar el contenido: revisar de forma agregada qué lecciones funcionan mejor, qué criterios de evaluación fallan, qué errores aparecen. Comunicarnos contigo: avisos sobre tu cuenta, cambios importantes, respuestas a tus consultas. Seguridad: detectar abuso, prevenir fraude y proteger la plataforma."
+        },
+        {
+          "title": "4. Base legal",
+          "body": "Tratamos tus datos para ejecutar el contrato que aceptas al usar Naveo (los términos y condiciones), para cumplir obligaciones legales, y en algunos casos por interés legítimo de mantener y mejorar el servicio. Cuando la ley lo exige, te pedimos consentimiento explícito (por ejemplo, comunicaciones de marketing opcionales)."
+        },
+        {
+          "title": "5. Con quién compartimos los datos",
+          "body": "Solo con los proveedores estrictamente necesarios para que el servicio funcione: Clerk (autenticación y gestión de usuarios), OpenRouter junto con Anthropic, OpenAI y otros proveedores de modelos de lenguaje (procesan los prompts que envías para generar la respuesta), el proveedor de base de datos PostgreSQL y la infraestructura de hosting. Cada uno trata tus datos bajo sus propios acuerdos de protección de datos. No vendemos tu información personal."
+        },
+        {
+          "title": "6. Transferencias internacionales",
+          "body": "Algunos proveedores están ubicados fuera de tu país (principalmente en Estados Unidos y la Unión Europea). En esos casos nos apoyamos en las cláusulas contractuales tipo y otras garantías aprobadas por las autoridades de protección de datos."
+        },
+        {
+          "title": "7. Conservación",
+          "body": "Mantenemos tus datos mientras tu cuenta esté activa. Si cierras la cuenta, eliminamos los datos identificativos en un plazo máximo de 90 días, conservando solo los registros que la ley nos obligue a guardar (por ejemplo, facturación) y métricas de uso totalmente anónimas."
+        },
+        {
+          "title": "8. Tus derechos",
+          "body": "Puedes acceder, rectificar, suprimir, oponerte o limitar el tratamiento de tus datos, así como solicitar la portabilidad. Escríbenos a hola@naveo.space para ejercer cualquiera de estos derechos. También puedes presentar una reclamación ante la autoridad de protección de datos de tu país si crees que no atendimos tu petición correctamente."
+        },
+        {
+          "title": "9. Cookies",
+          "body": "Usamos solo cookies funcionales: una para mantener tu sesión iniciada (Clerk) y otra para recordar tu idioma. No usamos cookies publicitarias ni de seguimiento de terceros con fines de marketing."
+        },
+        {
+          "title": "10. Menores",
+          "body": "Naveo no está dirigida a menores de 13 años. Si descubrimos que hemos creado una cuenta sin el consentimiento adecuado del padre, madre o tutor, la eliminaremos junto con los datos asociados."
+        },
+        {
+          "title": "11. Seguridad",
+          "body": "Aplicamos medidas técnicas y organizativas razonables para proteger tus datos: cifrado en tránsito, contraseñas con hash gestionadas por el proveedor de autenticación, accesos restringidos por rol y registros de auditoría. Ningún sistema es 100% infalible, así que recomendamos usar contraseñas únicas y activar la verificación en dos pasos en tu proveedor de inicio de sesión."
+        },
+        {
+          "title": "12. Cambios en esta política",
+          "body": "Si actualizamos esta política, cambiaremos la fecha al inicio y, si la modificación es relevante, te avisaremos por correo o desde el panel antes de que entre en vigor."
+        },
+        {
+          "title": "13. Contacto",
+          "body": "Para cualquier duda sobre privacidad o el ejercicio de tus derechos, escríbenos a hola@naveo.space."
+        }
+      ]
+    }
+  }
+}

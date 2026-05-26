@@ -1,0 +1,125 @@
+---
+title: "Mini-RAG: bring data in before answering"
+order: 15
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: rag_chain
+  toolPurpose: |
+    Design a 3-stage RAG (Retrieval-Augmented Generation) pipeline to
+    answer technical questions using the ship's internal manual as the
+    source.
+
+    The 3 stages:
+
+    1. retrieve(query) → fetches the 3 most relevant fragments from the
+       manual (via vector search). Output: { snippets: [{text, source}, ...] }.
+
+    2. augment(query, snippets) → builds the prompt that combines the
+       user's question with the retrieved snippets as context. Output:
+       { augmented_prompt: string }.
+
+    3. generate(augmented_prompt) → generates the final answer using the
+       augmented prompt. Output: { answer: string, citations: [source, ...] }.
+
+    Format: YAML with a `steps` array (same schema as step 02's chain).
+    Each step declares: id, prompt (or function), input, output_key.
+  exampleInvocations:
+    - 'rag_chain.run("What''s the nominal coolant pressure in bay 4?") → runs retrieve→augment→generate and returns { answer, citations }'
+  starter: |
+    steps:
+      - id: retrieve
+        # retrieve is NOT an LLM prompt. it's a call to a vector store.
+        # Declare the operation with `kind: tool_call` and the tool to invoke.
+        kind: # TODO
+        # TODO: complete input, output_key
+
+      - id: augment
+        prompt: |
+          # TODO: prompt that combines the user's question with the
+          # retrieved snippets as context. The output must be a complete
+          # prompt ready to feed to the generator.
+        input:
+          # TODO
+        output_key: # TODO
+
+      - id: generate
+        prompt: |
+          # TODO: prompt that produces the final answer, citing the
+          # sources of the snippets used.
+        input:
+          # TODO
+        output_key: # TODO
+  language: markdown
+  rubric:
+    - id: retrieve-is-not-llm
+      kind: llm-judge
+      criterion: "The `retrieve` step is declared as a tool/function call (not an LLM prompt). Has `kind: tool_call` or equivalent, and references a vector search tool (search_manual, vector_search, etc.). It is NOT an LLM prompt, because retrieval isn't done with an LLM."
+    - id: augment-passes-snippets
+      kind: llm-judge
+      criterion: "The `augment` step takes as input the original question AND the snippets from retrieve. Its prompt builds a complete message including the snippets EXPLICITLY (with tags like <context> or <snippets>) before the question."
+    - id: generate-uses-augmented
+      kind: llm-judge
+      criterion: "The `generate` step takes the output of augment (the augmented prompt) as input. Does NOT re-take the original question. that would indicate skipping augment."
+    - id: citations-required
+      kind: llm-judge
+      criterion: "The `generate` prompt explicitly asks the answer to cite the sources of the snippets it used. Without this, RAG is indistinguishable from hallucination with extra data on the side."
+    - id: handles-no-snippets
+      kind: llm-judge
+      criterion: "The `generate` prompt instructs what to do if snippets are empty or not relevant to the question. Example: 'If the snippets don't contain relevant info, say you don't have that info in the manual.' Without this, the model hallucinates when retrieve fails."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "RAG isn't an LLM pattern. it's a **mixed** pattern. The `retrieve` phase is code (vector search). The `augment` phase builds the prompt. Only `generate` is actually an LLM call."
+  - "The most common mistake: forgetting to handle 'empty snippets'. If retrieve found nothing relevant, the model will invent an answer. Tell it in the prompt what to do when there's no useful context."
+  - "Citations are critical. Without them, the user can't verify the answer and RAG loses its edge over 'model answering from memory'."
+teaches:
+  - mini-rag-design
+requires:
+  - chain-design-basics
+---
+
+## RAG: the model doesn't have to know everything by heart
+
+Models have knowledge frozen at training. everything that happened after, or everything internal to your organization, **they don't know**. Two ways to give them access:
+
+1. **Tools** (Track 3). the model invokes functions that fetch info in real time.
+2. **RAG**. before generating, you fetch relevant data and **inject it into the prompt** as context.
+
+RAG is the dominant choice when:
+
+- You have a large corpus (manuals, docs, transcripts).
+- Questions are about **content**, not actions.
+- You want answers to come with citations (verifiable).
+
+### The three stages
+
+```
+[user query]
+        ↓
+   retrieve   (vector search over the corpus → top-K snippets)
+        ↓
+   augment    (composes a prompt: snippets + original question)
+        ↓
+   generate   (LLM answers using the augmented prompt, citing sources)
+        ↓
+[answer + citations]
+```
+
+Your job: design the YAML config of the pipeline. Three steps, chained by output_keys.
+
+### The trap that breaks RAG
+
+The most common problem isn't retrieval. it's that the **generate** doesn't handle the "snippets aren't relevant to the question" case. When that happens, if you don't tell the model what to do, **it invents** an answer with bits from the snippets. That's worse than not answering: it looks confident, carries fake citations, and the user doesn't notice.
+
+> Practical rule: in the generator's prompt, **always** include something like _"If the snippets don't contain relevant information, say you didn't find that in the manual."_ It's the difference between honest RAG and hallucinating RAG.
+
+### How it's evaluated
+
+5 LLM-judge criteria:
+
+1. `retrieve` declared as a tool/function call (not LLM).
+2. `augment` receives question + snippets, combines them explicitly.
+3. `generate` uses the augmented_prompt (not the raw question).
+4. `generate` asks for citations from the snippets.
+5. `generate` handles "empty / not-relevant snippets" without hallucinating.

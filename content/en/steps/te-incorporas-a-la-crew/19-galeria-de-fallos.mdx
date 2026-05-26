@@ -1,0 +1,85 @@
+---
+title: "Prompt failure gallery"
+order: 19
+estimatedMinutes: 6
+demo:
+  id: output-gallery
+  props:
+    presenter: atlas
+    intent: "the 5 failures you'll see a thousand times"
+    cases:
+      - title: "Vague in, vague out"
+        prompt: |
+          Summarize this shift report:
+
+          Bay 7 water recycler losing 5L/h since last night. No
+          contamination detected. Equipment still operational.
+        output: |
+          El reporte describe un reciclador de agua en bay 7 que ha estado perdiendo aproximadamente 5 litros por hora desde la noche anterior. No se ha detectado contaminación hasta el momento, y el equipo continúa operativo a pesar de la pérdida. Puede ser necesaria una investigación adicional para determinar la causa raíz.
+        why: |
+          The prompt didn't specify language, length, or format. The model decided for you: long paragraph in Spanish. This is exactly what we saw in lesson 2 (vague vs specific). Defense: close the four doors (language, format, length, behavior on gaps) explicitly in the prompt.
+      - title: "Few-shot all the same type"
+        prompt: |
+          Classify the message as urgent, normal or spam.
+
+          Message: "Reactor at 102%, venting now"
+          Classification: urgent
+
+          Message: "Coolant leak in bay 7, fix NOW"
+          Classification: urgent
+
+          Message: "EMERGENCY in dock 4"
+          Classification: urgent
+
+          Message: "Crew picnic Saturday at hangar 3"
+          Classification:
+        output: |
+          urgent
+        why: |
+          The model saw 3 urgent examples and learned "everything is urgent". The picnic message has nothing urgent about it, but the only classification visible in the pattern is urgent. Defense: three examples covering ALL three categories. Coverage beats quantity (lesson 7).
+      - title: "Reinforced negative"
+        prompt: |
+          Write a one-sentence product description.
+
+          DO NOT mention the price.
+          DO NOT include the price.
+          NEVER talk about the price under any condition.
+          The price must not appear.
+
+          Product: Handheld communicator model X, $129.
+        output: |
+          Handheld communicator model X, ideal for deck use, with a competitive price of $129.
+        why: |
+          The word "price" appears 5 times in the prompt. To the model, that means "price" is relevant and available as a token. Result: it mentioned it anyway. Defense (lesson 17): reframe positively. "Write a description highlighting the technical features and use case." Tell it WHAT to do, not what not to do.
+      - title: "Compound task without decomposition"
+        prompt: |
+          Process this ticket: summarize the problem, classify severity,
+          and recommend an action.
+
+          Ticket: Bay 7 water recycler losing 5L/h since last night. No
+          contamination detected. Equipment still operational but
+          declining steadily.
+        output: |
+          The bay 7 water recycler has been losing about 5 liters per hour since last night, which is a situation requiring attention because, even though there's no contamination, the steady decline suggests a fault that could worsen, so it would be good to inspect and repair soon.
+        why: |
+          The model blended the three tasks (summary, severity, action) into one paragraph. Severity never showed up as "high/medium/low". The action is vague ("inspect and repair soon"). The downstream parser can't extract anything. Defense (lesson 15): decompose explicitly with labels. SUMMARY:, SEVERITY:, ACTION:.
+      - title: "Placeholder passed as data"
+        prompt: |
+          Extract the crewmate's email. Return JSON: { "email": "..." }.
+
+          Bio: Carlos, mechanic, contact TBD.
+        output: |
+          { "email": "TBD" }
+        why: |
+          The model didn't understand that "TBD" is the absence of an email, not an email. It returned it as a string. Downstream, the system validating emails will fail or pass an invalid value. Defense (lesson 12): explicitly enumerate what counts as "no email": "TBD", "pending", "n/a", strings without local@domain format. And return real `null` (not a string).
+---
+
+## Five failures, five patterns, a thousand real bugs
+
+You've got all the techniques now: anatomy, format, examples, constraints, decomposition, iteration. The last piece before hardening (lessons 20-22) is **recognizing failure patterns** at a glance.
+
+On the right you'll see five reasonable prompts with their real outputs. Each one **fails** for a different reason. Your job: before revealing the diagnosis, look at the output and try to identify WHICH pattern broke.
+
+When you reveal all five, you've got the mental catalog. Next time a prompt of yours fails in production, you'll recognize which of the five is happening in seconds, not hours.
+
+> This catalog isn't exhaustive. But it covers 80% of typical Track 1 failures. The other 20% (refusals, ambiguity) come in the next two lessons.

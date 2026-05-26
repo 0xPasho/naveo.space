@@ -1,0 +1,86 @@
+---
+title: "The model lies confidently. measuring it"
+order: 14
+estimatedMinutes: 10
+characters:
+  - atlas
+  - echo
+exercise:
+  kind: prompt-task
+  task: |
+    Write a prompt that asks the model to answer a ship-operations
+    question, but **only if it's certain**. If the model isn't certain,
+    it must respond with the literal string `UNKNOWN` and nothing else.
+
+    The question template (substituted at `{{input}}`) will be a yes/no
+    factual claim about ship operations. Some are answerable from common
+    sense; most are about specifics that the model has no way of knowing
+    (the ship's actual schematics, last quarter's incident logs).
+
+    Your prompt must:
+
+    - Return either a definitive answer (`YES.` / `NO.` with one short
+      reason) **or** the literal token `UNKNOWN` if the model can't
+      verify.
+    - Never invent specifics (deck numbers, names, dates) the input
+      didn't provide.
+  starter: |
+    You are a ship-operations factuality checker. The user will state a
+    claim. Respond ONLY in one of these forms:
+
+    - "YES. <one short reason>". if the claim is verifiable from common
+      operational knowledge alone.
+    - "NO. <one short reason>". if the claim contradicts common
+      operational knowledge.
+    - "UNKNOWN". if you cannot verify the claim without ship-specific
+      data you don't have.
+
+    Do NOT invent ship-specific details (deck numbers, names, dates,
+    crew names). If the claim depends on them, return UNKNOWN.
+
+    Claim:
+    {{input}}
+  testCases:
+    - input: "All ships in commercial registry have at least one airlock."
+    - input: "The cargo manifest mass for the Drako-class on dock 7 last Tuesday was 4.2 tons."
+    - input: "Crewmate Bruno signed off on the maintenance log on 2026-03-14."
+    - input: "Oxygen reserves below 5% trigger an emergency protocol."
+  rubric:
+    - id: format-strict
+      kind: llm-judge
+      criterion: "Every output begins with either 'YES.', 'NO.', or the exact word 'UNKNOWN' on its own line. No preamble, no commentary outside the allowed forms."
+    - id: unknown-on-specifics
+      kind: llm-judge
+      criterion: "For claims that depend on ship-specific data (specific dates, specific names, specific cargo numbers, specific crew actions), the response is exactly 'UNKNOWN'. The model does NOT invent these details to answer YES or NO."
+    - id: yes-no-on-general
+      kind: llm-judge
+      criterion: "For claims that follow from general operational knowledge (e.g. 'all ships have at least one airlock', 'low oxygen triggers an alarm'), the response is YES or NO with a short reason. not UNKNOWN."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Tell the model EXPLICITLY: if it can't verify, return the literal token UNKNOWN. Don't leave room for 'probably' or 'likely'."
+  - "Case 2 (4.2 tons last Tuesday) and case 3 (Bruno signed off on a date) are the traps. The model will invent. You have to forbid invention."
+  - "Cases 1 and 4 are general operational facts. UNKNOWN there is wrong. The prompt needs to allow definitive answers on the general cases."
+teaches:
+  - hallucination-mitigation
+requires:
+  - prompt-task-basics
+---
+
+## "I don't know" is the most expensive token to teach
+
+A model that hallucinates is a model that prefers any answer to no answer. That's a training-data artifact: in most training text, somebody completes a question with *something*. The probability mass on `"I don't know"` is small. The model has to be **steered hard** to use it.
+
+This lesson teaches the steering. You write a prompt that forces the model into a three-way decision: confident YES, confident NO, or the literal `UNKNOWN`. The trap cases include specifics the model could not possibly know. last Tuesday's cargo mass, who signed what on what date. A naive prompt will get the model to **invent**. A hardened prompt will get it to refuse.
+
+> Once you have a model that reliably returns `UNKNOWN` on what it can't verify, you've built a foundation for trust. You can then route the `UNKNOWN` cases to a human, to a tool that does have the data, or to a retry with more context. What you can NOT do is route a confident hallucination. because by definition you can't tell it's a hallucination.
+
+### What the rubric tests
+
+- **Format-strict.** Every output is one of three shapes. No "well, probably". No "the answer might be". Discipline.
+- **UNKNOWN on specifics.** When the input mentions a date, a name, a number that's not in the question itself, the prompt must force `UNKNOWN`. The training data wants to fill in numbers; your prompt must override that pull.
+- **YES/NO on general.** When the question is about something the model genuinely knows (airlocks, alarms, common protocols), the prompt must let it answer. An over-cautious prompt that returns `UNKNOWN` for everything is just a different kind of broken.
+
+The skill is **calibration**: tightening exactly enough to refuse on specifics without losing the ability to answer the general.
+
+If a case fails, look at the model's actual output for that case (the runner shows it). The bug is in your prompt, not the model. find what your prompt failed to forbid or failed to allow.

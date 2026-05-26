@@ -1,0 +1,109 @@
+---
+title: "¿Cuántas tools son demasiadas? El tradeoff del catálogo"
+order: 19
+estimatedMinutes: 5
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge tiene que diseñar las tools para "gestionar el roster de la nave"
+    (crear turnos, asignar gente, cambiar roles, cancelar). Dos opciones de
+    catálogo. ¿Cuál es la que el agente usa mejor en producción?
+  optionA: |
+    Catálogo "ultra granular" (8 tools):
+
+    - create_day_shift
+    - create_night_shift
+    - create_late_night_shift
+    - assign_crewmate_to_shift
+    - change_crewmate_role_in_shift
+    - remove_crewmate_from_shift
+    - cancel_shift
+    - reactivate_cancelled_shift
+  optionB: |
+    Catálogo "consolidado" (3 tools):
+
+    - create_shift(shift_type, ...): crea un turno. shift_type es enum
+      day|night|late_night.
+    - update_shift_assignment(shift_id, crewmate_alias, action,
+      role?): asigna, cambia rol o quita. action es enum assign|change_role|remove.
+    - set_shift_status(shift_id, status): cambia estado del turno. status es
+      enum active|cancelled.
+  correct: B
+  explanation: |
+    Más tools NO es mejor. Cada tool extra cobra dos peajes:
+
+    1. **Más opciones para el modelo.** Tiene que escanear el catálogo
+       entero y decidir cuál usar. Con 30 tools casi idénticas, las
+       descripciones empiezan a colisionar (¿`create_day_shift` o
+       `create_shift_for_day`?). La precision baja.
+    2. **Más contexto consumido.** Cada tool definition ocupa tokens en
+       el system prompt. 30 tools con descripciones decentes son varios
+       miles de tokens que estás pagando en cada request.
+
+    En la opción A, las 8 tools son **variaciones del mismo verbo + un
+    qualifier que podría ser un parámetro**. El catálogo se infló porque
+    alguien dijo "una tool por caso de uso". Resultado: el modelo se
+    confunde entre `assign_crewmate_to_shift` y
+    `change_crewmate_role_in_shift` cuando el usuario dice "ponéme a Em
+    de medic en el turno N1" (¿es asignar o cambiar rol?).
+
+    En la opción B, las 3 tools cubren los mismos casos pero el qualifier
+    vive donde tiene que vivir: como **enum del parámetro**. El modelo
+    elige una de 3, y dentro de esa tool decide el valor del enum.
+    Decisión más simple, menos errores.
+
+    Heurística de Forge:
+
+    - **2-15 tools por MCP**: rango sano. Catálogos así son fáciles para
+      el modelo y para vos para mantener.
+    - **15-30 tools**: revisalo. Probablemente algunas se consolidan con
+      un parámetro enum.
+    - **30+ tools**: casi seguro hay overlap o cosas que no deberían ser
+      tools (lección 13). Auditá.
+
+    Cuándo SÍ vale tener más tools: cuando dos casos tienen **schemas
+    profundamente distintos** (parámetros distintos, validaciones
+    distintas, side effects distintos). Si el schema es el mismo y solo
+    cambia un valor, es un enum, no una tool nueva.
+hints:
+  - "Si dos tools del catálogo se diferencian SOLO por un qualifier (day vs night, assign vs remove), probablemente se consolidan con un enum."
+  - "El modelo elige tool comparando intent vs name+description. 30 nombres similares = 30 candidatos confusos. Menos tools mejor descritas > más tools peor descritas."
+teaches:
+  - tool-catalog-size
+requires:
+  - tool-naming-discoverability
+---
+
+## Más tools, peor decisión. Hasta cierto punto.
+
+Existe la tentación de que "una tool por caso" es lo correcto: queda explícito, queda granular, queda "limpio". Pero el modelo no vive en tu mundo de arquitectura. **vive en la decisión de qué invocar cuando el usuario dice algo**. Y esa decisión empeora cuando hay demasiadas opciones similares.
+
+### El experimento mental
+
+Imaginá que sos el modelo. El usuario dice: _"ponéme a Em de medic en el turno de la noche del 14"_.
+
+**Con 30 tools** de roster que incluyen `assign_crewmate`, `update_role_in_shift`, `add_crewmate_to_existing_shift`, `set_shift_crewmate_role`, tenés que **leer 30 descripciones y comparar**. Las decisiones cercanas a 50/50 son las peores: el modelo elige una con baja confianza, y si elige la "incorrecta" (todas hacen casi lo mismo, pero con distinta DB), rompe.
+
+**Con 3 tools** (create_shift, update_shift_assignment, set_shift_status), elegís rápido: necesitás `update_shift_assignment` con `action: "assign"` y `role: "medic"`. Decisión clara.
+
+### Cómo consolidar sin perder claridad
+
+Patrones que funcionan:
+
+1. **Enum de acción**: en vez de `assign_x`, `remove_x`, `change_x`, usá `update_x` con `action: "assign"|"remove"|"change"`.
+2. **Enum de tipo**: en vez de `create_day_shift`, `create_night_shift`, usá `create_shift` con `shift_type` enum.
+3. **Parámetros opcionales**: en vez de `list_active_shifts`, `list_cancelled_shifts`, usá `list_shifts(status?)` con default "active".
+
+Patrones que NO funcionan:
+
+1. **Mega-tool con `command` string**: `do_action(command: string, payload: any)`. el modelo no sabe qué meter en `payload` y se rinde. Necesitás los parámetros tipados.
+2. **Sobre-consolidar tools con schemas distintos**: si `create_shift` y `cancel_shift` tienen 0 parámetros en común, son tools distintas. No las fuerces a una.
+
+### El umbral práctico
+
+- **< 5 tools**: catálogo mínimo. Difícil cubrir un dominio entero.
+- **5-15 tools**: sweet spot. La mayoría de los MCPs en producción viven acá.
+- **15-30 tools**: revisar consolidación.
+- **30+ tools**: casi siempre hay overlap o tools que no son tools.
+
+> Cada tool nueva cuesta tokens en el system prompt y precision en la elección. Antes de agregar una, preguntate: ¿esto se merece su propio nombre y schema, o es un valor de enum de otra tool?

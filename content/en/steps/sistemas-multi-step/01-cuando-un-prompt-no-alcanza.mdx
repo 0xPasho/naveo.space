@@ -1,0 +1,79 @@
+---
+title: "When one prompt isn't enough"
+order: 1
+estimatedMinutes: 5
+exercise:
+  kind: prompt-AB
+  question: |
+    Orbit needs a system that, given a shift report, **(1) classifies the
+    incident type, (2) extracts the key fields per type, and (3) generates
+    a one-line summary for the captain's log**. She has two designs on the
+    whiteboard. Which one scales?
+  optionA: |
+    ONE SINGLE PROMPT:
+
+    "You are an assistant. You receive a shift report. Do three things at
+    once: classify the incident as [safety/maintenance/social/other],
+    extract the relevant fields (vary by type), and return a one-line
+    summary. Output: { category: ..., fields: {...}, summary: ... }"
+  optionB: |
+    THREE CHAINED PROMPTS:
+
+    Step 1. classify_report(text) → { category: "safety" | "maintenance" | ... }
+
+    Step 2. extract_fields_for(category, text):
+      - if category == "safety": specialized prompt to extract risk, location, severity.
+      - if category == "maintenance": specialized prompt to extract system, part, time.
+      - ... one per category.
+
+    Step 3. summarize(category, extracted_fields) → "One-line summary."
+
+    Final output: { category, fields, summary }. assembled from the 3 steps.
+  correct: B
+  explanation: |
+    The single prompt in A breaks as soon as:
+
+    1. **A category has different rules from the others.** In A, all the
+       rules have to coexist in the same prompt. the model gets confused,
+       mixes fields, or applies safety rules to a maintenance case.
+    2. **You want to change behavior of ONE category without touching the
+       others.** In A this is impossible without rewriting and re-testing
+       everything.
+    3. **You need to log or cache the intermediate steps.** In A there
+       are no steps. everything is one call to the model. In B, you can
+       cache the result of `classify_report` and only re-run the rest.
+    4. **You want to evaluate the system.** In B you can measure the
+       classifier's accuracy separately from the extractor's. In A, a
+       failure is opaque. you don't know which stage broke.
+
+    Practical rule: **one LLM prompt does ONE thing well**. When your
+    conceptual task has several steps, **split it into several prompts**.
+    Extra cost (more API calls) vs gain (clarity, debuggability,
+    evaluability, maintenance). Almost always worth it.
+hints:
+  - "What happens when you add a fifth category? A sixth? With different rules for each?"
+  - "If your single prompt fails, how do you know which step (classification, extraction, summarization) broke?"
+teaches:
+  - chain-vs-mono-prompt
+requires:
+  - capstone-track-1
+---
+
+## The instinct: "I'll put it all in one prompt."
+
+<Character name="orbit" /> works the other way around. Before touching the model she sketches the task on the whiteboard and cuts it into steps. She'll make you do the same the whole way through this track.
+
+The first reaction is always to make one monster prompt. And for small tasks it works. For real problems it breaks fast, for **four reasons**:
+
+1. **The model gets confused** when many rules are active at once.
+2. **You can't iterate partially**. to fix one part you have to touch everything.
+3. **You can't cache**. every call starts from scratch.
+4. **You can't evaluate**. a system-wide failure doesn't tell you which piece broke.
+
+### The alternative: split
+
+When you, reading the task, already identify **conceptually distinct stages** (classify, then extract, then summarize), your system should have those stages as separate steps. Each step is a focal prompt: one input, one typed output, one decision.
+
+> The criterion: if your task is naturally described as "first X, then Y, then Z", you probably want 3 prompts. If it's described as "take this and give me that", probably one.
+
+Look at the two designs on the right. One is a monster prompt. The other is a chain. Decide which one scales. and why.

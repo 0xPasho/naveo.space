@@ -1,0 +1,150 @@
+---
+title: "Quick mission: tool idempotency"
+intro: |
+  If a tool is retried, does it charge twice? The model does not know. You do, and you have to say so.
+station: forge
+teaches:
+  - tool-idempotency
+  - tool-side-effect-marking
+characters:
+  - atlas
+  - forge
+scenes:
+  - kind: prompt-AB
+    question: |
+      Atlas shows you two descriptions for a `charge_card` tool. There
+      is an automatic retry layer above the client. Which description
+      keeps the model from firing it twice by accident?
+    optionA: |
+      ```
+      Charges a card. Creates a new charge every time it is invoked.
+      ```
+    optionB: |
+      ```
+      Charges a card. NOT idempotent: each invocation creates a new
+      charge. If you need a safe retry, pass `idempotency_key` (a
+      unique string). With the same key, it returns the previous
+      charge instead of creating a new one.
+      ```
+    correct: B
+    explanation: |
+      Option A is the classic trap. "Creates a new charge every time"
+      sounds explanatory, but it is telling the model (and the client
+      that orchestrates retries) that this tool can never be safely
+      retried. One network timeout and the user pays twice.
+
+      Option B names the risk ("NOT idempotent") and offers the
+      escape: a key you generate and send. With the same key, the
+      tool returns the existing charge. The model learns to use the
+      key whenever retry is possible, and retries stop being fatal.
+
+      Rule: irreversible side effects (charging, sending email,
+      deleting) need to be either idempotent by design or accept an
+      idempotency_key. Otherwise a flaky network ruins your day.
+  - kind: slot-fill-dnd
+    task: |
+      Sort each operation: is it idempotent (same input twice is safe)
+      or not (same input twice causes harm)?
+    slots:
+      - id: idempotent
+        label: "Idempotent (safe to retry)"
+      - id: not-idempotent
+        label: "NOT idempotent (risky)"
+    pieces:
+      - id: p1
+        label: "GET /user/42 (read user 42's profile)."
+        correctSlot: idempotent
+      - id: p2
+        label: "POST /payments (create a new $100 charge)."
+        correctSlot: not-idempotent
+      - id: p3
+        label: "PUT /user/42 with body {name: 'Pasho'} (overwrite the name)."
+        correctSlot: idempotent
+      - id: p4
+        label: "send_email(to, subject, body) (send an email)."
+        correctSlot: not-idempotent
+      - id: p5
+        label: "set_status(record_id, 'closed') (mark a record as closed)."
+        correctSlot: idempotent
+      - id: p6
+        label: "append_log(message) (add a line to the log)."
+        correctSlot: not-idempotent
+  - kind: wiring-dnd
+    task: |
+      Connect each operation with the idempotency tier it belongs to.
+      Think about what happens if it runs twice with the same input.
+    sources:
+      - id: src-get
+        label: "Read data (GET /resource/id)."
+        detail: "Modifies nothing."
+      - id: src-overwrite
+        label: "Replace the full state (PUT with a fixed body)."
+        detail: "Same input leaves the same result."
+      - id: src-create
+        label: "Create a new resource (POST /orders)."
+        detail: "Each call adds a row."
+      - id: src-key
+        label: "Create a resource with idempotency_key."
+        detail: "Same key, same charge, no duplicate."
+    targets:
+      - id: tgt-natural
+        label: "Idempotent by nature"
+        detail: "Retrying is trivially safe."
+      - id: tgt-engineered
+        label: "Idempotent by design (with key)"
+        detail: "Safe if you generate the key."
+      - id: tgt-unsafe
+        label: "Not idempotent (dangerous to retry)"
+        detail: "Each call has an effect."
+    correctConnections:
+      - from: src-get
+        to: tgt-natural
+      - from: src-overwrite
+        to: tgt-natural
+      - from: src-create
+        to: tgt-unsafe
+      - from: src-key
+        to: tgt-engineered
+  - kind: step-order-dnd
+    task: |
+      You are designing a `create_invoice` tool that will live behind
+      automatic retries. Order the steps to make it safe to retry,
+      from top to bottom.
+    steps:
+      - id: s1
+        label: "Identify the concrete side effect the tool produces."
+        detail: "Without knowing the effect, you cannot tell if retry is safe."
+      - id: s2
+        label: "Mark explicitly in the description whether it is idempotent or not."
+        detail: "The model and the orchestrator read that to decide whether to retry."
+      - id: s3
+        label: "Add an `idempotency_key` (string) parameter, required for writes."
+        detail: "Without the key, there is no way to tell two calls are the same."
+      - id: s4
+        label: "In the handler, before creating, look up whether a record with that key already exists."
+        detail: "If it exists, return the previous one instead of creating a new one."
+      - id: s5
+        label: "Test the retry on purpose: invoke it twice in a row with the same key."
+        detail: "If the result is one record, good. If it is two, you are missing logic."
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this well-built tool description. A
+      responsible description names the side effect, the idempotency
+      tier, the key arguments, and a dry-run when applicable.
+    parts:
+      - id: effect
+        label: "Side effect (what happens in the world when invoked)"
+        text: "Creates a real charge on the customer's card. Money moves, this is not a log."
+      - id: tier
+        label: "Idempotency tier (safe to retry or not)"
+        text: "Not idempotent by default. Each invocation creates a separate charge unless you pass `idempotency_key`."
+      - id: key
+        label: "Argument that makes retry safe"
+        text: "`idempotency_key` (string, optional but recommended): with the same key, it returns the previous charge without charging again."
+      - id: dryrun
+        label: "Dry-run (test without real effect)"
+        text: "Pass `dry_run: true` to validate the input and return a simulated charge without touching the card. Useful for pre-flight checks."
+---
+
+Mission of the day: if the tool has a side effect, tell the model whether
+retrying is safe. Silence in the description is the most expensive bug source.

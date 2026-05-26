@@ -1,0 +1,136 @@
+---
+title: "Learn by example: few-shot prompting"
+order: 6
+estimatedMinutes: 8
+exercise:
+  kind: prompt-task
+  task: |
+    Atlas needs to classify incoming messages into three categories:
+    `urgent`, `normal`, `spam`. The rules are hard to describe but easy
+    to show with examples.
+
+    Write a **few-shot** prompt: show the model 2-3 examples of
+    `message → classification` and let it learn the pattern. The model
+    should return ONLY one word: `urgent`, `normal` or `spam`. No
+    explanations.
+
+    Where the message to classify goes, use `{{input}}`.
+  starter: |
+    <task>
+      Classify the message into one of three categories: urgent, normal, spam.
+      Respond with ONE word only.
+    </task>
+
+    <examples>
+      Message: "Reactor at 102%. venting now"
+      Classification: urgent
+
+      Message: "Crew picnic Saturday at hangar 3"
+      Classification: normal
+
+      Message: "FREE crew tokens. claim before midnight!!!"
+      Classification: spam
+    </examples>
+
+    <input>
+      {{input}}
+    </input>
+
+    Classification:
+  testCases:
+    - input: "Coolant pressure dropping fast in bay 7. need maintenance NOW"
+    - input: "Reminder: monthly diagnostics scheduled for Thursday 09:00"
+    - input: "CONGRATS! You've been selected for our exclusive crew loan offer. reply YES"
+    - input: "Bru: hey, the comms panel in bay 2 keeps bouncing between channels. Should we look at it today or wait until tomorrow's shift?"
+  rubric:
+    - id: valid-label
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^\\s*(urgent|normal|spam)\\s*$"
+        flags: "i"
+      criterion: "Returns exactly ONE word (urgent, normal or spam) with no preamble, quotes, punctuation, or markdown"
+    - id: correct-classification
+      kind: llm-judge
+      criterion: "The classification matches the actual priority of the message (urgent for safety emergencies or reports requiring immediate action; normal for routine info, reminders, shift questions; spam for promotions, offers, deceptive messages)."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Few-shot = show examples. 2-3 are enough; more just confuses."
+  - "Each example is a pair `message → classification`. Cover the 3 categories."
+  - "The model tends to chatter. Tell it explicitly: **one word only**."
+teaches:
+  - few-shot-basics
+requires:
+  - prompt-task-basics
+---
+
+## Sometimes it's better to show than describe
+
+Some rules are easy to explain:
+
+> _"Return the text in JSON with fields name, age, email."_
+
+And some rules are **better understood through examples**:
+
+> _"Mark this message as urgent, normal or spam based on... uh... the vibe."_
+
+Few-shot prompting is the technique of **showing the model 2-3 input-output examples** before asking for the real case. The model learns the pattern by imitation.
+
+### Why it works
+
+In pre-flight you saw that the model predicts the next most-probable token given everything before it. Few-shot exploits that directly:
+
+```
+Message: "Reactor at 102%"
+Classification: urgent
+
+Message: "Free tokens! Claim now!!"
+Classification: spam
+
+Message: "Crew picnic Saturday"
+Classification: ___
+```
+
+When the model reaches the blank, **the pattern "Message: ... Classification: ..." is already established in the context**. The most probable continuation is one of the labels it just saw, not an explanation or a greeting. Probabilities pile up behind `urgent`, `spam` or `normal` because that's what the pattern predicts.
+
+It's not that the model "learns" on the spot. It's that the shape of the prompt **forces the output to look like the examples**. That's why few-shot is so robust: it doesn't rely on the model understanding your rule, it relies on the model completing a visible pattern.
+
+### The task
+
+<Character name="atlas" /> receives hundreds of messages a day and needs to filter them fast. Your prompt will classify each one as `urgent`, `normal` or `spam`.
+
+The validator is strict:
+
+1. The output must be **exactly** one of the three labels (no explanation, no extra punctuation).
+2. The classification must match the real priority of the message.
+
+### Recommended structure
+
+The `<starter>` gives you the pattern:
+
+```xml
+<examples>
+  Message: "..."
+  Classification: urgent
+
+  Message: "..."
+  Classification: normal
+
+  ...
+</examples>
+
+<input>
+  {{input}}
+</input>
+
+Classification:
+```
+
+> Tip: ending with `Classification:` (no value) gives the model the "scaffolding" to complete. it usually responds with the clean label, no chatter.
+
+### When to few-shot vs when to describe
+
+- **Describe** when the rule is clear and short (data extraction, format conversion).
+- **Show examples** when there's nuance, jargon, tone, or fuzzy categories.
+- Sometimes both: 1-2 sentences describing + 2 examples.

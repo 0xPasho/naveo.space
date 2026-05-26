@@ -1,0 +1,91 @@
+---
+title: "Tu primer prompt: extraer datos para Echo"
+order: 10
+estimatedMinutes: 8
+exercise:
+  kind: prompt-task
+  task: |
+    Echo necesita procesar bios cortas de nuevos crewmates y devolver un JSON
+    con tres campos: `alias`, `puesto` y `contacto`.
+
+    Escribe un prompt que reciba la bio del crewmate (donde diga `{{input}}`)
+    y devuelva ese JSON. Si algún campo no está en la bio, usa null.
+  starter: |
+    <task>
+      Extrae alias, puesto y contacto del siguiente texto.
+      Si algún campo no aparece, usa null.
+    </task>
+
+    <output_format>
+      { "alias": "string|null", "puesto": "string|null", "contacto": "string|null" }
+    </output_format>
+
+    <input>
+      {{input}}
+    </input>
+  testCases:
+    - input: "Bru, técnico de turno, bru@thecrew.io"
+    - input: "María Pérez (alias 'Em'), enfermera, em@thecrew.io"
+    - input: "Carlos sin contacto, mecánico"
+    - input: "Reporte: el nuevo (alias Tova) entró ayer. Posición pendiente de asignar. Sin contacto registrado."
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "El output es JSON válido"
+    - id: keys-present
+      kind: deterministic
+      check: has-keys
+      args: ["alias", "puesto", "contacto"]
+      criterion: "Contiene alias, puesto y contacto"
+    - id: no-hallucination
+      kind: llm-judge
+      criterion: "Si la bio no menciona un campo, el valor correspondiente es `null` (no una cadena vacía, no un placeholder, no un valor inventado). Nunca inventa un email, número o puesto que no aparezca textualmente en la bio."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Empieza copiando el `<starter>` que te dimos. Solo necesitas afinar la instrucción."
+  - "Recuerda decirle al modelo qué hacer cuando un campo no está. Si no lo dices, lo va a inventar."
+  - "Probá con uno de los casos en tu cabeza: si tu prompt no te diría a ti qué responder, tampoco al modelo."
+teaches:
+  - prompt-task-basics
+requires:
+  - xml-tags-claude
+---
+
+## Echo necesita un prompt para procesar reclutas
+
+Hasta aquí solo elegiste o llenaste huecos. Ahora **escribes el prompt completo**.
+
+<Character name="echo" /> tiene una pila de bios de nuevos crewmates y le toma media tarde procesarlas a mano. Tu trabajo es darle un prompt que las convierta en JSON limpio.
+
+### Cómo funciona este ejercicio
+
+1. Escribís tu prompt en el editor de la derecha.
+2. Donde quieras que vaya la bio del crewmate, ponés `{{input}}`.
+3. Cuando le des **Comprobar**, el sistema va a:
+   - Reemplazar `{{input}}` con cada uno de los 3 casos de prueba.
+   - Mandar el prompt resultante a un modelo (Claude Haiku).
+   - Evaluar el output contra la rúbrica.
+
+Para pasar, **los 4 casos** tienen que cumplir **los 3 criterios**:
+
+- El output es JSON válido.
+- Tiene las llaves `alias`, `puesto`, `contacto`.
+- No inventa nada cuando la bio no lo dice.
+
+### El truco de los datos faltantes
+
+Los casos 3 y 4 son los que separan un prompt bueno de uno mediocre. Por ejemplo:
+
+```
+Carlos sin contacto, mecánico
+```
+
+Si tu prompt no le dice al modelo qué hacer cuando falta un campo, va a **inventar** un email plausible. Eso es alucinación. y para <Character name="echo" /> es peor que un error visible: parece dato real.
+
+El caso 4 sube la apuesta: la bio menciona explícitamente que faltan datos. Tu prompt debe devolver `null` ahí también, no un `"pendiente"` o `"desconocido"`.
+
+> Tip: una sola línea como _"Si algún campo no aparece, usa null"_ resuelve el 90% de las alucinaciones. La rúbrica está para premiarte cuando lo haces bien.
+
+Si te trabás, abrí los hints (vienen en orden de menor a mayor pista).

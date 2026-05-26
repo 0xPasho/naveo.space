@@ -1,0 +1,85 @@
+---
+title: "Correcciones quirúrgicas, no reescrituras"
+order: 4
+estimatedMinutes: 5
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo te dio un mensaje de coordinación para mandarle a otro turno.
+    Está bien casi todo. solo querés que (1) saque el saludo inicial,
+    (2) cambie "ayer" por "el turno pasado", y (3) deje el resto igual.
+    ¿Cuál follow-up tiene más chance de mantener el resto intacto?
+  optionA: |
+    ```
+    Probá de nuevo pero sin saludo y con "el turno pasado" en vez de
+    "ayer". El resto está bien.
+    ```
+  optionB: |
+    ```
+    Reescribilo pero más profesional y claro, y arreglá lo del saludo
+    y la fecha.
+    ```
+  correct: A
+  explanation: |
+    El prompt A es un **diff quirúrgico**. Le dice al modelo exactamente
+    QUÉ cambiar (dos cosas, nombradas) y QUÉ NO TOCAR ("el resto está
+    bien"). El output va a venir con esos dos cambios y el resto
+    intacto.
+
+    El prompt B es una **reescritura disfrazada de corrección**. Le
+    decís "más profesional y claro" + "arreglá lo del saludo y la
+    fecha". El modelo no sabe cuál es la parte "buena" que tiene que
+    preservar, entonces reescribe TODO. Lo que ayer estaba bien, hoy
+    puede ser otra frase distinta. Y vos ahora tenés que comparar dos
+    versiones largas para ver qué se perdió.
+
+    La regla del correction prompt:
+
+    1. Listá los cambios específicos (numerados ayuda).
+    2. Decí explícito qué NO tocar ("el resto igual" / "no cambies el
+       cuerpo" / "preservá la estructura").
+    3. NO uses adjetivos vagos ("más claro", "más profesional"). cada
+       adjetivo es una licencia para reescribir.
+
+    Esto es la diferencia entre **editar** y **regenerar**. Editar
+    preserva lo bueno. Regenerar tira el bebé con el agua.
+teaches:
+  - surgical-correction-prompt
+requires:
+  - multi-turn-followup
+---
+
+## Editar, no regenerar
+
+Una vez que el modelo te da un output **casi** bueno, la tentación es decir "reescribilo mejor". Mal movimiento. Cada palabra vaga ("más claro", "más profesional", "más conciso") es una licencia para reescribir todo, incluyendo las partes que ya estaban bien.
+
+El correction prompt quirúrgico funciona al revés: nombrás los cambios y nombrás lo que **no** se toca.
+
+### El patrón de 3 líneas
+
+```
+Misma respuesta pero con estos cambios:
+1. <cambio específico>
+2. <cambio específico>
+No toques el resto.
+```
+
+Tres líneas. Lista numerada para que el modelo no se pierda. Cierre explícito de "no toques el resto" para evitar la reescritura silenciosa.
+
+### Lo que NO funciona
+
+- "Reescribilo, está medio raro." Le diste licencia total. Va a cambiar todo.
+- "Más profesional." Tres palabras vagas, tres puertas abiertas. Va a meter formalismos donde no querías.
+- "Mejorá esto." El modelo elige qué "mejorar". Spoiler: no es lo que vos pensabas.
+
+### Lo que sí
+
+- "Sacá el saludo y cambiá 'ayer' por 'el turno pasado'. Resto igual."
+
+Dos cambios nombrados. Frase final de protección. El output viene con esos dos cambios y nada más.
+
+> Esta técnica también te sirve cuando le pasás un código al modelo y querés que arregle UN bug sin tocar el resto. *"Cambiá solo la línea 12 para que devuelva null si el input es vacío. No reformatees el resto."* Si no lo decís, te devuelve el archivo entero con cinco cambios estéticos que vos no pediste.
+
+A la derecha, el mismo follow-up en dos formas. ¿Cuál preserva el resto del output?

@@ -1,0 +1,108 @@
+---
+title: "Lists: many things in one box"
+order: 11
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    The ship keeps the crew in a list:
+
+    ```
+    crew = ["Vega", "Atlas", "Echo", "Forge"]
+    ```
+
+    Drag each name to the **position** it occupies in the list. Remember:
+    the first position is **0**, not 1.
+  slots:
+    - id: pos_0
+      label: "crew[0]"
+    - id: pos_1
+      label: "crew[1]"
+    - id: pos_2
+      label: "crew[2]"
+    - id: pos_3
+      label: "crew[3]"
+  pieces:
+    - id: vega
+      label: "\"Vega\""
+      correctSlot: pos_0
+    - id: atlas
+      label: "\"Atlas\""
+      correctSlot: pos_1
+    - id: echo
+      label: "\"Echo\""
+      correctSlot: pos_2
+    - id: forge
+      label: "\"Forge\""
+      correctSlot: pos_3
+hints:
+  - "Position **0** is the first one, not the second. The last position is `count - 1`."
+  - "Read the list left to right. The first name goes into `crew[0]`."
+  - "For a list of 4 elements, the valid positions are 0, 1, 2, and 3. Position 4 doesn't exist."
+teaches:
+  - lists-basics
+requires:
+  - variables-basics
+  - basic-data-types
+---
+
+## One box with many things inside
+
+So far boxes held a single value: a number, a text, a true/false. But the ship needs to hold **collections** of things. The crew has four members, not one.
+
+That's what a **list** is for: a box with several values inside, in order.
+
+```
+crew = ["Vega", "Atlas", "Echo", "Forge"]
+```
+
+That box holds four texts in a sequence. The list preserves **order**: the position matters, it's not an unordered set.
+
+### Accessing by position
+
+To pull a value out of the list you use a number in brackets, the **position**:
+
+```
+crew[0]  → "Vega"      ← the first one
+crew[1]  → "Atlas"
+crew[2]  → "Echo"
+crew[3]  → "Forge"     ← the fourth and last
+```
+
+### The surprising detail: it starts at 0
+
+In almost every programming language, **the first position is 0, not 1**. The fourth is 3, not 4. The last is always `count - 1`.
+
+For a crew of 4:
+
+- `crew[0]` is the first (Vega)
+- `crew[3]` is the last (Forge)
+- `crew[4]` **doesn't exist** (error or null, depending on the language)
+
+It's counterintuitive at first, but there's a historical reason and you'll internalize it quickly.
+
+### Typical operations
+
+Lists have their own vocabulary:
+
+- `len(crew)` counts how many there are (4)
+- `crew[0]` pulls one out by position ("Vega")
+- `crew.append("Orbit")` adds to the end: `["Vega", "Atlas", "Echo", "Forge", "Orbit"]`
+- `crew.remove("Vega")` takes one out by name: `["Atlas", "Echo", "Forge"]`
+
+### Lists + loops: the most common combination
+
+Lists pair particularly well with loops (lesson 3):
+
+```
+FOR EACH crewmate IN crew:
+  check suit oxygen
+```
+
+The loop visits each position in the list, one at a time. Whether the crew is 4 or 40, the code is the same. The loop adjusts itself.
+
+> Almost every structured input to an LLM is a list: list of messages in a conversation, list of bios to process, list of available tools. The "many items in order" idea is **everywhere** once you move past trivial prompts.
+
+On the right, a crew of 4 names. Assign each name to the position it occupies. Remember: the first one is 0.

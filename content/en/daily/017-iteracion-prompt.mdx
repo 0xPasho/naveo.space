@@ -1,0 +1,148 @@
+---
+title: "Quick mission: iterating a prompt without losing the thread"
+intro: |
+  The output came out wrong. Do you change everything or just one thing? That choice decides whether you learn anything from the round.
+station: vega
+teaches:
+  - prompt-iteration-loop
+  - recover-from-bad-output
+characters:
+  - vega
+  - echo
+scenes:
+  - kind: prompt-AB
+    question: |
+      Vega has a prompt that classifies tickets. Accuracy dropped. She
+      looks at the prompt and sees three things to change: the order
+      of the labels, adding two examples, and raising the temperature.
+      How does she iterate next?
+    optionA: |
+      ```
+      Change all three at once and re-measure. If it improves,
+      done; if not, try something else.
+      ```
+    optionB: |
+      ```
+      Change ONE thing, measure, log the result. Then another. The
+      third last. That way you'll know which of the three moved
+      accuracy.
+      ```
+    correct: B
+    explanation: |
+      Option A is the "more changes, more chances" trap. If you move
+      three variables and accuracy rises, you do not know which one
+      helped. If it falls, you do not know which one broke it. Next
+      time you are in the same place, guessing.
+
+      Option B is the healthy iteration rule: one variable per round.
+      Slower per cycle, but it accumulates knowledge. After three
+      iterations you have three data points: "the examples added 4%",
+      "the order changed nothing", "higher temperature dropped 2%".
+      That is learning, not luck.
+
+      Exception: if you have a big framing change (whole system
+      prompt, different model), start a new experiment. But inside
+      one prompt, one variable at a time.
+  - kind: step-order-dnd
+    task: |
+      One clean iteration round. Order the steps, top to bottom.
+    steps:
+      - id: s1
+        label: "Look at the output that failed and name the concrete symptom."
+        detail: "'It's bad' is not enough. 'Confuses urgent and normal on ambiguous messages' is."
+      - id: s2
+        label: "Pick ONE hypothesis about which part of the prompt is the likely cause."
+        detail: "Just one. If you have three, write them down, but attack one at a time."
+      - id: s3
+        label: "Change that part and re-run the prompt on the same input that failed."
+        detail: "Same input is key. If you change the input, you are not measuring the change."
+      - id: s4
+        label: "Log the result: improved, no change, or worse. And why you think it happened."
+        detail: "The iteration log is what saves you next time."
+      - id: s5
+        label: "If it improved, keep the change and go back to step 1 with the next symptom."
+        detail: "Iterate until the symptom is gone. Not until the prompt is perfect."
+  - kind: slot-fill-dnd
+    task: |
+      After a bad output you look at signals. Sort each one: does it
+      say "small patch" (a detail) or "discard" (the prompt started
+      down the wrong path)?
+    slots:
+      - id: patch
+        label: "Small patch (iterate)"
+      - id: discard
+        label: "Discard (rebuild from scratch)"
+    pieces:
+      - id: p1
+        label: "The output has the structure you wanted, one preamble sentence is extra."
+        correctSlot: patch
+      - id: p2
+        label: "The model understood a completely different task (you asked for a summary, it gave you a translation)."
+        correctSlot: discard
+      - id: p3
+        label: "The JSON is fine, but one field has the wrong format."
+        correctSlot: patch
+      - id: p4
+        label: "The model is role-playing a persona you never asked for."
+        correctSlot: discard
+      - id: p5
+        label: "One few-shot example is confusing it, without that one it works better."
+        correctSlot: patch
+      - id: p6
+        label: "After 5 iterations the output is still as bad as on the first one."
+        correctSlot: discard
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of a clean iteration-log entry. A good log lets
+      you replicate and learn later.
+    parts:
+      - id: input
+        label: "Input that failed (concrete, copied as is)"
+        text: "Ticket: 'the charge came out wrong, give me my money back NOW or I'm calling my lawyer'."
+      - id: symptom
+        label: "Observed symptom (what went wrong in the output)"
+        text: "The model classified it as `normal`. I expected `urgent` given the tone and the legal mention."
+      - id: hypothesis
+        label: "Hypothesis (one variable likely to cause it)"
+        text: "The few-shot has no example with aggressive tone plus legal mention. The model has no reference for this case."
+      - id: change
+        label: "Change applied (the concrete thing you touched)"
+        text: "Added one example: 'I'll report you -> urgent'. Did not touch anything else in the prompt."
+  - kind: prompt-AB
+    question: |
+      Echo shows you two ways to log a prompt iteration after a
+      failed test. Which will help you more when you come back a
+      week later?
+    optionA: |
+      ```
+      v3: tried several things, added examples and lowered the
+      temperature. Something improved but not enough. Keep trying.
+      ```
+    optionB: |
+      ```
+      v3 (change: added example 'report you -> urgent').
+      Input: ticket #4421. Before: classified `normal`. Now:
+      `urgent`. Result: good. Side effect: ticket #4400 (a calm
+      question) is now `urgent` too. Needs review.
+      ```
+    correct: B
+    explanation: |
+      Option A is the note of someone iterating without method.
+      "Tried several things" cannot be reproduced. "Something
+      improved" cannot be measured. In a week you will not remember
+      what you tried or why.
+
+      Option B is a log that helps: it names the exact change (one
+      variable), the concrete input, before and after, and names a
+      side effect that appeared. That last line is gold, because it
+      tells you the next iteration has to be careful not to
+      over-fire `urgent` on calm cases.
+
+      Rule: the log is written for you in 7 days, not for the
+      current you that remembers everything. If the entry does not
+      let you reproduce, it does not help.
+---
+
+Mission of the day: you iterate better when you move one variable at a time
+and leave a trace. If you change everything every round, you are guessing,
+not learning.

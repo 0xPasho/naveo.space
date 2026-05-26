@@ -1,0 +1,28 @@
+---
+title: "Beyond a prompt: systems"
+order: 0
+estimatedMinutes: 2
+---
+
+## So far it was pieces. Now comes the system.
+
+You walked the full prompt path:
+
+- **Track 1**. a well-structured prompt.
+- **Track 2**. a well-sustained conversation.
+- **Track 3**. a well-defined toolkit so the model can act.
+
+Each piece, on its own, solves **a bounded scenario**. In real life, problems are uglier: classifying 50 different input types, chaining 3-4 steps where each one touches data from the previous one, doing retrieval before generating, **measuring whether all that works** when you can no longer mentally test every case.
+
+For that you need something different: **designing the system**.
+
+> A multi-step system is **several LLM (and non-LLM) pieces orchestrated** where the output of one feeds the next. Designing one well means knowing where to split the problem, how to route inputs, when to stop a loop, and how to evaluate the full result. not each piece in isolation.
+
+In this track:
+
+- <Character name="orbit" /> teaches you to **design the flow**: where to split the problem, what runs in a chain, what branches, when the loop has to cut.
+- <Character name="forge" /> brings the toolkit (what you learned in Track 3, now orchestrated).
+- <Character name="echo" /> teaches you to evaluate (how to know your system works).
+- <Character name="atlas" /> signs the capstone when your full system passes the evals.
+
+It's the last track of the onboarding. When you close it, you're a **systems engineer with LLMs**, not a user.

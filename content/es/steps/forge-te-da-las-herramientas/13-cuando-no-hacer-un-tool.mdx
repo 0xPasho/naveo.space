@@ -1,0 +1,120 @@
+---
+title: "Cuándo NO hacer un tool (y dejar que el LLM resuelva)"
+order: 13
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge está armando un MCP para un asistente de turnos. Recibió este
+    pedido del PM: _"agregá una tool que convierta nombres de turno
+    informales ('mañana', 'noche', 'la madruga') al `shift_type` formal
+    del sistema ('day', 'night', 'late_night')"_. ¿Qué hace Forge?
+  optionA: |
+    Crea la tool:
+
+    {
+      "name": "normalize_shift_name",
+      "description": "Convierte un nombre de turno informal en el shift_type formal.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "informal_name": { "type": "string" }
+        },
+        "required": ["informal_name"]
+      }
+    }
+
+    Handler: tabla hardcodeada con 30 sinónimos. mantenida a mano.
+  optionB: |
+    NO crea la tool. En lugar de eso, agrega esta frase al system prompt
+    del agente:
+
+    "Cuando el usuario use nombres informales para los turnos ('mañana',
+    'la noche', 'la madruga', etc.), interpretalos como uno de los
+    shift_type formales del sistema: 'day' (06:00-14:00), 'night'
+    (22:00-06:00), 'late_night' (02:00-06:00). Pasá siempre el formal al
+    invocar tools."
+  correct: B
+  explanation: |
+    No todo lo que un agente "hace" tiene que ser una tool. Una tool
+    cuesta:
+
+    - **Una llamada extra al modelo** (round-trip de decisión + invocación
+      + lectura del resultado).
+    - **Espacio en el catálogo** que el modelo escanea para elegir.
+    - **Código del handler** que tenés que mantener, testear, monitorear.
+
+    Si la "lógica" es traducir lenguaje natural a un valor de un set
+    cerrado, eso es **literalmente lo que el LLM hace mejor que cualquier
+    cosa**. Mapear sinónimos a labels es cero esfuerzo para el modelo y
+    cero costo de mantenimiento para vos.
+
+    Cuándo una tool sí tiene sentido:
+
+    - **Estado externo.** Tu DB, una API, un sistema de tickets. El
+      modelo no puede inventar esos datos.
+    - **Determinismo crítico.** Necesitás que el resultado sea EXACTO
+      todas las veces (cálculos financieros, fechas legales). No
+      "probable".
+    - **Side effects.** Mandar mails, crear registros, transferir
+      créditos.
+    - **Conocimiento que cambia.** El modelo tiene una snapshot estática;
+      precios actuales, stock, schedules en vivo son fuera de su mundo.
+
+    Cuándo NO:
+
+    - **Traducción de sinónimos / normalización de texto.** El modelo
+      hace esto sin tools.
+    - **Resúmenes, reformulaciones, traducciones.** Caso ideal del LLM.
+    - **Cálculo simple sobre datos que ya están en contexto.** Sumar dos
+      números que viste en el último turno no necesita tool.
+    - **Decisiones de presentación.** "¿Lo digo formal o casual?" Eso
+      sale del system prompt + tone, no de una tool.
+
+    Regla mental: **¿esto requiere acceso a algo que el modelo no tiene
+    o no puede inferir?** Si sí, tool. Si no, dejalo al modelo.
+hints:
+  - "Pensá qué hace mejor el modelo solo: lenguaje. Lo que NO puede hacer: tocar tu base, mandar mails, asegurar determinismo. Si la 'lógica' es solo lenguaje, no es una tool."
+  - "Cada tool nueva agrega ruido al catálogo. El modelo tiene que decidir entre más opciones. Las tools 'baratas' (normalización, formateo) bajan precision."
+teaches:
+  - tool-vs-prompt-tradeoff
+requires:
+  - tool-vs-prompt
+---
+
+## Toolear todo es un anti-patrón
+
+Es tentador resolver cada "lógica" con una tool. Te queda un sistema "modular", "auditable", "testable". Pero cada tool extra:
+
+1. **Le agrega trabajo al modelo.** Más opciones que escanear. Más decisiones de "¿uso esta o aquella?".
+2. **Te agrega trabajo a vos.** Otro handler que mantener, otro schema que versionar, otro pedazo del sistema que puede crashear.
+3. **Hace al agente más lento.** Cada tool call es otra ronda (modelo → tool → modelo). Lo que el LLM podía hacer en un turno, ahora son tres.
+
+Y muchas veces, la "lógica" que estás encapsulando es **algo que el LLM hace gratis y mejor**.
+
+### El test rápido: ¿qué necesita esto?
+
+Hacé esta pregunta antes de crear cualquier tool:
+
+> ¿La operación necesita acceso a datos, sistemas o garantías que el modelo no tiene?
+
+| Necesita | Tool sí | Tool no |
+|---|---|---|
+| Leer/escribir tu DB | ✓ | |
+| Llamar a una API externa | ✓ | |
+| Side effects (mails, pagos, notifs) | ✓ | |
+| Determinismo absoluto (cálculo financiero) | ✓ | |
+| Datos en tiempo real (precios, stocks) | ✓ | |
+| Traducir / normalizar / reformular | | ✓ (system prompt) |
+| Resumir contenido del contexto | | ✓ (in-prompt) |
+| Decidir tono / estilo de respuesta | | ✓ (system prompt) |
+| Hacer un cálculo simple con números visibles | | ✓ (in-prompt) |
+| Clasificar texto en categorías conocidas | | ✓ (in-prompt o output schema) |
+
+### Caso real: <Character name="forge" /> casi cae
+
+En la nave había un MCP con 23 tools. Forge auditó y encontró que 8 de ellas eran "normalizadores": `normalize_alias`, `format_date`, `parse_priority`, `expand_abbreviation`. Todas se podían reemplazar por **dos párrafos en el system prompt** que dijeran las reglas de normalización.
+
+Resultado de borrar las 8: el agente se aceleró 1.4x, el catálogo bajó a 15 tools, y la **precision en la elección de las tools restantes subió** (menos ruido, mejor decisión).
+
+> Antes de escribir una tool, preguntate: ¿esto necesita el mundo real, o solo necesita que el modelo piense un poco más en el prompt? Si es lo segundo, no es una tool.

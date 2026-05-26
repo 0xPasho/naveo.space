@@ -1,0 +1,94 @@
+---
+title: "El tool que el agente ignora"
+order: 23
+estimatedMinutes: 6
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "do_thing",
+      "description": "Hace una cosa.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "thing_id": { "type": "string" },
+          "metadata": { "type": "object" },
+          "config": { "type": "object" },
+          "options": { "type": "object" },
+          "context": { "type": "object" }
+        },
+        "required": ["thing_id", "metadata", "config", "options", "context"]
+      }
+    }
+
+    Contexto: Forge registró este tool en el MCP de la nave. En los últimos
+    50 turnos del agente, NUNCA fue invocado. ni siquiera en escenarios
+    donde claramente correspondía. ¿Cuál es la razón más probable?
+  candidates:
+    - id: vague-description
+      label: "La descripción es demasiado vaga. el modelo no sabe cuándo invocarlo."
+    - id: too-many-required
+      label: "Hay demasiados parámetros required (5), muchos como objetos sin tipo. el modelo se rinde antes de invocarlo."
+    - id: vague-name
+      label: "El nombre 'do_thing' no comunica nada. el modelo no asocia el tool con ninguna intención."
+    - id: all-of-the-above
+      label: "Las tres anteriores combinadas. el tool está roto en todas las capas."
+  correct: all-of-the-above
+  explanation: |
+    Es un caso de manual donde **las tres causas se refuerzan**:
+
+    **1. Nombre opaco.** "do_thing" no dice nada. El modelo elige tools por
+    asociación entre intención del usuario y nombre + description. Si el
+    nombre no aporta, depende 100% de la description.
+
+    **2. Description vacía.** "Hace una cosa" es el equivalente a no tener
+    description. El modelo no tiene cuándo SÍ, no tiene cuándo NO, no tiene
+    qué devuelve. Por defecto, no invoca.
+
+    **3. Parámetros tóxicos.** 5 parámetros required, todos `object` sin
+    `properties` definidas. El modelo no sabe qué meter en `metadata`,
+    `config`, `options`, `context`. Es indistinguible del ruido. Cuando el
+    modelo no sabe cómo construir los argumentos, **prefiere no invocar**
+    antes que invocar mal.
+
+    En producción, cualquiera de las tres por sí sola es suficiente para
+    que un tool sea ignorado. Las tres juntas son un caso clásico de "tool
+    construido sin pensar en el LLM como consumidor".
+
+    Cómo se arregla:
+
+    - **Nombre concreto.** Si el tool registra un incidente, se llama
+      `file_incident_report`, no `do_thing`.
+    - **Description que diga qué, cuándo SÍ, cuándo NO** (step 5).
+    - **Parámetros mínimos y tipados.** Solo lo esencial en `required`.
+      Si necesitás un objeto, definí sus `properties` con descriptions.
+hints:
+  - "Pensá desde el lado del modelo: lee SOLO el nombre + description + parámetros. No tiene acceso al código del handler. ¿Qué le dirías a alguien que solo lee eso?"
+  - "Cada una de las opciones es real. La pregunta es si una sola explica el problema o si son varias acumuladas."
+teaches:
+  - mcp-debug-ignored
+requires:
+  - tool-description-craft
+---
+
+## Cuando el agente actúa como si tu tool no existiera
+
+El síntoma es siempre el mismo: el tool está registrado, el handler funciona, pero el agente **nunca lo invoca**. Tipos de problema:
+
+- Lo invoca de menos (recall bajo): debería usarlo y no lo hace.
+- Lo invoca de más (precision bajo): lo invoca cuando no toca.
+- Lo invoca con argumentos malos: se rompe y queda mal.
+
+Tu trabajo en este step: leer un schema que está siendo ignorado, y elegir la causa raíz más probable.
+
+### Las tres dimensiones donde un tool puede fallar
+
+1. **El nombre.** ¿Comunica la intención? `lookup_crewmate` vs `find_data`.
+2. **La descripción.** ¿Dice cuándo SÍ, cuándo NO, qué garantiza?
+3. **Los parámetros.** ¿Son los mínimos? ¿Están tipados? ¿Tienen `description`?
+
+Cuando un tool falla en una de estas, ya es candidato a ser ignorado. Cuando falla en las tres, es **prácticamente invisible** para el agente.
+
+Mirá el spec a la derecha y elegí la causa más probable.
+
+> En producción, este es el debugging del 80% de los MCPs que "no funcionan": no es código roto, es **mal documentado para el LLM**.

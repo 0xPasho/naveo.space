@@ -1,0 +1,125 @@
+---
+title: "Mini-RAG: traer datos antes de responder"
+order: 15
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: rag_chain
+  toolPurpose: |
+    Diseñar un pipeline RAG (Retrieval-Augmented Generation) de 3 etapas
+    para responder preguntas técnicas usando el manual interno de la nave
+    como fuente.
+
+    Las 3 etapas:
+
+    1. retrieve(query) → trae los 3 fragmentos más relevantes del manual
+       (vía búsqueda vectorial). Output: { snippets: [{text, source}, ...] }.
+
+    2. augment(query, snippets) → arma el prompt que combina la pregunta
+       del usuario con los snippets recuperados como contexto. Output:
+       { augmented_prompt: string }.
+
+    3. generate(augmented_prompt) → genera la respuesta final usando el
+       prompt aumentado. Output: { answer: string, citations: [source, ...] }.
+
+    Formato: YAML con array `steps` (mismo schema que la cadena del step
+    02). Cada step declara: id, prompt (o función), input, output_key.
+  exampleInvocations:
+    - 'rag_chain.run("¿Cuál es la presión nominal del coolant en bay 4?") → ejecuta retrieve→augment→generate y devuelve { answer, citations }'
+  starter: |
+    steps:
+      - id: retrieve
+        # retrieve NO es un prompt LLM. es una llamada a un vector store.
+        # Declará la operación con `kind: tool_call` y el tool a invocar.
+        kind: # TODO
+        # TODO: completar input, output_key
+
+      - id: augment
+        prompt: |
+          # TODO: prompt que combina la pregunta del usuario con los snippets
+          # recuperados como contexto. El output debe ser un prompt completo
+          # listo para alimentar al generador.
+        input:
+          # TODO
+        output_key: # TODO
+
+      - id: generate
+        prompt: |
+          # TODO: prompt que produce la respuesta final, citando las
+          # fuentes de los snippets usados.
+        input:
+          # TODO
+        output_key: # TODO
+  language: markdown
+  rubric:
+    - id: retrieve-is-not-llm
+      kind: llm-judge
+      criterion: "El paso `retrieve` está declarado como una llamada a un tool / función (no como un prompt LLM). Tiene `kind: tool_call` o equivalente, y referencia a un tool de búsqueda vectorial (search_manual, vector_search, etc.). NO es un prompt LLM porque retrieval no se hace con un LLM."
+    - id: augment-passes-snippets
+      kind: llm-judge
+      criterion: "El paso `augment` toma como input la pregunta original Y los snippets del paso retrieve. Su prompt construye un mensaje completo que incluye los snippets EXPLÍCITAMENTE (con tags como <context> o <snippets>) antes de la pregunta."
+    - id: generate-uses-augmented
+      kind: llm-judge
+      criterion: "El paso `generate` toma el output de augment (el prompt aumentado) como input. NO toma la pregunta original de nuevo. eso indicaría que se saltea el augment."
+    - id: citations-required
+      kind: llm-judge
+      criterion: "El prompt de `generate` pide explícitamente que la respuesta cite las fuentes (citations) de los snippets que usó. Sin esto, el RAG es indistinguible de alucinación con datos extra al lado."
+    - id: handles-no-snippets
+      kind: llm-judge
+      criterion: "El prompt de `generate` instruye qué hacer si los snippets están vacíos o no son relevantes a la pregunta. Ejemplo: 'Si los snippets no contienen información relevante, respondé que no tenés esa info en el manual.' Sin esto, el modelo alucina cuando retrieve falla."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "RAG no es un patrón LLM. es un patrón **mixto**. La fase `retrieve` es código (búsqueda vectorial). La fase `augment` arma el prompt. Solo `generate` es realmente una llamada LLM."
+  - "El error más común: olvidarse de manejar 'snippets vacíos'. Si retrieve no encontró nada relevante, el modelo va a inventar una respuesta. Decile en el prompt qué hacer cuando no hay context útil."
+  - "Las citations son críticas. Sin ellas, el usuario no puede verificar la respuesta y RAG pierde su ventaja sobre 'modelo respondiendo de memoria'."
+teaches:
+  - mini-rag-design
+requires:
+  - chain-design-basics
+---
+
+## RAG: el modelo no tiene que saber todo de memoria
+
+Los modelos tienen conocimiento congelado en entrenamiento. todo lo que pasó después, o todo lo que es interno a tu organización, **no lo saben**. Hay dos formas de darles acceso:
+
+1. **Tools** (Track 3). el modelo invoca funciones que consultan info en tiempo real.
+2. **RAG**. antes de generar, traés datos relevantes y los **inyectás en el prompt** como contexto.
+
+RAG es la opción dominante cuando:
+
+- Tenés un corpus grande (manuales, docs, transcripciones).
+- Las preguntas son sobre **contenido**, no sobre acciones.
+- Querés que las respuestas vengan citadas (verificables).
+
+### Las tres etapas
+
+```
+[query del usuario]
+        ↓
+   retrieve   (búsqueda vectorial sobre el corpus → top-K snippets)
+        ↓
+   augment    (compone un prompt: snippets + pregunta original)
+        ↓
+   generate   (LLM responde usando el prompt aumentado, citando fuentes)
+        ↓
+[respuesta + citations]
+```
+
+Tu trabajo: diseñar la configuración YAML del pipeline. Tres steps, encadenados por output_keys.
+
+### La trampa que rompe RAG
+
+El problema más común no es retrieval. es que el **generate** no maneja el caso "los snippets no son relevantes a la pregunta". Cuando eso pasa, si no le decís al modelo qué hacer, **inventa** una respuesta con datos sueltos de los snippets. Eso es peor que no responder: parece confiable, lleva citations falsas, y el usuario no se da cuenta.
+
+> Regla práctica: en el prompt del generador, **siempre** incluí algo como _"Si los snippets no contienen información relevante, decí que no encontraste eso en el manual."_ Es la diferencia entre RAG honesto y RAG que alucina.
+
+### Cómo se evalúa
+
+5 criterios LLM-judge:
+
+1. `retrieve` declarado como llamada a tool/función (no LLM).
+2. `augment` recibe pregunta + snippets, los combina explícitamente.
+3. `generate` usa el augmented_prompt (no la pregunta cruda).
+4. `generate` pide citations de los snippets.
+5. `generate` maneja "snippets vacíos / no relevantes" sin alucinar.

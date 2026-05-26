@@ -1,0 +1,136 @@
+---
+title: "Routing by rules vs by LLM"
+order: 9
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Orbit shows you two routers for the same problem: route incoming
+    messages to one of four flows. The actual inputs you receive are
+    **very varied** (free form, jargon, mixed languages, typos). Which
+    router do you pick?
+  optionA: |
+    RULES-BASED ROUTER (code):
+
+    ```
+    function route(text) {
+      const lower = text.toLowerCase()
+      if (lower.includes("ticket") || lower.includes("incident") || lower.includes("failure")) return "incident_report"
+      if (lower.includes("shift") || lower.includes("on-call") || lower.includes("who is on")) return "shift_info"
+      if (lower.startsWith("who is")) return "crewmate_lookup"
+      return "escalate_to_human"
+    }
+    ```
+
+    Fast (<1ms), deterministic, free. Maintained by hand.
+  optionB: |
+    LLM-BASED ROUTER (prompt):
+
+    "You are a router. Read the user message and return exactly one of:
+    incident_report, shift_info, crewmate_lookup, escalate_to_human.
+    If unsure, escalate."
+
+    + user input in `{{input}}`.
+
+    Latency: ~500ms. Cost: ~500 tokens per call. No code to maintain
+    when input patterns change.
+  correct: B
+  explanation: |
+    For inputs that are **varied, free-form, with jargon and mixed
+    languages**, rules break at the first case you didn't anticipate.
+    The LLM router generalizes by **meaning**, not by keywords.
+
+    When to pick each:
+
+    | Case | Router |
+    |---|---|
+    | Structured inputs (forms, dropdowns, IDs) | Rules |
+    | 2-3 very distinct categories (urgent vs non-urgent) | Rules |
+    | Latency-critical (<10ms) | Rules |
+    | Free inputs, multilingual, jargon | LLM |
+    | More than 4-5 routes with semantic overlap | LLM |
+    | Need a non-obvious "safe default" | LLM |
+
+    Common error: doing rules-based "to save cost" on inputs that ARE
+    free. Ends up with a router full of exceptions, thousands of
+    patches per new case, and still mis-routing in production.
+
+    <Character name="orbit" />'s practical rule: **start with LLM,
+    measure accuracy with your eval set, and only fall back to rules
+    when you can prove with data that rules match just as well**. Almost
+    never happens.
+hints:
+  - "Rules work when you can enumerate the inputs. If you can't enumerate them, they're the wrong rules."
+  - "LLM cost sounds high until you compare it with the cost of your time maintaining the rules + the bugs leaking to production."
+  - "Edge case: for routing on hot paths with thousands of QPS, you can use a small classifier (not the big model) as router. It's the mix 'cheap LLM as adaptive rules'."
+teaches:
+  - rules-vs-llm-routing
+requires:
+  - prompt-router
+---
+
+## Two router flavors, two different contexts
+
+In step 08 you wrote an LLM-based router. But another alternative exists: **rules-based router**, a code function with `if/else` on keywords and patterns. When does each one fit?
+
+### Rules: fast, cheap, fragile
+
+Pros:
+
+- Latency <1ms.
+- Zero cost per invocation.
+- Deterministic. Same input, same route, always.
+- Auditable. Anyone reads the code and gets what it does.
+
+Cons:
+
+- Fragile to input variations. A typo, a synonym, a translation and the rule fails.
+- Maintenance explodes. Every new case is another branch, and it never ends.
+- Doesn't generalize. If the input corpus changes, rules don't learn.
+
+### LLM: flexible, expensive, non-deterministic
+
+Pros:
+
+- Generalizes by meaning, not by keywords.
+- Handles synonyms, multilingual, typos for free.
+- You can wire the safe default (escalate) into the route description, not into code.
+
+Cons:
+
+- Latency 200-2000ms.
+- Cost per invocation.
+- Non-deterministic (without temperature=0 and a well-built eval set).
+
+### The decision tree
+
+```
+Is the input structured (form, JSON, dropdown)?
+  YES → rules. Done.
+  NO → continue.
+
+Do you have 2-3 very distinct categories that a simple regex separates?
+  YES → rules with a clear fallback.
+  NO → continue.
+
+Is critical latency <50ms or do you have thousands of QPS?
+  YES → rules + optional escalation to LLM for default cases.
+  NO → LLM.
+```
+
+> The error <Character name="orbit" /> sees most: teams that start with rules "to save money" and, six months later, have 4000 lines of `if/else` nobody understands, 60% accuracy, and a "special cases" backlog growing faster than it closes.
+
+### Hybrid: the best of both
+
+In serious systems, the winning pattern is usually:
+
+1. **A very fast rules layer** for the obvious cases (95% of real traffic).
+2. **An LLM layer** that takes everything rules flag as "not sure".
+
+Rules give low latency on the happy path; the LLM catches the long tail without blowing up costs.
+
+### Your exercise
+
+On the right, two routers for the same problem: free input, multilingual, with internal jargon. Pick which one you'd ship and why.

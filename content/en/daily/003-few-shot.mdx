@@ -1,0 +1,163 @@
+---
+title: "Quick mission: few-shot beats more explanation"
+intro: |
+  When the model does not get it, examples teach faster than paragraphs of theory.
+station: vega
+teaches:
+  - few-shot-basics
+  - few-shot-selection
+characters:
+  - orbit
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Orbit is classifying incoming messages as `urgent`, `normal`, or
+      `spam`. The model keeps confusing `urgent` with `normal`. You have
+      to improve the prompt. What do you add?
+    optionA: |
+      ```
+      To classify better, consider that urgent is any message where the
+      sender expresses immediate need, high priority, or potential loss
+      if not addressed quickly. Normal is anything else that is not spam.
+      Spam is promotional or unsolicited.
+      ```
+    optionB: |
+      ```
+      Examples:
+
+      Message: "The server is down, we need it back up now."
+      Category: urgent
+
+      Message: "Whenever you can, take a look at ticket #123."
+      Category: normal
+
+      Message: "You won an iPhone, click here."
+      Category: spam
+      ```
+    correct: B
+    explanation: |
+      More abstract explanation rarely fixes classification confusion.
+      The model already understands the words "urgent" and "normal" in
+      English. The problem is not vocabulary, it is where to draw the
+      line between the two.
+
+      Three concrete examples define that line much better than a
+      definition. "The server is down" anchors `urgent`; "whenever you
+      can" anchors `normal`. The model now has reference points.
+
+      Practical few-shot rule: 3 examples beat 3 paragraphs. If the model
+      keeps getting it wrong, do not write another paragraph. Add another
+      example, ideally for the borderline case that fails.
+  - kind: step-order-dnd
+    task: |
+      Order the steps to build a good few-shot prompt from scratch. Top
+      first, bottom last.
+    steps:
+      - id: s1
+        label: "Define the possible labels (e.g. urgent / normal / spam)."
+        detail: "Without this, you do not know which categories you have to cover with examples."
+      - id: s2
+        label: "Write 1 clear example per label."
+        detail: "The most representative case for each category. No tricks."
+      - id: s3
+        label: "Cover borderline cases where the model will get confused."
+        detail: "The lookalike pairs that cross the line between two labels."
+      - id: s4
+        label: "Close with the new input to classify, without the answer."
+        detail: "The model completes following the pattern of the examples."
+  - kind: prompt-anatomy
+    task: |
+      Vega built this few-shot prompt to detect whether a review is about
+      the product or the service. Label each part: the instruction, the
+      positive example, the contrast example, and the new input.
+    parts:
+      - id: instruction
+        label: "Instruction (what to do)"
+        text: "Classify each review as `product` (talks about the item) or `service` (talks about shipping or support)."
+      - id: positive
+        label: "Positive example (clear case, obvious label)"
+        text: "Review: 'The coffee maker filters very slowly, water barely flows through.' -> product"
+      - id: negative
+        label: "Contrast example (opposite case, other label)"
+        text: "Review: 'It arrived 4 days late and the box was open.' -> service"
+      - id: input
+        label: "New input (the case to classify, no answer)"
+        text: "Review: 'Support took 2 weeks to reply to my email.' -> "
+  - kind: prompt-AB
+    question: |
+      You need to classify incoming emails as `invoice`, `inquiry`,
+      `complaint`, or `other`. Is 1 example per category enough, or
+      should you cover 3 to 5 different cases?
+    optionA: |
+      ```
+      Example:
+      
+      Email: "Attached invoice 0042 for May services."
+      Category: invoice
+      
+      New email: {{input}}
+      Category:
+      ```
+    optionB: |
+      ```
+      Examples:
+      
+      Email: "Attached invoice 0042 for May services." -> invoice
+      Email: "How much is the annual plan?" -> inquiry
+      Email: "The product arrived broken, I want a refund." -> complaint
+      Email: "Late payment, we sent the receipt on Monday." -> invoice
+      Email: "Hi, is anyone there?" -> other
+      
+      New email: {{input}}
+      Category:
+      ```
+    correct: B
+    explanation: |
+      With one example per category the model learns the central case,
+      but it has no references for the edges. What about an email that
+      mentions an invoice but is really a complaint? An inquiry that
+      could be a complaint? Without examples for those, it has to
+      guess.
+      
+      With 3 to 5 examples covering different cases, the model sees
+      the variation: "late payment" is also invoice, "is anyone there?"
+      is other, not complaint. The boundary between labels becomes
+      explicit.
+      
+      More examples is not always better: if the 5 you add are nearly
+      identical, you teach nothing new. The useful rule is to cover
+      different cases, not fill space with repeats.
+  - kind: slot-fill-dnd
+    task: |
+      You are building a few-shot prompt to classify reviews as
+      `product` or `service`. Sort each example: does it help the
+      prompt or hurt it?
+    slots:
+      - id: good
+        label: "Good few-shot example"
+      - id: bad
+        label: "Bad few-shot example"
+    pieces:
+      - id: p1
+        label: "Review: 'Arrived late and broken.' -> service. Covers two distinct complaints in one line, clear label."
+        correctSlot: good
+      - id: p2
+        label: "Review: 'The coffee maker filters slowly.' -> service. Talks about the item but the label says service."
+        correctSlot: bad
+      - id: p3
+        label: "Review: 'My shipment never arrived.' -> service. Clean borderline case, correct label."
+        correctSlot: good
+      - id: p4
+        label: "Review: 'Arrived late.' -> service. And another: 'Arrived late again.' -> service. And another nearly identical."
+        correctSlot: bad
+      - id: p5
+        label: "Review: 'Support takes forever to reply.' -> service. Different from shipping, same label, reinforces the pattern."
+        correctSlot: good
+      - id: p6
+        label: "Review: 'It is good.' -> product. Too short and ambiguous, could be service."
+        correctSlot: bad
+---
+
+Mission of the day: when the model does not get it, do not write more. Show
+more.

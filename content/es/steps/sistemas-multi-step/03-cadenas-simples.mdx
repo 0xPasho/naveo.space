@@ -1,0 +1,123 @@
+---
+title: "Tu primera cadena: tres pasos en YAML"
+order: 3
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: report_processing_chain
+  toolPurpose: |
+    Diseñar una cadena de 3 pasos para procesar reportes de turno. Cada
+    paso es un prompt focal con input, output, y dependencias declaradas.
+
+    Pasos requeridos:
+    - classify_report: recibe el texto crudo, devuelve { category: "safety" | "maintenance" | "social" | "other" }.
+    - extract_fields: recibe el texto crudo + la categoría, devuelve { fields: {...} } con campos específicos de esa categoría.
+    - summarize: recibe la categoría + los fields, devuelve { summary: "string" }.
+
+    Formato: YAML con un array `steps`, cada step con:
+    - id (string único)
+    - prompt (texto del prompt para esa etapa)
+    - input (objeto declarando qué keys necesita y de dónde vienen)
+    - output_key (string. bajo qué nombre guardar el output en el contexto compartido)
+  exampleInvocations:
+    - 'chain.run("Bay 4: válvula 7 sigue tirando alarma intermitente desde anoche.") → ejecuta los 3 steps en orden y devuelve { category, fields, summary }'
+  starter: |
+    steps:
+      - id: classify_report
+        prompt: |
+          # TODO: prompt que clasifica el reporte
+        input:
+          # TODO: qué keys necesita y de dónde
+        output_key: # TODO
+
+      - id: extract_fields
+        prompt: |
+          # TODO
+        input:
+          # TODO
+        output_key: # TODO
+
+      - id: summarize
+        prompt: |
+          # TODO
+        input:
+          # TODO
+        output_key: # TODO
+  language: markdown
+  rubric:
+    - id: three-steps-defined
+      kind: llm-judge
+      criterion: "El YAML define los 3 steps con los ids correctos (classify_report, extract_fields, summarize), en ese orden."
+    - id: input-output-wiring
+      kind: llm-judge
+      criterion: "Las dependencias están declaradas correctamente: classify_report toma el reporte crudo; extract_fields toma el reporte + el output de classify_report (la categoría); summarize toma la categoría + los fields del paso anterior. NO hay step que dependa de uno que viene DESPUÉS."
+    - id: prompts-are-focal
+      kind: llm-judge
+      criterion: "Cada prompt de cada step se enfoca EN UNA SOLA cosa. classify_report solo clasifica (no extrae datos extra). extract_fields solo extrae (no clasifica ni resume). summarize solo resume. Los prompts NO mezclan responsabilidades."
+    - id: output-keys-unique
+      kind: llm-judge
+      criterion: "Cada step declara un `output_key` único (ej: category, fields, summary). Los siguientes steps referencian esas keys explícitamente en su `input`."
+    - id: classify-uses-enum
+      kind: llm-judge
+      criterion: "El prompt de classify_report es estricto: pide categoría exactamente como una de las 4 opciones (safety, maintenance, social, other) sin texto extra. Si el output puede ser libre, el siguiente step no puede confiar en el valor."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Pensá en cada step como una función pura: dado el input declarado, devuelve siempre el output declarado. Sin side effects, sin acceso a info que no esté declarada."
+  - "El prompt de classify_report debería terminar con algo como 'Responde con UNA SOLA palabra: safety, maintenance, social o other.'. para que el siguiente step pueda branchear sobre el valor."
+  - "El prompt de extract_fields recibe la categoría como contexto. En su prompt podés ramificar: 'Si category=safety, extraé riesgo+ubicación+severidad. Si category=maintenance, extraé sistema+parte+tiempo. ...'"
+teaches:
+  - chain-design-basics
+requires:
+  - chain-vs-mono-prompt
+---
+
+## El primer chain del Track
+
+Vas a diseñar la **configuración** de una cadena de 3 pasos. No es código que ejecutás. es un **artefacto declarativo** (YAML) que un runtime de chains puede leer y ejecutar paso a paso.
+
+### El formato
+
+Cada step tiene cuatro campos:
+
+```yaml
+- id: classify_report           # identificador único del step
+  prompt: |                     # el prompt LLM
+    Eres un clasificador...
+    Texto: {{ report }}
+  input:                        # de dónde sacar los placeholders
+    report: chain.input.text
+  output_key: category          # bajo qué nombre guardar el resultado
+```
+
+El runtime ejecuta los steps en orden. Después del primer step, el contexto tiene `category` con el output del classifier. El segundo step lo puede usar como `{{ category }}` en su prompt.
+
+### Lo que tu cadena tiene que hacer
+
+Procesar reportes como:
+
+> _"Bay 4: válvula 7 sigue tirando alarma intermitente desde anoche."_
+
+Y devolver al final:
+
+```json
+{
+  "category": "maintenance",
+  "fields": { "system": "bay 4 valve 7", "issue": "intermittent alarm", "time": "since last night" },
+  "summary": "Válvula 7 en bay 4 con alarma intermitente desde anoche."
+}
+```
+
+Tres steps, cada uno con responsabilidad única, todos encadenados por output_keys explícitas.
+
+### Cómo se evalúa
+
+5 criterios LLM-judge sobre:
+
+1. Los 3 steps definidos con ids correctos.
+2. Las dependencias bien encadenadas (sin referencias circulares).
+3. Cada prompt es focal (una sola responsabilidad).
+4. Output keys únicas y referenciables.
+5. El classifier es estricto (output controlado).
+
+> Diseñar una buena cadena es ingeniería de software más que prompting. Pensá en cada step como una función pura. Inputs declarados, output declarado, sin sorpresas.

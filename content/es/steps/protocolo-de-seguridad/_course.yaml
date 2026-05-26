@@ -1,0 +1,13 @@
+slug: protocolo-de-seguridad
+title: "Protocolo de seguridad"
+order: 1
+narrativeHook: |
+  Atlas te lleva a la sala de operaciones de seguridad y te presenta a
+  Hex, la analista de red team. La crew ya desplegó sistemas que reciben
+  ataques. por inputs hostiles, por usuarios listos, por datos que no
+  deberían haber visto. Veinte rituales en seis unidades: clasificar
+  incidentes, romper inyección de prompts, blindar datos y secretos,
+  scopear tools destructivas, calibrar alucinación y validar output,
+  red-team y capstone. Hex te enseña a romperlos antes que el atacante;
+  Atlas firma al final.
+estimatedMinutes: 150

@@ -1,0 +1,158 @@
+---
+title: "Stateful MCPs: the cart that remembers"
+order: 21
+estimatedMinutes: 12
+exercise:
+  kind: tool-handler-implement
+  toolName: cart_handlers
+  toolSchema: |
+    Three related tools that operate on the same user's "cart":
+
+    {
+      "name": "cart_add",
+      "description": "Adds an item to the current user's cart.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item_id": { "type": "string" },
+          "quantity": { "type": "number" }
+        },
+        "required": ["item_id", "quantity"]
+      }
+    }
+
+    {
+      "name": "cart_remove",
+      "description": "Removes an item from the cart.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item_id": { "type": "string" }
+        },
+        "required": ["item_id"]
+      }
+    }
+
+    {
+      "name": "cart_checkout",
+      "description": "Closes the cart and creates the order.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  starter: |
+    // Three handlers that share state: the current user's cart.
+    // Available: getUserId() returns the session user's id.
+    //            db.catalog.get(item_id) returns {price, stock} or null.
+    //            db.orders.create({userId, items, total}) creates the order.
+    //
+    // Your job: implement all 3 handlers keeping the cart state coherent
+    // across calls. Think about WHERE that state lives.
+
+    const carts = /* TODO */ null;
+
+    async function cart_add({ item_id, quantity }) {
+      // TODO
+    }
+
+    async function cart_remove({ item_id }) {
+      // TODO
+    }
+
+    async function cart_checkout() {
+      // TODO
+    }
+  language: javascript
+  scenarios:
+    - description: "Add item to cart (user1, item_id='X', quantity=2). Cart starts empty."
+      expected: "ok: true. Cart state: {X: 2} for user1."
+    - description: "Add another item to the SAME cart (user1 already has X, now adds Y=1)."
+      expected: "ok: true. user1's cart: {X: 2, Y: 1}. Does NOT overwrite the previous item."
+    - description: "Remove X from user1's cart. Y should remain."
+      expected: "ok: true. user1's cart: {Y: 1}."
+    - description: "Checkout: user1 closes their cart. Has 1×Y. Stock OK. The order is created, the cart is emptied."
+      expected: "ok: true, order_id. user1's cart is empty afterwards."
+    - description: "Isolation by user: user2 has their own cart. Adding Z to user2's cart does NOT touch user1's cart."
+      expected: "Each user has their own cart. No collision."
+  rubric:
+    - id: state-persistence
+      kind: llm-judge
+      criterion: "The cart state persists between calls. Uses a structure (Map, object, or store) declared OUTSIDE the functions so multiple successive invocations share state. Does NOT initialize the cart every time a handler is called."
+    - id: per-user-isolation
+      kind: llm-judge
+      criterion: "State is indexed by user (via `getUserId()` or another mechanism). user1's cart does NOT mix with user2's. Each user has their own space."
+    - id: add-accumulates
+      kind: llm-judge
+      criterion: "`cart_add` ACCUMULATES items in the existing cart, doesn't overwrite. If the item exists, sums the quantity (or replaces, by explicit design). If new, adds it."
+    - id: remove-works
+      kind: llm-judge
+      criterion: "`cart_remove` correctly removes the item from the current user's cart. Doesn't affect other items or other users' carts."
+    - id: checkout-clears
+      kind: llm-judge
+      criterion: "`cart_checkout` creates the order with the current items AND LEAVES THE CART EMPTY afterwards. If `cart_add` is called again afterwards, it starts on a clean cart."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "To keep state between calls, declare the variable OUTSIDE the functions. Example: `const carts = new Map();` before the handlers."
+  - "Per-user isolation: use `getUserId()` as the Map key. `carts.get(userId)` returns the current user's cart."
+  - "`cart_add` should read the current cart, add the new item, and save it back. If no cart exists yet for that user, create it empty first."
+teaches:
+  - mcp-stateful-tools
+requires:
+  - mcp-error-handling
+---
+
+## The handler that survives between calls
+
+So far every tool has been **stateless**: each invocation independent, no memory of the previous one. That works for lookups, but breaks for multi-step operations.
+
+A **shopping cart** is the classic case:
+
+- The user adds an item, then another, then removes one, then checks out.
+- Every tool call has to see what the previous ones left behind.
+
+If every handler starts with an empty cart, it doesn't work. **State has to live outside the functions.**
+
+### The three tools
+
+On the right you have three tools that operate on the same cart:
+
+- **`cart_add`**. adds an item with quantity.
+- **`cart_remove`**. removes an item.
+- **`cart_checkout`**. closes the cart and creates the order.
+
+Your job: implement the handlers so that **state persists between calls** and **is isolated per user**.
+
+### The pattern
+
+```js
+const carts = new Map();  // userId -> { itemId -> quantity }
+
+async function cart_add({ item_id, quantity }) {
+  const userId = getUserId();
+  if (!carts.has(userId)) carts.set(userId, {});
+  const cart = carts.get(userId);
+  cart[item_id] = (cart[item_id] || 0) + quantity;
+  return { ok: true };
+}
+```
+
+Three things that matter:
+
+1. **The `Map carts` lives outside the functions.** If you declare it inside, it resets every call.
+2. **Indexed by `userId`.** Each user has their own cart. Without this, everyone shares the same cart and it breaks on the second concurrent user.
+3. **`cart_add` accumulates**. doesn't overwrite. If there's already 2 of X and you add 1 more, you get 3, not 1.
+
+### How it's evaluated
+
+5 llm-judge criteria over 5 scenarios:
+
+1. State persists between calls.
+2. Isolated per user.
+3. `cart_add` accumulates correctly.
+4. `cart_remove` removes without breaking the rest.
+5. `cart_checkout` creates the order and leaves the cart empty.
+
+> This pattern is the foundation of ANY stateful MCP. It's worth implementing it well here. you'll use it in much more complex real systems.

@@ -1,0 +1,55 @@
+---
+title: "Bad description vs good description"
+order: 11
+estimatedMinutes: 3
+demo:
+  id: prompt-dial
+  props:
+    presenter: forge
+    intent: "Same tool, two descriptions. The model isn't wrong by accident."
+    before:
+      label: "Vague description"
+      prompt: |
+        Tool: do_thing
+        Description: "does something with data"
+        Parameters: { input: string }
+      output: |
+        The agent almost never calls this tool. When it does, it sends
+        random strings. sometimes the user's raw query, sometimes
+        invented content. Rarely useful.
+
+        Real logs: do_thing was invoked in 3% of conversations where it
+        should have been used. Zero correct calls.
+    after:
+      label: "Precise description"
+      prompt: |
+        Tool: lookup_crewmate
+        Description: "Returns name, role, and current shift for a crewmate by
+        alias. Use when the user mentions a crewmate by alias (e.g. 'vega',
+        'echo') and you need their role or shift assignment. Do NOT use for
+        crewmates referenced only by full name."
+        Parameters: { alias: string }
+      output: |
+        The agent invokes it reliably whenever an alias appears in the
+        user's input. It ignores mentions by full name (correct: there's
+        another tool for that).
+
+        Real logs: 94% correct invocations, 0% wrong-context invocations.
+    note: |
+      The model isn't lazy: it's copying you. If your description says
+      "does something with data", the invocation will be as ambiguous as
+      that sentence. Every word in the description buys precision in the
+      decision.
+---
+
+This step is the **heart of the Track**, condensed into a single comparison.
+
+<Character name="Forge" /> already explained the principle in the previous step. Here you see it in data: same tool structure, two descriptions, two radically different production behaviors.
+
+Toggle between the **Before** and **After** tabs. Notice three things that change:
+
+- **The main verb** ("does something" vs "returns name, role, and current shift").
+- **The use criterion** (absent vs "Use when the user mentions a crewmate by alias").
+- **The anti-patterns** (absent vs "Do NOT use for crewmates referenced only by full name").
+
+All three live in the description. None in the tool name.

@@ -1,0 +1,70 @@
+---
+title: "Condiciones: cómo decide la nave"
+order: 4
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    El radar detecta 3 obstáculos al frente. El protocolo de vuelo dice:
+
+    <DecisionFlow condition="¿obstáculo en trayectoria?" ifAction="desviar" elseAction="continuar a velocidad" />
+
+    ¿Qué camino toma la nave?
+  optionA: |
+    **Desviar.** La condición se cumple. hay obstáculos en la trayectoria,
+    entonces dispara la rama `SI`.
+  optionB: |
+    **Continuar a velocidad.** La nave ya venía moviéndose, así que sigue
+    moviéndose salvo que algo la detenga.
+  correct: A
+  explanation: |
+    Un programa con `SI` no pregunta qué venía pasando antes. Evalúa la
+    condición **ahora mismo**. El radar dice que hay obstáculos en la
+    trayectoria → corre la rama `SI`. La rama `SINO` solo se dispara si la
+    condición es falsa. La misma forma aplica a un prompt: *"si el bio no
+    tiene email, devolvé null. si tiene, devolvé el email"*. Mismo
+    `SI / SINO`.
+teaches:
+  - conditionals-basics
+requires:
+  - sequencing-basics
+---
+
+## Dos caminos, una decisión
+
+Una secuencia ejecuta todo de arriba a abajo. Pero a veces la crew tiene que **decidir**: hago A o hago B, depende de lo que esté pasando ahora.
+
+Eso es una **condición**. En código:
+
+<DecisionFlow condition="¿condición?" ifAction="acción_A" elseAction="acción_B" />
+
+En la nave:
+
+- _Si la esclusa está cerrada, encendé. si no, abortá._
+- _Si el oxígeno está debajo del 20%, sonar alarma. si no, silencio._
+- _Si la mano del capitán está en la llave, dispará. si no, esperá._
+
+La condición es una pregunta con respuesta sí/no. La rama `SI` corre cuando sí. La rama `SINO` corre cuando no.
+
+### Mirálo correr con un valor concreto
+
+Tomá la regla del oxígeno y dale dos lecturas distintas del sensor:
+
+<DecisionFlow condition="oxígeno < 20%?" ifAction="sonar alarma" elseAction="silencio" />
+
+- Sensor en **35%** → la condición es **falsa**. Corre `SINO`: silencio.
+- Sensor en **12%** → la condición es **verdadera**. Corre `SI`: sonar alarma.
+
+Misma estructura, dos resultados. lo único que cambió fue el valor que la nave está leyendo en este instante. El programa no "recuerda" qué pasaba antes; cada vez que llega a la condición, **mide de nuevo**.
+
+### La misma forma sirve para un prompt
+
+Cuando le pidas algo al modelo más adelante, vas a escribir esta misma decisión en español:
+
+> *"Si el bio menciona un email, devolvé el email. Si no, devolvé null."*
+
+Misma decisión binaria, mismas dos ramas. Lo único que cambió es que el "sensor" ahora es el texto de entrada y el "actuador" es lo que el modelo te devuelve.
+
+A la derecha, una llamada binaria. Leé el protocolo. Leé la situación. Elegí.

@@ -1,0 +1,95 @@
+---
+title: "The drafter-reviewer loop"
+order: 7
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    You have to hand the captain an executive summary of an incident.
+    You already got the model's draft on the previous turn. Which
+    follow-up brings back a truly better draft on the next turn?
+  optionA: |
+    ```
+    Make it better.
+    ```
+  optionB: |
+    ```
+    Now switch roles. You're Atlas, captain, reading this draft at
+    6 AM in the middle of another incident. Give me a numbered list
+    of 3 things that are weak or confusing in this draft, from your
+    point of view. Don't rewrite yet.
+    ```
+  correct: B
+  explanation: |
+    "Make it better" is the beginner's favorite follow-up. The model
+    picks what to "improve" and rarely matches what you need. It hands
+    back a paragraph rewritten with cosmetic changes and the same
+    structural weakness.
+
+    Prompt B activates the **drafter-reviewer loop**: ask the model
+    to switch role and critique its own output from a new perspective,
+    BEFORE asking it to rewrite. When an "Atlas-reviewer" detects
+    three concrete weaknesses, you can pick which to attack and ask
+    for surgical rewrites (previous lesson). The draft improves by
+    construction, not by luck.
+
+    The key trick of the loop:
+
+    1. **Drafter** produces. That's what you already have.
+    2. **Reviewer** (same model, different role) critiques with
+       concrete criteria. Numbered list, no rewrite.
+    3. **Drafter** comes back and corrects only the chosen points.
+
+    It works because the model is good at spotting problems when you
+    ask it to BE a detector. Not as good at spotting its own while
+    writing.
+
+    This is the recipe for high-rigor outputs in production. exec
+    summaries, marketing copy, code for something critical. Where
+    "make it better" loses, the drafter-reviewer loop wins.
+teaches:
+  - drafter-reviewer-loop
+requires:
+  - multi-turn-followup
+  - surgical-correction-prompt
+---
+
+## Two roles, one conversation
+
+The model is better at **critiquing** a draft than at **writing the perfect draft**. That asymmetry gets exploited with a classic pattern: the drafter-reviewer loop.
+
+### The pattern
+
+```
+Turn N:   "Write me X."                          → DRAFTER produces
+Turn N+1: "Now you're <reviewer>. List 3 weak
+           things. Don't rewrite."               → REVIEWER critiques
+Turn N+2: "Attack points 1 and 3 with these
+           corrections..."                       → DRAFTER fixes
+```
+
+Same model. Same conversation. The role swap between turns is the only thing that changes. And that alone raises output quality significantly.
+
+### Why it works
+
+When the model writes, it's optimizing "produce something plausible". When you ask it to switch role and critique, it's optimizing "find flaws". Two different cognitive modes. no human can run both at the same time, the model can't either.
+
+> Useful variant: the reviewer can be a **specific persona**. *"You're Atlas reading this at 6 AM."*. *"You're a skeptical customer evaluating this proposal."*. *"You're a security linter."* The more concrete the role, the more concrete the findings.
+
+### What DOESN'T work
+
+- **"Make it better."** Zero criteria. Cosmetic changes.
+- **"Rewrite it and fix what's wrong."** The model picks and rarely lands right.
+- **"Make it more professional."** Vague adjective = a coat of varnish.
+
+### What does
+
+- **"You're <concrete role>. List 3 weak things. Don't rewrite yet."**
+
+The "don't rewrite yet" matters: if you let it rewrite in the same turn, it re-enters drafter mode and the critique gets diluted into a new version.
+
+> Tip: when you ask for critiques, ask for a NUMBER ("3 things"). If you say "list the weaknesses", the model brings 1 or 12, no commitment. With a fixed number, it forces a pick of the most important ones.
+
+On the right, two follow-ups after a draft. Which one actually raises it?

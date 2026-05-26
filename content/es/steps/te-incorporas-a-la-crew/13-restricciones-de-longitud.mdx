@@ -1,0 +1,115 @@
+---
+title: "Restricciones de longitud: forzar el output corto"
+order: 13
+estimatedMinutes: 7
+characters:
+  - vega
+exercise:
+  kind: prompt-task
+  task: |
+    Vega necesita notificaciones ultra cortas para la pantalla del puente.
+    Cada notificación debe ser **exactamente una oración**, máximo 120
+    caracteres, terminando con punto. Nada de signos de exclamación o
+    interrogación. Nada de listas. Nada de párrafos.
+
+    Escribí un prompt que reciba un evento de turno (`{{input}}`) y
+    devuelva esa notificación. El output debe ser SOLO la oración.
+  starter: |
+    <task>
+      Genera una notificación para la pantalla del puente.
+
+      Reglas estrictas:
+      - Exactamente UNA oración.
+      - Máximo 120 caracteres.
+      - Termina con punto (no con ! ni con ?).
+      - Sin preamble, sin comillas, sin listas.
+    </task>
+
+    <event>
+      {{input}}
+    </event>
+  testCases:
+    - input: "Detección de fuga en bay 7 a las 02:14. Refrigerante derramándose a razón de 5L/min. Forge en camino con kit de sellado. Estimado de contención: 6 minutos. Sin riesgo para crew adyacente."
+    - input: "Reciclador de agua del deck 3 completó su ciclo de mantenimiento programado sin incidencias."
+    - input: "Tres eventos en el turno nocturno: panel de comunicaciones bay 2 reiniciado, comida programada para 06:00, y Atlas autorizó cambio de turno anticipado."
+  rubric:
+    - id: one-sentence
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^[^.!?\\n]+\\.\\s*$"
+        flags: "s"
+      criterion: "Exactamente una oración. termina con punto, sin ! ni ?, sin saltos de línea internos, sin segunda oración."
+    - id: within-length
+      kind: deterministic
+      check: length-between
+      args:
+        min: 20
+        max: 120
+      criterion: "Entre 20 y 120 caracteres."
+    - id: captures-essence
+      kind: llm-judge
+      criterion: "La oración captura el hecho central del evento (no detalles secundarios). Para reportes con múltiples eventos, selecciona el de mayor prioridad operacional. No inventa información que no esté en el input."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Especificá el límite **en caracteres**, no en palabras. Los modelos cuentan caracteres mejor que palabras."
+  - "Decile explícitamente: 'NO uses signos de exclamación. NO uses interrogación.' Sin esa restricción dura el modelo va a meter ! para énfasis."
+  - "Para el caso 3 (múltiples eventos), agregá al prompt: 'Si hay varios eventos, elegí el más crítico operacionalmente.' Sin esa regla el modelo va a intentar mencionar los tres y se va de los 120 caracteres."
+teaches:
+  - length-constraints
+requires:
+  - prompt-task-basics
+---
+
+## Por qué los modelos son malos para contar
+
+Los LLMs **no cuentan bien**. No tienen una calculadora interna. Cuando les decís "máximo 50 palabras", están aproximando, no midiendo. Por eso las restricciones de longitud necesitan más cuidado que otras.
+
+### Tres restricciones que funcionan mejor que "máximo N palabras"
+
+**1. Caracteres en vez de palabras.**
+
+```
+"Máximo 120 caracteres."
+```
+
+Mejor que palabras porque los modelos son más consistentes con la unidad. Aún así no son exactos, pero el error es ±20% en vez de ±50%.
+
+**2. Estructura forzada en vez de longitud.**
+
+```
+"Exactamente una oración."
+"Una lista de 3 ítems, ni más ni menos."
+"Dos párrafos: el primero el qué, el segundo el porqué."
+```
+
+La estructura es más fácil de respetar que un número. Si tu prompt dice "exactamente 3 bullets", el modelo casi siempre devuelve 3.
+
+**3. Prohibiciones específicas.**
+
+```
+"NO uses signos de exclamación."
+"NO incluyas explicaciones después de la respuesta."
+"NO uses listas con bullets."
+```
+
+Cada prohibición específica corta una rama común de "elaboración" del modelo.
+
+### El truco del andamio
+
+Si querés exactamente una oración, **terminá el prompt con una pista visual**:
+
+```
+Notificación: 
+```
+
+(con el espacio y los dos puntos, sin valor). El modelo trata eso como el "andamio" sobre el cual escribir y tiende a respetar el formato.
+
+### Por qué fallan las longitudes vagas
+
+*"Sé conciso"* es completamente subjetivo. *"Una oración"* es preciso. La diferencia está en lo que el modelo puede chequear contra su output mientras genera. Reglas que se pueden verificar en tiempo real funcionan; reglas estéticas no.
+
+> Validación práctica: usá regex para chequear estructura (cantidad de puntos, presencia de bullets, saltos de línea). Usá longitud entre N y M caracteres como límite duro. Dejá el judge para la calidad del contenido.
+
+A la derecha, tres eventos de distinto tamaño. Escribí un prompt que devuelva una sola oración corta para los tres, incluyendo el caso del input multi-evento.

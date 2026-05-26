@@ -1,0 +1,119 @@
+---
+title: "When NOT to make a tool (and let the LLM solve it)"
+order: 13
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge is building an MCP for a shift assistant. The PM sent this
+    request: _"add a tool that converts informal shift names ('morning',
+    'night', 'late hours') into the system's formal `shift_type` ('day',
+    'night', 'late_night')"_. What does Forge do?
+  optionA: |
+    She builds the tool:
+
+    {
+      "name": "normalize_shift_name",
+      "description": "Converts an informal shift name into the formal shift_type.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "informal_name": { "type": "string" }
+        },
+        "required": ["informal_name"]
+      }
+    }
+
+    Handler: hardcoded table with 30 synonyms. maintained by hand.
+  optionB: |
+    She does NOT build the tool. Instead, she adds this sentence to the
+    agent's system prompt:
+
+    "When the user uses informal shift names ('morning', 'the night',
+    'late hours', etc.), interpret them as one of the system's formal
+    shift_type values: 'day' (06:00-14:00), 'night' (22:00-06:00),
+    'late_night' (02:00-06:00). Always pass the formal value when
+    invoking tools."
+  correct: B
+  explanation: |
+    Not everything an agent "does" has to be a tool. A tool costs:
+
+    - **An extra round-trip to the model** (decide + invoke + read the
+      result).
+    - **A slot in the catalog** the model scans to pick.
+    - **Handler code** you have to maintain, test, monitor.
+
+    If the "logic" is translating natural language to a value from a
+    closed set, that's **literally what the LLM does better than
+    anything**. Mapping synonyms to labels is zero effort for the model
+    and zero maintenance for you.
+
+    When a tool DOES make sense:
+
+    - **External state.** Your DB, an API, a ticket system. The model
+      can't invent that data.
+    - **Critical determinism.** You need the result to be EXACT every
+      time (financial calculations, legal dates). Not "probable".
+    - **Side effects.** Sending mails, creating records, transferring
+      credits.
+    - **Knowledge that changes.** The model has a static snapshot;
+      current prices, stock, live schedules are outside its world.
+
+    When NOT:
+
+    - **Synonym translation / text normalization.** The model does this
+      without tools.
+    - **Summaries, rephrasings, translations.** Ideal LLM case.
+    - **Simple calculation on data already in context.** Adding two
+      numbers you saw last turn doesn't need a tool.
+    - **Presentation decisions.** "Do I say it formal or casual?" That
+      comes from the system prompt + tone, not from a tool.
+
+    Mental rule: **does this require access to something the model
+    doesn't have or can't infer?** If yes, tool. If no, leave it to the
+    model.
+hints:
+  - "Think about what the model does best alone: language. What it CAN'T do: touch your DB, send mails, guarantee determinism. If the 'logic' is just language, it's not a tool."
+  - "Every new tool adds noise to the catalog. The model has to decide between more options. 'Cheap' tools (normalization, formatting) reduce precision."
+teaches:
+  - tool-vs-prompt-tradeoff
+requires:
+  - tool-vs-prompt
+---
+
+## Tooling everything is an anti-pattern
+
+It's tempting to solve every "logic" with a tool. You get a system that's "modular", "auditable", "testable". But each extra tool:
+
+1. **Adds work for the model.** More options to scan. More decisions of "do I use this or that?".
+2. **Adds work for you.** Another handler to maintain, another schema to version, another piece of the system that can crash.
+3. **Slows the agent down.** Every tool call is another round (model → tool → model). What the LLM could do in one turn now takes three.
+
+And many times, the "logic" you're encapsulating is **something the LLM does for free and better**.
+
+### The quick test: what does this need?
+
+Ask this question before creating any tool:
+
+> Does the operation need access to data, systems, or guarantees the model doesn't have?
+
+| Needs | Tool yes | Tool no |
+|---|---|---|
+| Read/write your DB | ✓ | |
+| Call an external API | ✓ | |
+| Side effects (mails, payments, notifs) | ✓ | |
+| Absolute determinism (financial calc) | ✓ | |
+| Real-time data (prices, stocks) | ✓ | |
+| Translate / normalize / rephrase | | ✓ (system prompt) |
+| Summarize content in context | | ✓ (in-prompt) |
+| Decide tone / response style | | ✓ (system prompt) |
+| Simple calculation with visible numbers | | ✓ (in-prompt) |
+| Classify text into known categories | | ✓ (in-prompt or output schema) |
+
+### Real case: <Character name="forge" /> almost fell
+
+The ship had an MCP with 23 tools. Forge audited and found 8 of them were "normalizers": `normalize_alias`, `format_date`, `parse_priority`, `expand_abbreviation`. All of them could be replaced by **two paragraphs in the system prompt** stating the normalization rules.
+
+Result of deleting the 8: the agent got 1.4x faster, the catalog dropped to 15 tools, and the **precision on picking the remaining tools went up** (less noise, better decision).
+
+> Before writing a tool, ask: does this need the real world, or does it only need the model to think a bit more in the prompt? If it's the second, it's not a tool.

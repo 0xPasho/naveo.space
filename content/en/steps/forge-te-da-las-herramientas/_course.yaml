@@ -1,0 +1,13 @@
+slug: forge-te-da-las-herramientas
+title: "Forge hands you the tools"
+order: 1
+narrativeHook: |
+  The model went from "understands you" to "helps you with words". Forge
+  is going to teach you to give it something different: hands. Twenty-seven
+  steps across seven units: what a tool is and how the model decides to
+  invoke it, schema craft with enums and formats, descriptions the LLM
+  actually reads, handlers that don't break the agent (rich errors,
+  idempotency, logging), composition and catalog size, state and
+  authorization, debugging ignored MCPs. By the end of the course Forge
+  signs your first MCP that an agent uses on its own.
+estimatedMinutes: 195

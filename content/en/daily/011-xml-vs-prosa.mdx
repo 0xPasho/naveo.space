@@ -1,0 +1,163 @@
+---
+title: "Quick mission: XML tags vs prose"
+intro: |
+  Claude reads XML better than long paragraphs. Clear tags separate pieces and cut confusion.
+station: vega
+teaches:
+  - xml-tags-claude
+characters:
+  - echo
+scenes:
+  - kind: prompt-AB
+    question: |
+      Echo shows you two ways to give Claude the same information: the
+      user input, a couple of examples, and the task. Which one
+      separates the pieces better?
+    optionA: |
+      ```
+      I'm sending you the user input which is "the server crashed",
+      here are some examples: server down -> high, ticket opened ->
+      medium, and I need you to classify the input as high, medium, or low.
+      ```
+    optionB: |
+      ```
+      <examples>
+        <ex><in>server down</in><out>high</out></ex>
+        <ex><in>ticket opened</in><out>medium</out></ex>
+      </examples>
+
+      <input>the server crashed</input>
+
+      <task>
+        Classify the input as high, medium, or low based on the examples.
+      </task>
+      ```
+    correct: B
+    explanation: |
+      Option A is a paragraph where everything blends: the user input,
+      the examples, and the actual task all live in one sentence. The
+      model has to parse what is what before it can think.
+
+      Option B uses clear XML tags. Each piece lives in its own box.
+      The model reads `<input>` and knows that is what to classify,
+      not part of the examples.
+
+      Rule: when there is more than one piece of information, separate
+      with tags. Claude is trained to respect `<tags>` and reads them
+      better than bold or dashes.
+  - kind: slot-fill-dnd
+    task: |
+      You are migrating a prose prompt to XML. Sort each idea: better
+      in its own XML tag, or better as prose inside the task?
+    slots:
+      - id: tag
+        label: "Better in its own XML tag"
+      - id: prose
+        label: "Better as prose inside the task"
+    pieces:
+      - id: p1
+        label: "Three input-output examples."
+        correctSlot: tag
+      - id: p2
+        label: "A note like 'if unsure, return low'."
+        correctSlot: prose
+      - id: p3
+        label: "Today's input that needs processing."
+        correctSlot: tag
+      - id: p4
+        label: "The exact JSON output schema."
+        correctSlot: tag
+      - id: p5
+        label: "A minor style preference ('use active voice if you can')."
+        correctSlot: prose
+      - id: p6
+        label: "The product reference documentation, 4 paragraphs."
+        correctSlot: tag
+  - kind: prompt-tag-fill
+    template: |
+      <role>
+        You are {{role}}, helping a support team.
+      </role>
+
+      <context>
+        {{context}}
+      </context>
+
+      <examples>
+        <ex><in>{{example_in}}</in><out>{{example_out}}</out></ex>
+      </examples>
+
+      <input>
+        {{input}}
+      </input>
+
+      <task>
+        {{task}}
+      </task>
+    requiredTags:
+      - role
+      - context
+      - examples
+      - input
+      - task
+  - kind: prompt-AB
+    question: |
+      Echo builds a long prompt with instructions, product docs, and
+      the customer's question. Which structure gives the model less
+      chance to mix up pieces?
+    optionA: |
+      ```
+      Instructions: help the customer. Here are the product docs: the
+      free plan has 100 requests/month, pro 10k, enterprise unlimited.
+      Customer question: how many requests does pro give? Keep it short.
+      ```
+    optionB: |
+      ```
+      <instructions>
+        Answer the customer in a single line, no greeting.
+      </instructions>
+
+      <docs>
+        Free plan: 100 requests/month.
+        Pro plan: 10,000 requests/month.
+        Enterprise plan: unlimited.
+      </docs>
+
+      <question>
+        How many requests does the pro plan give?
+      </question>
+      ```
+    correct: B
+    explanation: |
+      Option A works on short prompts, but as soon as the doc block
+      grows, the model starts confusing what is "instruction" and what
+      is "content to use". Sometimes it answers about the instructions
+      instead of the question.
+
+      Option B isolates each piece. Docs are content to reference,
+      instructions are behavior, question is what to answer. No risk
+      of mixing.
+
+      Operational bonus: if later you need to change only the doc,
+      you touch one tag. In option A you rewrite the whole paragraph.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this XML prompt. Once you see the boxes, you
+      can move each without breaking the others.
+    parts:
+      - id: role
+        label: "<role> (who the assistant is)"
+        text: "<role>You are a ticket classifier for a SaaS support team.</role>"
+      - id: examples
+        label: "<examples> (fixed few-shot)"
+        text: "<examples><ex><in>cannot log in</in><out>auth</out></ex><ex><in>dashboard is slow</in><out>performance</out></ex></examples>"
+      - id: input
+        label: "<input> (what changes today)"
+        text: "<input>my last import wiped the data</input>"
+      - id: task
+        label: "<task> (operational instruction)"
+        text: "<task>Return only the category: auth, billing, performance, or data.</task>"
+---
+
+Mission of the day: if your prompt has more than one piece, tag it.
+Claude respects tags and your prompt becomes editable, not monolithic.

@@ -1,0 +1,126 @@
+---
+title: "Agent loops: when to stop"
+order: 11
+estimatedMinutes: 12
+exercise:
+  kind: tool-handler-implement
+  toolName: agent_loop
+  toolSchema: |
+    An agent that receives a user goal, decides which tool to invoke,
+    reads the result, decides if it needs another tool, and eventually
+    finishes with a final answer.
+
+    The loop:
+
+    1. callModel(messages + tools) → returns { type: "tool_call", name, args } or { type: "final", text }
+    2. If it's a tool_call: run the corresponding handler, append the result to messages, go back to step 1.
+    3. If it's a final: return the answer to the user and stop.
+
+    Your job: implement the loop with the **correct stop conditions**.
+    Without them, the agent can enter infinite loops or stop too early.
+  starter: |
+    // Agent loop.
+    // Available:
+    //   callModel({ messages, tools }) → { type: "tool_call" | "final", ...payload }
+    //   handleTool(name, args) → tool result, or throws
+    //
+    // Your job: implement the loop with stop conditions.
+
+    async function runAgent({ userGoal, tools }) {
+      const messages = [
+        { role: "user", content: userGoal }
+      ];
+
+      // TODO: loop with correct stop conditions.
+      while (true) {
+        const step = await callModel({ messages, tools });
+
+        if (step.type === "final") {
+          return { ok: true, answer: step.text };
+        }
+
+        if (step.type === "tool_call") {
+          const result = await handleTool(step.name, step.args);
+          messages.push(
+            { role: "assistant", content: null, tool_call: step },
+            { role: "tool", content: JSON.stringify(result) }
+          );
+          continue;
+        }
+      }
+    }
+  language: javascript
+  scenarios:
+    - description: "Happy path: the model calls 2 tools, then returns final answer."
+      expected: "ok: true, answer: the final text."
+    - description: "Potential infinite loop: the model calls the SAME tool with the SAME args twice in a row (signal that it's stuck)."
+      expected: "The loop breaks before the 3rd identical call. Returns ok: false, error code 'stuck_loop' or similar."
+    - description: "Too many steps: the model goes 20 tool_calls without reaching final."
+      expected: "The loop breaks at max_steps (typical: 10-15). Returns ok: false, error code 'max_steps_exceeded'."
+    - description: "Tool fails: handleTool throws on the 3rd iteration."
+      expected: "The error is caught, injected back to the model as a tool_result with ok: false, and the loop CONTINUES so the model can decide how to recover. Does NOT silently terminate."
+  rubric:
+    - id: max-steps-limit
+      kind: llm-judge
+      criterion: "The loop has an iteration counter (typically max 10-15). Upon reaching the limit, it exits with a structured error (`ok: false, error: { code: 'max_steps_exceeded' }`). Does NOT loop infinitely."
+    - id: detects-stuck
+      kind: llm-judge
+      criterion: "The loop detects when the agent is requesting the SAME tool with the SAME args two or three times in a row. a stuck signal. Exits with a structured 'stuck_loop' error."
+    - id: tool-errors-feed-back
+      kind: llm-judge
+      criterion: "When a tool fails, the error is caught (try/catch) and injected back to the agent's messages as a tool_result with ok: false. The loop CONTINUES. the agent can read the error and decide how to recover. Does NOT silently terminate with the error as the answer."
+    - id: happy-path-intact
+      kind: llm-judge
+      criterion: "In the happy path (model calls tools, then returns final), the behavior is correct: tool calls run, results are appended to messages, and the final answer is returned with ok: true."
+    - id: structured-returns
+      kind: llm-judge
+      criterion: "All loop outputs are structured objects with `ok: true/false`. On failure, they carry an identifiable `error.code`. Does NOT throw exceptions out of runAgent."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Three classic stop conditions: (a) max_steps (absolute counter), (b) loop-detection (same tool with same args N times), (c) tool-error-budget (more than M errors in N consecutive steps)."
+  - "To detect loops: keep an array of the last K (name, args) and compare. If the last 3 are identical, exit."
+  - "When a tool fails, the error HAS to go back to the model as input. not as an exception. The model can read the error and request another tool or adjust args. If you throw the exception, the loop dies and the user doesn't know what happened."
+teaches:
+  - agent-loop-stop-conditions
+requires:
+  - mcp-error-handling
+---
+
+## The agent that knows when to stop.
+
+<Character name="orbit" /> has a rule: *any loop without an exit condition is an incident waiting to happen*. If you're going to let the agent run on its own, you have to be able to answer before hitting **Run**: what makes it stop?
+
+An agent that calls tools in a loop is the central piece of any modern autonomous system. Sounds simple: model picks a tool, you execute, send back the result, repeat until done.
+
+The problem: **when does "done" happen?** Three ways to never finish:
+
+1. **Infinite loop.** The model gets "stuck" calling the same tool over and over with the same args.
+2. **Long but non-infinite loop.** The model does reasonable things but doesn't converge. 30 turns later you're still burning tokens.
+3. **Cascading error.** A tool fails, the model doesn't know, keeps calling things that depended on that result.
+
+Designing good **stop conditions** is what separates an agent you can let run from one that needs constant human supervision.
+
+### The three stop conditions
+
+1. **`max_steps`**. absolute counter. If it hits 10-15 without a `final`, exit with error. Universal safety net.
+2. **Loop detection**. if the model requests the same tool with the same args 2-3 times in a row, it's stuck. Exit.
+3. **Tool errors are propagated**. when a tool fails, the error goes back to the model as input (`{ ok: false, error: ... }`). The model decides how to recover. The loop **does NOT break**. it only breaks if the model decides to or if the other stop conditions trigger.
+
+### The task
+
+Implement the loop. On the right you have a starter that **works on the happy path** but has no stop conditions.
+
+### Why we don't execute your code
+
+Same principle as Track 3, step 06: an LLM-judge reads your implementation and reasons whether it would correctly handle the 4 scenarios. That means your code has to be **readable**. Clear names, obvious control flow, early returns for errors.
+
+### How it's evaluated
+
+5 LLM-judge criteria:
+
+1. `max_steps` correctly implemented.
+2. Loop detection implemented.
+3. Tool errors go back to the agent as input, don't terminate the loop.
+4. Happy path intact.
+5. Structured returns with an `ok` boolean.

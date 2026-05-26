@@ -1,0 +1,112 @@
+---
+title: "Scoping de capacidades: la tool más chica posible"
+order: 11
+estimatedMinutes: 7
+characters:
+  - hex
+  - forge
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "manage_user_account",
+      "description": "Operaciones sobre cuentas de usuarios de la nave. Útil para casos de soporte: leer estado, actualizar campos, suspender, eliminar.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": ["read", "update", "suspend", "delete"]
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["user_id", "action"]
+      }
+    }
+  candidates:
+    - id: action-enum-is-fine
+      label: "El enum cubre las acciones razonables. Está bien."
+    - id: scope-too-wide
+      label: "Una sola tool con cuatro acciones (leer, actualizar, suspender, eliminar) le da al modelo cuatro niveles de poder distintos en una invocación. Si el modelo se equivoca o es inyectado, puede saltar de read a delete sin que vos te enteres. La tool tiene que partirse en tools chicas: `read_user`, `update_user_fields`, `suspend_user`, `delete_user`. cada una con su scope."
+    - id: missing-required-fields
+      label: "La definición de `fields` no es estricta. El modelo puede pasar cualquier cosa. Hay que cerrarlo."
+    - id: name-not-domain-prefixed
+      label: "El nombre debería ser `accounts.manage_user` con prefijo de dominio."
+    - id: no-pagination
+      label: "Para `read` debería haber paginación."
+  correct: scope-too-wide
+  explanation: |
+    El principio que viola esta tool es **least capability**: cada tool
+    expone exactamente una capacidad. La razón es brutalmente práctica.
+
+    Cuando el modelo (o un atacante vía inyección) decide llamar a
+    `manage_user_account(user_id="x", action="delete")`, lo está
+    decidiendo en el mismo lugar donde antes decidió `action="read"`. Tu
+    capa de autorización tiene que adivinar la intención del modelo y
+    decidir si esta llamada particular está permitida. Es frágil.
+
+    Con tools partidas, **la capacidad está en el cableado, no en el
+    argumento**. El asistente de soporte de nivel 1 tiene `read_user` y
+    `update_user_fields`. No tiene `suspend_user` ni `delete_user`. Si
+    el modelo intenta llamar a `delete_user`, la tool **no existe** en
+    su set. No es "la auth dijo que no". es "el modelo nunca tuvo la
+    opción de pedirlo".
+
+    Las otras opciones son cierto-pero-no-fatal: campos abiertos es algo
+    que limpiarías al endurecer; nombrado por dominio es estilo;
+    paginación es performance. **Scope too wide es el problema de
+    seguridad**: un solo agujero en el casco que da acceso a cuatro
+    niveles de poder.
+
+    > Regla de <Character name="hex" />: **una capacidad, una tool**. Si
+    > necesitás dos, dos tools. El cableado de quién tiene cuál es tu
+    > política de autorización, expresada en código de infraestructura,
+    > no en prompts.
+hints:
+  - "Mirá el enum de `action`. Una sola tool. Cuatro acciones de muy distinto poder. ¿Qué pasa si el modelo se confunde de acción?"
+  - "Pensá: ¿qué pasaría si tu asistente de soporte de nivel 1 solo necesita leer y actualizar? ¿Por qué le diste también suspend y delete?"
+  - "La pregunta clave: ¿el nivel de privilegio del modelo en una llamada está controlado por **vos** (cableado de tools) o por el **modelo** (eligiendo el `action`)? Si es el segundo, la tool es muy amplia."
+teaches:
+  - capability-scoping
+requires:
+  - destructive-tool-mitigation
+---
+
+## La tool más chica que cumple su trabajo
+
+Tener una tool gigante con un `action` enum se siente eficiente. Una sola tool, mil casos de uso. <Character name="forge" /> lo intentó. <Character name="hex" /> tardó cuatro minutos en mostrarle por qué no.
+
+El problema no es estético. es **estructural**. Cuando juntás cuatro niveles de poder en una sola tool, el modelo (o un atacante vía inyección) elige cuál ejercer al momento de la llamada. Tu capa de autorización ahora tiene que:
+
+1. Identificar qué `action` está pidiendo el modelo.
+2. Decidir si el usuario de la sesión está autorizado a esa acción.
+3. Esperar que el modelo no se confunda entre acciones similares.
+
+Cada uno de esos tres pasos puede fallar. Y "puede fallar" es lo que <Character name="hex" /> persigue para ganarse la firma de Atlas.
+
+### Least capability: una tool, una capacidad
+
+El patrón correcto:
+
+```
+read_user(user_id)            // solo lectura
+update_user_fields(user_id, fields)  // escritura controlada
+suspend_user(user_id)         // acción de moderación
+delete_user(user_id)          // acción destructiva, con dry-run
+```
+
+Cuatro tools, cuatro niveles de poder. Cuando armás un asistente de soporte de nivel 1, le cableás `read_user` y `update_user_fields` y nada más. El modelo **literalmente no puede** intentar `delete_user`. la tool no existe en su set.
+
+> La autorización ya no es una pregunta sobre el dato (*"¿el `action` que el modelo eligió está permitido?"*). es una pregunta sobre el cableado (*"¿esta tool está en el set del asistente?"*). El cableado lo hacés vos, en código, en deploy, bajo code review. mucho más auditable que la decisión del modelo en runtime.
+
+### Cuándo es OK agrupar
+
+Cuando dos operaciones son **isomorfas en poder y en superficie de error**. `list_users(filter)` y `count_users(filter)` son básicamente la misma cosa con distinto formato de output. agruparlas como `query_users(filter, format)` puede tener sentido.
+
+Cuando difieren en **poder** (read vs delete) o en **superficie de error** (leer mi cuenta vs leer cualquier cuenta), no agrupes.
+
+A la derecha: una tool con cinco supuestos problemas. Cuatro son cierto-pero-no-fatal. Uno es el que volaría la nave. Encontralo.

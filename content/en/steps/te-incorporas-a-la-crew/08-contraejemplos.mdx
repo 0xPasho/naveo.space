@@ -1,0 +1,123 @@
+---
+title: "Counter-examples: teaching with what NOT to do"
+order: 8
+estimatedMinutes: 5
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo needs to extract **just the alias** from short bios. Many bios
+    include the full name. Which prompt is going to fail less?
+  optionA: |
+    ```
+    Extract the alias.
+
+    Bio: "María Pérez (alias 'Em'), nurse"
+    Alias: Em
+
+    Bio: "Bruno (alias 'Bru'), technician"
+    Alias: Bru
+
+    Bio: {{input}}
+    Alias:
+    ```
+  optionB: |
+    ```
+    Extract just the alias (NOT the full name).
+
+    Bio: "María Pérez (alias 'Em'), nurse"
+    ✓ CORRECT: Em
+    ✗ WRONG: María Pérez
+
+    Bio: "Bruno (alias 'Bru'), technician"
+    ✓ CORRECT: Bru
+    ✗ WRONG: Bruno
+
+    Bio: {{input}}
+    Alias:
+    ```
+  correct: B
+  explanation: |
+    Prompt A shows only correct answers. The model learns *"extract the
+    alias"*, but doesn't notice the trap: when a bio with a prominent full
+    name arrives, it can get confused and return the name.
+
+    Prompt B shows **both possible answers**, labeled. "This one's right /
+    this one's wrong" is a stronger signal than "this one's right". The
+    model learns the distinction explicitly, it doesn't have to infer it.
+
+    Counter-examples don't always win. But when the model has a natural
+    tendency to confuse two nearby options, showing it both with labels
+    is more efficient than just showing the right one.
+hints:
+  - "Normal few-shot teaches by imitation: 'do this'. Counter-examples teach by contrast: 'do this, not that'."
+  - "When is there a risk the model confuses the alias with the name? When the bio has the full name and the alias resembles part of it."
+  - "Think about which of the two prompts leaves the model more room to get it wrong."
+teaches:
+  - counter-examples
+requires:
+  - few-shot-basics
+  - few-shot-selection
+---
+
+## Showing what NOT to do
+
+Normal few-shot shows you *"do this"*. Counter-examples show you *"don't do this"*. Sometimes the second teaches more, especially when the model has a natural tendency to fail in a specific direction.
+
+### When counter-examples help
+
+Counter-examples shine when:
+
+1. **The model has a wrong default** you want to avoid.
+2. **The distinction is subtle**: the correct and incorrect answers look very similar.
+3. **You've already tried positive-only** and it fails on the predictable case.
+
+Example: extracting just the alias from a bio. Without counter-examples, the model sometimes returns the full name. With a "WRONG: full name / CORRECT: alias" pair, the distinction is explicit.
+
+### Three ways to write them
+
+**1. Direct label, side by side.**
+
+```
+Bio: "María Pérez (alias 'Em')"
+✓ CORRECT: Em
+✗ WRONG: María Pérez
+```
+
+Simple and clear. The model sees the distinction next to the input.
+
+**2. In the description.**
+
+```
+Extract the alias (NOT the full name).
+If the bio says "María Pérez (alias 'Em')", return "Em", not "María Pérez".
+```
+
+Useful when you just want to prevent one specific error without adding extra examples.
+
+**3. Separate "anti-patterns" block.**
+
+```xml
+<examples>
+  Bio: "..." → Alias: "Em"
+</examples>
+
+<avoid>
+  Don't return the full name.
+  Don't return values wrapped in quotes.
+  Don't explain your reasoning.
+</avoid>
+```
+
+For tasks with several possible failure modes.
+
+### The important catch: careful with reinforcing the bad pattern
+
+There's a weird LLM phenomenon: if you insist heavily on *"DON'T say X"*, sometimes the model says it more. The phrase "don't mention the weather" can **increase** the probability of mentioning the weather, because "weather" entered the context and became an available token.
+
+Practical rule: **one negative mention is fine, repeating it 3 times raises the risk**. If your prompt has "don't do X" in 4 places, rethink: it's probably more effective to positively state what SHOULD happen.
+
+> This is one of the better-known LLM traps (we'll come back to it in lesson 17). For now: counter-examples yes, in moderation, and always with a visible label.
+
+On the right, two prompts. One with only positive examples, one with positive + negative. Which extracts better?

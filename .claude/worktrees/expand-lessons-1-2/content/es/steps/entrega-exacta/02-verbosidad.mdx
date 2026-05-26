@@ -1,0 +1,79 @@
+---
+title: "'Una línea' no es un límite"
+order: 2
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo te pide un resumen de una sola línea para cada incidente — los va a
+    pegar en un dashboard con espacio limitado. Tenés dos prompts; ambos
+    piden "una línea". ¿Cuál suele entregar algo que realmente entra?
+  optionA: |
+    <task>
+      Resume este incidente en una sola línea.
+    </task>
+
+    <incidente>
+      A las 03:00 UTC el sensor de presión del bay 3 empezó a dar lecturas
+      erráticas. El equipo de turno aisló el bay y reportó al supervisor.
+    </incidente>
+  optionB: |
+    <task>
+      Resume este incidente. Máximo 80 caracteres. Ejemplo del estilo:
+      "Sensor de presión erratico en bay 4 a las 02:15 UTC."
+    </task>
+
+    <incidente>
+      A las 03:00 UTC el sensor de presión del bay 3 empezó a dar lecturas
+      erráticas. El equipo de turno aisló el bay y reportó al supervisor.
+    </incidente>
+  correct: B
+  explanation: |
+    "Una sola línea" suena a límite, pero no lo es — el modelo puede
+    entender "una línea larguísima". Cualquier adjetivo blando ("corto",
+    "breve", "una línea") deja la decisión del cap al modelo, y el modelo
+    se equivoca para arriba.
+
+    El B hace dos cosas que sí funcionan:
+
+    1. **Pone un número.** "Máximo 80 caracteres" es verificable; "corto"
+       es opinable.
+    2. **Da un ejemplo del largo.** Los modelos respetan ejemplos mejor
+       que adjetivos. Un ejemplo de 70 caracteres calibra el output mejor
+       que tres líneas pidiendo brevedad.
+
+    Si te importa el largo exacto, escribilo como número Y mostralo con un
+    ejemplo. Y si lo necesitas garantizado, además de eso truncá en tu
+    código — el modelo va a respetar el spirit, pero no firmes contratos
+    sobre el carácter 81.
+hints:
+  - "Mira qué tan concreta es la restricción de longitud en cada prompt."
+  - "Si el cap es subjetivo, el modelo decide. Si es un número con ejemplo, vos decidís."
+teaches:
+  - verbosity-control
+requires:
+  - prompt-anatomy-basics
+---
+
+## Los adjetivos no son límites
+
+"Corto", "breve", "una línea", "conciso" — todos suenan a restricción y ninguno lo es. El modelo los traduce a su propio criterio de qué es corto, y casi siempre se queda largo.
+
+Cuando <Character name="echo" /> te dice "resumen de una línea para el dashboard", está pidiendo dos cosas distintas:
+
+- Un **estilo** (frase declarativa, sin estructura ni viñetas).
+- Un **largo máximo** (cabe en el ancho del dashboard).
+
+El primero lo podes pedir con palabras. El segundo necesita un número.
+
+### Las tres formas de poner un cap real
+
+1. **Número en caracteres**: `Máximo 80 caracteres.` Verificable, no opinable.
+2. **Número en palabras**: `Máximo 12 palabras.` Útil cuando el formato es prosa y los caracteres varían mucho.
+3. **Ejemplo del largo target**: una línea de muestra del tamaño exacto que querés. Los modelos respetan ejemplos mejor que reglas.
+
+> Combiná las tres cuando te importa de verdad: número + tipo de unidad + ejemplo. Y si lo necesitas hard, truncá en código además de pedirlo en el prompt.
+
+### Por qué este step es importante
+
+Verbosidad parece un problema cosmético. No lo es — un dashboard que se desborda, un campo que no entra en una columna SQL, un summary que pisa la UI: todo eso son bugs que arrancan acá.

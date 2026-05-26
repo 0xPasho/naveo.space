@@ -1,0 +1,13 @@
+tracks:
+  - slug: anatomia-del-prompt
+    title: "Anatomía del prompt"
+    order: 1
+    description: "La crew solo te entiende si sabes cómo hablarles. Aprende el protocolo: cómo estructurar un prompt para que cada compañero responda como esperas."
+    courses:
+      - te-incorporas-a-la-crew
+  - slug: coordinacion-con-la-crew
+    title: "Coordinación con la crew"
+    order: 2
+    description: "Una sola instrucción no siempre alcanza. Aprende a sostener conversaciones multi-turn con miembros de la crew para resolver situaciones reales."
+    courses:
+      - tu-primera-conversacion

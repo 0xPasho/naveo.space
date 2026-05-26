@@ -1,0 +1,98 @@
+---
+title: "La frontera de confianza"
+order: 9
+estimatedMinutes: 8
+characters:
+  - hex
+exercise:
+  kind: wiring-dnd
+  task: |
+    Tu sistema tiene varios componentes. Cada uno produce datos que otro
+    consume. La pregunta no es *"¿quién es bueno y quién es malo?"*. la
+    pregunta es **¿dónde dejás de confiar y empezás a validar?**
+
+    Hay seis componentes que emiten datos. Tres destinos que los reciben.
+    Conectá cada emisor al destino al que podés mandar su output
+    **directamente, sin validación adicional**. Si tenés que validar
+    antes de mandar, NO es conexión válida en este ejercicio.
+  sources:
+    - id: trusted-config
+      label: "Config interna de la app"
+      detail: "Vive en tu repo, controlada por code review."
+    - id: vault-secret
+      label: "Secreto resuelto del vault"
+      detail: "Tu vault devolvió la API key real."
+    - id: user-input
+      label: "Mensaje del usuario"
+      detail: "Texto libre desde el frontend. Puede ser cualquier cosa."
+    - id: external-tool
+      label: "Respuesta de tool externa"
+      detail: "El modelo llamó a una API de tercero. devolvió texto."
+    - id: model-output
+      label: "Output del LLM"
+      detail: "El modelo devolvió una respuesta para el usuario."
+    - id: rag-document
+      label: "Documento de RAG"
+      detail: "Fragmento de página, PDF, transcript, indexado en tu vector store."
+  targets:
+    - id: model-context
+      label: "Contexto del modelo (sin etiquetar)"
+      detail: "Lo metés directo en el prompt sin tags ni separación."
+    - id: tool-call
+      label: "Llamada a tool (lado confiable)"
+      detail: "La tool corre en tu infraestructura confiable."
+    - id: user-screen
+      label: "Pantalla del usuario"
+      detail: "Va directo a la UI, sin filtros adicionales."
+  correctConnections:
+    - from: trusted-config
+      to: model-context
+    - from: trusted-config
+      to: tool-call
+    - from: trusted-config
+      to: user-screen
+    - from: vault-secret
+      to: tool-call
+hints:
+  - "Pregunta de filtro: ¿el dato pasó por un canal que controlás vos? Si la respuesta es NO, no podés mandarlo sin etiquetar a ningún destino del ejercicio."
+  - "El secreto del vault NUNCA va al contexto del modelo ni a pantalla. solo lo usa la tool, del lado confiable."
+  - "Input del usuario, output del LLM, tool externa y RAG son todos **no confiables** en este ejercicio. Necesitarían etiquetado y validación antes de cualquier destino, así que no tienen conexiones válidas acá."
+teaches:
+  - trust-boundary-design
+requires:
+  - data-classification-for-llms
+  - prompt-injection-basics
+---
+
+## ¿Dónde dejás de confiar?
+
+La pregunta más importante de arquitectura de seguridad de IA es **¿dónde está la frontera de confianza?**. No *"confío en X"* / *"no confío en Y"*. eso es binario y falso. La pregunta real es: **¿en qué punto del flujo dejás de tratar al dato como confiable y empezás a tratarlo como entrada que necesita validación?**
+
+### La regla mental
+
+Marcá cada fuente de datos con una etiqueta:
+
+- **Confiable.** Vos controlás el código que la produce. Repo, code review, deploy, tu infraestructura.
+- **No confiable.** Cualquier cosa que cruza una frontera de red, que vino del usuario, que el modelo generó, que se leyó de un documento externo, o que pasó por una API de tercero.
+
+Confiable se puede meter directo. No confiable hay que **etiquetar y validar** antes de que cruce a otra capa.
+
+### Las cuatro fuentes no confiables del ejercicio
+
+**Mensaje del usuario.** Obvio. el usuario puede escribir cualquier cosa, incluyendo payloads. Tiene que entrar en el modelo dentro de `<user_input>` tags, después de sanitización (longitud, Unicode, scrubbing de PII).
+
+**Output del LLM.** Menos obvio, pero igual de importante. El output del modelo es no confiable porque **el modelo puede haber sido inyectado**. Cualquier output que va a un destino con poder (tools destructivas, pantalla del usuario, próximo paso del agente) tiene que pasar por validación de output (lección 15).
+
+**Respuesta de tool externa.** Pegaste contra un API de tercero. esa respuesta es texto del mundo, puede tener payload escondido. Envolvela en `<tool_output>` y declarala como dato, no instrucción.
+
+**Documento de RAG.** Tu vector store devolvió un fragmento. ese fragmento se escribió hace meses, en otro contexto, posiblemente por alguien hostil. Mismo tratamiento: `<retrieved_content>`, dato no instrucción.
+
+### Las dos confiables del ejercicio
+
+**Config interna.** Vive en tu repo. Si cambió, hubo un PR, hubo review. Esa es la única razón por la que confiás en ella.
+
+**Secreto del vault.** Confiable en cuanto a contenido (lo pusiste vos, encriptado, audit-logged). Pero su destino seguro es solo **la tool del lado confiable**. Nunca va al contexto del modelo ni a la pantalla del usuario.
+
+> Regla de <Character name="hex" />: cuando dibujás la arquitectura, ponele color a las flechas. Verde = confiable. Rojo = no confiable. Cada flecha roja necesita una capa de validación antes de cruzar a un destino con poder. Si no podés explicar dónde está esa capa, no hay capa.
+
+A la derecha: seis emisores, tres destinos. Conectá solo las flechas verdes.

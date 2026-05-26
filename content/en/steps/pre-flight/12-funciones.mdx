@@ -1,0 +1,110 @@
+---
+title: "Functions: a protocol with a name"
+order: 12
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    The ship has four functions defined. Some have very similar names but
+    do different things. Match each description to the function it
+    belongs to.
+  slots:
+    - id: inspect
+      label: "inspectHull()"
+    - id: repair
+      label: "repairHull()"
+    - id: close
+      label: "closeAirlock()"
+    - id: open
+      label: "openAirlock()"
+  pieces:
+    - id: inspect_desc
+      label: "Walk through the hull sensors and return OK or a list of defects."
+      correctSlot: inspect
+    - id: repair_desc
+      label: "Apply automatic sealant to detected cracks."
+      correctSlot: repair
+    - id: close_desc
+      label: "Close the outer door and verify the seal."
+      correctSlot: close
+    - id: open_desc
+      label: "Depressurize the chamber and open the outer door."
+      correctSlot: open
+hints:
+  - "Read the name as a verb: *inspect* checks, *repair* fixes. They are different jobs."
+  - "*Close* and *open* are opposite operations. The description tells you which direction it goes."
+  - "A well-named function reads at a glance. If two descriptions seem to fit one function, re-read the verb."
+teaches:
+  - functions-basics
+requires:
+  - sequencing-basics
+---
+
+## Functions: a protocol with a name
+
+So far protocols were loose, written somewhere. But if a protocol is going to be used several times, you wrap it in a **function**: a protocol with a name that the ship can invoke whenever it needs to.
+
+### Define vs call
+
+A function has two moments:
+
+**Define** (you write it once):
+
+```
+FUNCTION inspectHull():
+  walk through sensors
+  log defects
+  return "OK" if no defects
+```
+
+**Call** (you invoke it whenever it needs to run):
+
+```
+inspectHull()
+```
+
+Each call **runs the steps inside**. The definition lives once. The calls can number in the thousands.
+
+### Why this matters: don't repeat yourself
+
+Without functions, every time you want to inspect the hull you write the same ten steps. With functions, you write them once and then call `inspectHull()` whenever you need to.
+
+Three immediate wins:
+
+- **Less code** to maintain.
+- **One place** to fix bugs (if the routine changes, it changes in one spot).
+- **The name** documents the intent. `inspectHull()` reads at a glance, no need to skim the ten steps.
+
+### Parameters: the function takes inputs
+
+Sometimes you don't want the function to do **always the same thing**. You want it to adapt. For that you pass **parameters**:
+
+```
+FUNCTION soundAlarm(intensity, duration):
+  turn on horn at `intensity`
+  wait `duration` seconds
+  turn off horn
+```
+
+And you call it with different values depending on the case:
+
+```
+soundAlarm("critical", 30)
+soundAlarm("informational", 5)
+```
+
+The function is **the same**. The behavior changes based on the inputs.
+
+### In a prompt
+
+The most direct equivalent is a **parameterized prompt**: a template with holes you fill differently each time:
+
+```
+"Summarize the following bio in {{N}} sentences: {{bio}}"
+```
+
+That's a mental function. `N` and `bio` are parameters. Each call produces a different output. You reuse the "definition" (the template) thousands of times.
+
+On the right, four functions of the ship with similar-looking names. Match each description to the function it belongs to.

@@ -1,0 +1,38 @@
+tracks:
+  - slug: pre-flight
+    title: "Pre-flight"
+    order: 0
+    description: "Puente opcional para tripulantes sin experiencia previa en programación. Veintiún rituales cortos, seis unidades: pasos, decisiones, variables y datos, funciones, cómo piensa el modelo y tu primer prompt. Vega te guía. Saltátelo si ya programás."
+    optional: true
+    courses:
+      - pre-flight
+  - slug: anatomia-del-prompt
+    title: "Anatomía del prompt"
+    order: 1
+    description: "La crew solo te entiende si sabes cómo hablarles. Veintiséis rituales en siete unidades: anatomía y claridad, forma del input, ejemplos, pedir bien la salida, razonar, debuggear, y endurecer para producción."
+    courses:
+      - te-incorporas-a-la-crew
+  - slug: coordinacion-con-la-crew
+    title: "Coordinación con la crew"
+    order: 2
+    description: "Sostené una conversación con el modelo cuando un prompt no alcanza. Veinticuatro lecciones en siete unidades: insistir con preguntas específicas, corregir quirúrgicamente, manejar la deriva, comprimir historial, y negociar hasta el sí."
+    courses:
+      - tu-primera-conversacion
+  - slug: tools-y-mcps
+    title: "Tools y MCPs"
+    order: 3
+    description: "Forge te enseña a darle al modelo manos. Veintisiete lecciones en siete unidades: schemas tipados, descripciones que el agente sí elige, handlers con errores ricos, idempotencia, autorización, y MCPs que un agente usa solo."
+    courses:
+      - forge-te-da-las-herramientas
+  - slug: flujos-complejos
+    title: "Flujos complejos: sistemas multi-step"
+    order: 4
+    description: "Diseño de sistemas multi-step con LLMs. Veintidós lecciones en siete unidades: cuándo partir un problema en cadenas (y cuándo no), paralelizar y cachear, enrutar por reglas o por LLM, cascadas de costo, agent loops con presupuestos y reintentos, degradación graceful, RAG, trazas, evals, judges y A/B testing. Orbit te guía, Atlas firma."
+    courses:
+      - sistemas-multi-step
+  - slug: seguridad-de-sistemas-ia
+    title: "Seguridad: el modelo, los datos y vos"
+    order: 5
+    description: "Todo modelo puede ser engañado. Toda tool puede ser usada como arma. Todo output es una mentira confiada hasta que se demuestre lo contrario. Hex te entrena en veinte rituales: clasificar incidentes, romper inyección directa e indirecta, scrubear PII, sacar secretos del modelo, scopear tools destructivas, validar el output, calibrar alucinación y red-team. Atlas firma cuando aguanta el ataque."
+    courses:
+      - protocolo-de-seguridad

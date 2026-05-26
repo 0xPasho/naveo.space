@@ -1,0 +1,55 @@
+---
+title: "Descripción mala vs descripción buena"
+order: 11
+estimatedMinutes: 3
+demo:
+  id: prompt-dial
+  props:
+    presenter: forge
+    intent: "Misma tool, dos descripciones. El modelo no se equivoca por azar."
+    before:
+      label: "Description vaga"
+      prompt: |
+        Tool: do_thing
+        Description: "hace algo con datos"
+        Parameters: { input: string }
+      output: |
+        El agente casi nunca llama esta tool. Cuando lo hace, manda strings
+        al azar. a veces el query del usuario crudo, a veces inventa
+        contenido. Rara vez es útil.
+
+        En logs reales: do_thing fue invocada en 3% de las conversaciones
+        donde debería haberse usado. Cero llamadas correctas.
+    after:
+      label: "Description precisa"
+      prompt: |
+        Tool: lookup_crewmate
+        Description: "Returns name, role, and current shift for a crewmate by
+        alias. Use when the user mentions a crewmate by alias (e.g. 'vega',
+        'echo') and you need their role or shift assignment. Do NOT use for
+        crewmates referenced only by full name."
+        Parameters: { alias: string }
+      output: |
+        El agente la invoca de forma confiable cada vez que aparece un alias
+        en el input del usuario. Ignora menciones por nombre completo
+        (correcto: hay otra tool para eso).
+
+        En logs reales: 94% de invocaciones correctas, 0% de invocaciones
+        en contextos equivocados.
+    note: |
+      El modelo no es vago: te está copiando. Si tu description dice "hace
+      algo con datos", la invocación va a ser tan ambigua como esa frase.
+      Cada palabra de la description compra precisión en la decisión.
+---
+
+Este step es el **corazón del Track**, condensado en una comparación.
+
+<Character name="Forge" /> ya te explicó el principio en el step anterior. Acá lo ves en datos: la misma estructura de tool, dos descriptions, dos comportamientos radicalmente distintos en producción.
+
+Tocá entre las pestañas **Antes** y **Después**. Fijate en tres cosas que cambian:
+
+- **El verbo principal** ("hace algo" vs "returns name, role, and current shift").
+- **El criterio de uso** (ausente vs "Use when the user mentions a crewmate by alias").
+- **Los anti-patrones** (ausente vs "Do NOT use for crewmates referenced only by full name").
+
+Las tres están en la description. Ninguna en el nombre de la tool.

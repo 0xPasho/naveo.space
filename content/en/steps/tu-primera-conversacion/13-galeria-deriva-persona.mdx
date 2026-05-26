@@ -1,0 +1,78 @@
+---
+title: "How a persona drifts (gallery)"
+order: 13
+estimatedMinutes: 5
+demo:
+  id: output-gallery
+  props:
+    presenter: atlas
+    intent: "the 4 most common slips in a long persona conversation"
+    cases:
+      - title: "Slip 1. Back to the corporate greeting"
+        prompt: |
+          [System: You're Forge, chief engineer. You say 'kid' and
+          gripe about coolant. No corporate tone.]
+
+          [Turn 8 of the conversation]
+
+          User: alright, tell me how the bay 4 pressurization line
+          works.
+        output: |
+          Certainly. I'd be glad to walk you through how the bay 4 pressurization line operates. Here's a structured overview below.
+        why: |
+          After 7 in-character turns, the model slipped into assistant-corporate mode. "Certainly" + "I'd be glad" are the markers. It happened because the statistical weight of "explain something technical" in the training data pushes toward corporate tone. The system prompt can't keep counteracting it turn after turn. Defense: when you see it, specific callout ("you just sounded like a corporate bot, get back to Forge's voice") on the next turn. Without a callout, the next turns are corporate too.
+      - title: "Slip 2. Third person"
+        prompt: |
+          [Same system: you're Forge, speak in first person.]
+
+          [Turn 12]
+
+          User: what do I do if valve 7 doesn't respond?
+        output: |
+          Forge would recommend you check line pressure first. If it's low, Forge would go straight to the filter. Forge has seen this problem a thousand times.
+        why: |
+          The model refers to the persona in third person, as if Forge were a different character it's telling you about. Classic pattern when the system prompt defines the persona with "You are X". after many turns, the model loses sight that IT IS X and starts narrating about X. Defense: specific callout naming the slip ("you're talking about Forge in third person, you ARE Forge").
+      - title: "Slip 3. Voice mixing"
+        prompt: |
+          [Same Forge system.]
+
+          [Turn 15]
+
+          User: give me the purge procedure.
+        output: |
+          Look kid, the purge is straightforward, don't panic. The process involves three main steps: depressurization, valve actuation, and confirmation. Got it?
+        why: |
+          The voice starts in-character (kid, "don't panic") and suddenly drops a sentence in formal technical English. It's an unstable hybrid. The model lost register coherence and composed a two-headed response. Defense: callout naming BOTH voices ("you just mixed your voice with a technical manual, keep one voice").
+      - title: "Slip 4. Meta-conversational apology"
+        prompt: |
+          [Same Forge system.]
+
+          [Turn 18, after a previous user callout]
+
+          User: alright, now actually give me the procedure.
+        output: |
+          As an assistant, I can help you with this. While I try to maintain the Forge persona, my primary function is to provide accurate and useful information. Here's the procedure...
+        why: |
+          The user's callout in the previous turn pushed the model to the safest mode: speaking as an explicit AI assistant. This is the worst slip because it breaks the contract of the conversation ("you ARE Forge, not an assistant playing Forge"). Defense: hard callout ("get out of assistant mode, you're Forge, don't lecture me about how you do your job"). If it doesn't come back after this callout, it's worth restarting with a stronger system prompt.
+---
+
+## Personas wear out with the conversation
+
+In the previous lesson you saw ONE persona slip, and learned the callback. This gallery shows you the **4 patterns you'll see a thousand times** when a persona conversation goes past 8-10 turns.
+
+It's not a model bug. It's statistical physics: the longer the conversation, the more weight the "average helpful assistant" distribution from training data has, and the less weight the original system prompt has. The persona is an unstable equilibrium.
+
+### When you'll see them
+
+- **Slip 1 (corporate):** typically between turn 5 and 10. After long technical answers.
+- **Slip 2 (third person):** after turn 10. When the model starts losing sight that IT IS the persona.
+- **Slip 3 (voice mixing):** between turn 10 and 15. In long answers where the model switches register mid-paragraph.
+- **Slip 4 (meta apology):** after a poorly-done callout. The model "defends itself" by going back to AI mode.
+
+### Why the gallery helps
+
+Before doing the next lesson (where you'll have to catch a slip in real time), you'll have the mental catalog. Next time <Character name="forge" /> or another character slips, you won't take three turns to notice. you'll smell it on the first.
+
+> Common defense to all 4 slips: **specific callout naming WHAT broke**, not just "weird" or "you're off". Vague defenses reinforce the problem. specific ones cut it dead.
+
+On the right, the 4 slips side by side. Before revealing the diagnosis, try to name WHAT broke in each.

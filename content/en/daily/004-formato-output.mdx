@@ -1,0 +1,146 @@
+---
+title: "Quick mission: JSON, bullets, or prose"
+intro: |
+  Format is not aesthetic. It decides how easy it is to consume the output downstream.
+station: vega
+teaches:
+  - strict-output-format
+  - structured-output
+  - tool-output-shape
+characters:
+  - vega
+  - hex
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Hex sends you five requests. Pick the right format for each one based
+      on who or what is going to consume the output.
+    slots:
+      - id: json
+        label: "JSON"
+      - id: bullets
+        label: "Bullets"
+      - id: prosa
+        label: "Prose"
+    pieces:
+      - id: p1
+        label: "Another program will parse the response and trigger an action."
+        correctSlot: json
+      - id: p2
+        label: "A human reads the morning stand-up summary for the team."
+        correctSlot: bullets
+      - id: p3
+        label: "A new crewmate needs an explanation of why the policy changed."
+        correctSlot: prosa
+      - id: p4
+        label: "The dashboard shows the top 3 incidents of the day in cards."
+        correctSlot: bullets
+      - id: p5
+        label: "A webhook receives the result and stores the fields in a database."
+        correctSlot: json
+      - id: p6
+        label: "The end-of-shift executive report gets printed and signed."
+        correctSlot: prosa
+  - kind: prompt-AB
+    question: |
+      Vega asks the model for a shift summary to store in the database.
+      Another service will read the result. Which prompt do you send?
+    optionA: |
+      ```
+      Summarize the shift and return the important info in a clear way.
+      ```
+    optionB: |
+      ```
+      Return exact JSON, no text before or after:
+      {
+        "shift_id": string,
+        "events_count": number,
+        "incidents": [{ "id": string, "severity": "low"|"med"|"high" }]
+      }
+      ```
+    correct: B
+    explanation: |
+      If another program consumes the output, "in a clear way" is not
+      enough. The model might return bullets, prose, or JSON with a
+      preamble like "Here is the JSON:". Any of those breaks the parser
+      on the consuming side.
+
+      Option B leaves no room. It defines the schema field by field, says
+      "no text before or after" to kill the preamble, and the enum values
+      ("low"|"med"|"high") prevent the model from inventing new categories.
+
+      Rule: if it goes to a machine, explicit schema. If it goes to a
+      human, the format can be looser.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this well-built prompt. Pay special attention to
+      the section where the format is specified.
+    parts:
+      - id: role
+        label: "Role of the assistant"
+        text: "You are a shift analyst. You summarize operational events into a format an API can consume."
+      - id: task
+        label: "Task (what to do)"
+        text: "Summarize the following shift report and extract the incidents mentioned."
+      - id: format
+        label: "Format spec (the exact shape of the output)"
+        text: "Return only valid JSON with the shape: { \"summary\": string, \"incidents\": [{ \"id\": string, \"severity\": \"low\"|\"med\"|\"high\" }] }. No text before or after."
+      - id: fallback
+        label: "Fallback (what to do if info is missing)"
+        text: "If there are no incidents, return incidents: []. Never omit the field."
+  - kind: prompt-AB
+    question: |
+      You need a predictable output to store in a database. Two ways to
+      ask for it: "structured" or JSON with exact fields. Which one gives
+      you more consistency?
+    optionA: |
+      ```
+      Give me the response in a structured way, with the important fields
+      well organized.
+      ```
+    optionB: |
+      ```
+      Return JSON with exactly these fields:
+      - shift_id (string)
+      - events_count (number)
+      - incidents (array of objects with id, severity)
+      Nothing more, nothing less.
+      ```
+    correct: B
+    explanation: |
+      "Structured" is a word that sounds technical but commits to nothing.
+      The model can hand back YAML, a markdown table, JSON with different
+      fields each run, or a weird nested object. All of those are
+      "structured" under some reading.
+
+      Option B names every field, gives it a type, and closes with
+      "nothing more, nothing less". The model has no room to improvise.
+      Tomorrow you run the same prompt and you get the same schema.
+
+      Operating rule: when the output goes to a parser, mentioning the
+      format is not enough. You have to list the fields one by one.
+  - kind: step-order-dnd
+    task: |
+      Order the steps to specify the output format well when you plan to
+      parse the result.
+    steps:
+      - id: s1
+        label: "Define what exact fields the consumer needs."
+        detail: "Without this, any format will do and none of them is right."
+      - id: s2
+        label: "Write the full schema in the prompt, with a type per field."
+        detail: "JSON with types, not 'give me structured info'."
+      - id: s3
+        label: "Add an example of the expected output to the prompt."
+        detail: "One concrete example beats three sentences describing the format."
+      - id: s4
+        label: "Validate on the client side with a parser that fails loudly."
+        detail: "If the JSON comes back malformed, the system has to know. Do not swallow."
+      - id: s5
+        label: "Decide what happens on parse failure: retry, fallback, visible error."
+        detail: "Never silence the failure. Decide explicitly how it is handled."
+---
+
+Mission of the day: the format is picked by the consumer of the output,
+not the one writing the prompt. JSON for machines, bullets for humans in
+a hurry, prose for humans who read.

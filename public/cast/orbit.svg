@@ -1,0 +1,54 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
+  <defs>
+    <linearGradient id="obody" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#37475c"></stop>
+      <stop offset="1" stop-color="#1a2233"></stop>
+    </linearGradient>
+    <linearGradient id="ovisor" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#3a5a78"></stop>
+      <stop offset=".5" stop-color="#8fb6d4"></stop>
+      <stop offset="1" stop-color="#3a5a78"></stop>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="100" cy="226" rx="56" ry="6" fill="#000" opacity=".35"></ellipse>
+
+  <rect x="56" y="130" width="88" height="84" rx="22" fill="url(#obody)" stroke="#0a0e1d" stroke-width="2"></rect>
+
+  <rect x="70" y="148" width="60" height="44" rx="8" fill="#0e1726" stroke="#8fb6d4" stroke-width="1" opacity=".95"></rect>
+
+  <circle cx="100" cy="170" r="14" fill="none" stroke="#8fb6d4" stroke-width="1.4" opacity=".9"></circle>
+  <circle cx="100" cy="170" r="8" fill="none" stroke="#8fb6d4" stroke-width="1.1" opacity=".55"></circle>
+  <circle cx="100" cy="170" r="2.2" fill="#8fb6d4"></circle>
+
+  <text x="100" y="186" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" font-weight="700" letter-spacing="2.4" fill="#8fb6d4" opacity=".85">ORBIT</text>
+
+  <circle cx="50" cy="138" r="13" fill="#1a263c" stroke="#0a0e1d" stroke-width="2"></circle>
+  <circle cx="150" cy="138" r="13" fill="#1a263c" stroke="#0a0e1d" stroke-width="2"></circle>
+
+  <rect x="34" y="148" width="22" height="50" rx="11" fill="url(#obody)" stroke="#0a0e1d" stroke-width="2"></rect>
+  <rect x="144" y="148" width="22" height="50" rx="11" fill="url(#obody)" stroke="#0a0e1d" stroke-width="2"></rect>
+
+  <rect x="92" y="118" width="16" height="18" rx="4" fill="#1a263c" stroke="#0a0e1d" stroke-width="2"></rect>
+
+  <rect x="50" y="40" width="100" height="86" rx="30" fill="url(#obody)" stroke="#0a0e1d" stroke-width="2.5"></rect>
+
+  <rect x="56" y="72" width="88" height="22" rx="11" fill="#0a0e1d" stroke="#0a0e1d" stroke-width="1"></rect>
+  <rect x="60" y="76" width="80" height="14" rx="7" fill="url(#ovisor)"></rect>
+  <line x1="60" y1="83" x2="140" y2="83" stroke="#fff" stroke-width="1.1" opacity=".55"></line>
+
+  <circle cx="84" cy="83" r="2.4" fill="#fff" opacity=".95"></circle>
+  <circle cx="116" cy="83" r="2.4" fill="#fff" opacity=".95"></circle>
+
+  <line x1="100" y1="40" x2="100" y2="22" stroke="#0a0e1d" stroke-width="2.5"></line>
+  <circle cx="100" cy="20" r="5" fill="#8fb6d4" stroke="#0a0e1d" stroke-width="1.5"></circle>
+  <circle cx="100" cy="20" r="10" fill="none" stroke="#8fb6d4" stroke-width="1" opacity=".55"></circle>
+
+  <rect x="84" y="106" width="32" height="6" rx="2" fill="#0a0e1d"></rect>
+  <rect x="86" y="108" width="3" height="2" rx="1" fill="#8fb6d4" opacity=".75"></rect>
+  <rect x="92" y="108" width="3" height="2" rx="1" fill="#8fb6d4" opacity=".75"></rect>
+  <rect x="98" y="108" width="3" height="2" rx="1" fill="#8fb6d4" opacity=".75"></rect>
+  <rect x="104" y="108" width="3" height="2" rx="1" fill="#8fb6d4" opacity=".75"></rect>
+  <rect x="110" y="108" width="3" height="2" rx="1" fill="#8fb6d4" opacity=".75"></rect>
+</svg>

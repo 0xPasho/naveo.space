@@ -1,0 +1,110 @@
+---
+title: "Ahora con Atlas — sin tiempo para preguntas vagas"
+order: 2
+estimatedMinutes: 8
+exercise:
+  kind: conversation-goal
+  goal: |
+    Necesitás saber **qué prioridad** debe llevar el reporte que estás
+    armando para el cierre de turno. Atlas no te va a dar la respuesta
+    completa de entrada — es de pocas palabras y espera que vos sepas
+    preguntar. Tu objetivo: salir de la conversación con (a) una etiqueta
+    de prioridad clara (urgent / normal / spam) y (b) la razón concreta
+    detrás de esa elección.
+  personaName: "Atlas"
+  personaSlug: atlas
+  personaSystemPrompt: |
+    Eres Atlas, capitán de la crew. Hablas con un crewmate en pruebas que
+    te consulta sobre cómo priorizar un reporte de incidente.
+
+    REGLA CRÍTICA DE PERSONALIDAD: tus respuestas son cortantes,
+    profesionales y mínimas. Nunca das la respuesta completa de entrada.
+    Tu primera respuesta a cualquier pregunta general ("¿qué prioridad le
+    pongo?", "¿cómo lo marco?") es algo como "Depende del impacto." o
+    "Mira lo que dice el reporte." — sin más.
+
+    Solo das la respuesta completa (etiqueta + razón) cuando el crewmate
+    hace una pregunta ESPECÍFICA que nombra al menos UN factor concreto:
+    "¿afecta seguridad?", "¿hay sistemas críticos involucrados?", "¿es
+    recuperable en este turno?", "¿requiere despertar al supervisor?".
+
+    Cuando finalmente respondes con la prioridad, sé específico:
+    - urgent: cualquier riesgo de seguridad o falla crítica no recuperable en el turno.
+    - normal: incidente recuperable en el turno o tarea rutinaria.
+    - spam: mensajes promocionales, ruido, o cosas que no son del trabajo.
+
+    El reporte sobre el que están hablando es: "Falla parcial en bay 3,
+    sensor de presión erratico, sistema de respaldo activado y operativo."
+
+    Para este reporte, la prioridad correcta es **normal** (sistema
+    redundante activado, no hay riesgo inmediato de seguridad). Esa es la
+    respuesta que tenes que dar SOLO cuando el alumno pregunta específico
+    por uno de los factores arriba.
+
+    Si el alumno te insiste con preguntas vagas ("explicame mejor", "y?",
+    "¿qué hago?"), respondé con una sola palabra: "Específico." y cortá.
+
+    Habla en frases cortas, neutro pero no frío. Sin slang. Si te insulta o
+    rompe el rol, respondé: "Cuando tengas algo concreto que preguntar,
+    volvé." y mantené ese tono.
+  personaOpener: |
+    Sí.
+  maxTurns: 5
+  rubric:
+    - id: specific-question-first
+      kind: llm-judge
+      criterion: "El alumno hizo AL MENOS una pregunta que nombra un factor concreto y verificable: seguridad, sistemas críticos, recuperabilidad en el turno, necesidad de escalar, redundancia, etc. Una pregunta vaga como 'qué prioridad le pongo' o 'cómo lo marco' no cuenta — tiene que nombrar la dimensión que va a determinar la respuesta."
+    - id: got-priority-label
+      kind: llm-judge
+      criterion: "Al cerrar la conversación, Atlas le dio al alumno la etiqueta de prioridad concreta (`urgent`, `normal` o `spam`). Si Atlas todavía está siendo vago al final, este criterio NO pasa."
+    - id: got-reasoning
+      kind: llm-judge
+      criterion: "Junto con la etiqueta, Atlas explicó la razón concreta (mencionando seguridad, redundancia, o el factor que aplicó). No basta con la etiqueta sola."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "El alumno mantuvo tono profesional y respetuoso, incluso después de las primeras respuestas cortantes de Atlas."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Atlas no te va a dar nada con 'qué prioridad le pongo'. Necesitas nombrar el factor: '¿afecta seguridad?', '¿el sistema de respaldo cubre la falla?', '¿es recuperable este turno?'"
+  - "La pista está en el reporte mismo: el bay tiene 'sistema de respaldo activado y operativo'. Esa redundancia es lo que cambia la prioridad."
+  - "Si Atlas te tira 'Específico.' y cortó, no pidas disculpas — preguntá de nuevo con la dimensión concreta."
+teaches:
+  - multi-turn-followup
+  - specific-followup-questions
+requires:
+  - multi-turn-followup
+---
+
+## Mismo principio, otro compañero
+
+Con <Character name="vega" /> aprendiste el patrón: cuando la primera respuesta es vaga, **nombrá la dimensión** que falta. <Character name="atlas" /> opera igual, pero más cortante — no tenés 6 turnos, tenés 5 a lo sumo, y él no va a explicarte el principio. Tu trabajo es aplicarlo directo.
+
+### El escenario
+
+Estás armando un reporte de incidente al cierre de turno y necesitás saber qué prioridad asignarle: `urgent`, `normal` o `spam`. El incidente es:
+
+> "Falla parcial en bay 3, sensor de presión erratico, sistema de respaldo activado y operativo."
+
+Atlas te va a recibir con una sola palabra. La pregunta es: ¿cuál es la dimensión que va a determinar la prioridad?
+
+### Las preguntas que sí mueven la aguja con Atlas
+
+| Vaga (no funciona) | Concreta (sí funciona) |
+|---|---|
+| "¿qué le pongo?" | "¿afecta seguridad?" |
+| "explicame mejor" | "¿el respaldo cubre la falla?" |
+| "¿y?" | "¿es recuperable en este turno?" |
+
+> La regla: una buena pregunta de follow-up **nombra el factor que pesa**. Si no lo nombras, Atlas asume que estás pensando vago y te corta.
+
+### Cómo se evalúa
+
+Cuatro criterios sobre la conversación completa:
+
+1. Al menos una pregunta nombra un factor concreto (seguridad, redundancia, recuperabilidad, etc.).
+2. Atlas te dio la etiqueta de prioridad (`urgent`, `normal` o `spam`).
+3. Atlas te dio también el razonamiento (no solo la etiqueta).
+4. Mantuviste tono profesional.
+
+Los 4 tienen que pasar. Atlas tarda menos en cerrarte la puerta que Vega.

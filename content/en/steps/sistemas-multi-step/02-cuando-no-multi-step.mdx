@@ -1,0 +1,86 @@
+---
+title: "When NOT to split into multiple steps"
+order: 2
+estimatedMinutes: 6
+characters:
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Orbit tests you before moving on. New ask: *"Given a full name and
+    an email, return a formal greeting in English: 'Dear {name}, we are
+    writing to {email}.'"*. Two designs on the whiteboard. Which one
+    would you ship?
+  optionA: |
+    ONE SINGLE PROMPT:
+
+    "You are a formal-greeting generator. You receive a name and an email.
+    Return exactly: 'Dear {name}, we are writing to {email}.' No extra
+    text, no variations. If the name is empty, return 'Dear customer, we
+    are writing to {email}.'"
+  optionB: |
+    3-STEP CHAIN:
+
+    Step 1. detect_title(name) → "Mr." | "Ms." | "Mx."
+    Step 2. validate_email(email) → ok | invalid
+    Step 3. compose_greeting(name, title, email) → "Dear ..."
+  correct: A
+  explanation: |
+    This is the track's trap: **splitting when you don't need to costs
+    more than it pays back**. Option B has three LLM calls (or two
+    LLMs + one code call) when the task is **one deterministic
+    decision**: filling a template.
+
+    Four signals that you do NOT need multi-step:
+
+    1. **Output is a direct transformation of the input.** No branching,
+       no heterogeneous conditionals, no combining external sources.
+    2. **Success criterion is checkable with regex/parser.** If you can
+       validate the output with code, you don't need an LLM-judge.
+    3. **The prompt fits comfortably in 15 lines.** You don't have to
+       list N different rules for N input types.
+    4. **No external data to fetch.** No retrieval, no tools, no info
+       that isn't already in the input.
+
+    Multi-step pays when the problem branches, depends on external
+    context, or needs intermediate evaluable decisions. For a format
+    string, any extra call is noise, cost, and gifted latency.
+hints:
+  - "Count the REAL decisions in the task. Filling a template is ONE decision. Splitting it into 3 invents decisions that don't exist."
+  - "Every LLM call you add adds latency (200-2000ms), cost (tokens in + out), and new failure points. It has to pay for itself."
+  - "Do you need to 'detect a title' to say 'Dear'? In English you can just say 'Dear {name}'. An LLM call for that is pure over-engineering."
+teaches:
+  - when-not-to-chain
+requires:
+  - chain-vs-mono-prompt
+---
+
+## Lesson 01 in reverse
+
+In lesson 01 you saw when one prompt isn't enough. Now, before learning to build chains, <Character name="orbit" /> stops you cold: **most tasks aren't multi-step**. If you split everything, you'll pile on cost, latency, and bugs without gaining anything.
+
+> Orbit's rule: *one good single prompt beats five mediocre chained prompts*. Multi-step pays when the problem **really** branches. Not when you imagine it could.
+
+### The four "don't split" signals
+
+1. **Output = direct transformation of the input.** Format strings, parsing a known JSON, literal translation. One model call or one pure function. Not three.
+2. **Validatable with regex/parser.** If success is checkable in code, you don't need a judge or a chain. A well-written prompt plus a deterministic test is everything.
+3. **Short, focusable prompt.** If all the rules fit in 10-15 lines without contradicting each other, one call handles them.
+4. **No external data.** No retrieval, no tools, no conditional on the world. If everything needed is in the input, there's nothing to orchestrate.
+
+### Real costs of over-splitting
+
+Every step you add brings:
+
+- **Latency.** 200-2000ms per LLM call. Three steps = possible 5-second response.
+- **Cost.** Each step charges tokens in + out. Three steps repeat the same context three times.
+- **Failure points.** Each step can fail, hallucinate, or return an unexpected format.
+- **Maintenance.** Three prompts to maintain, three rubrics to write, three versions to track.
+
+> If the task fits in one prompt and you can validate it with regex, **keep it in one prompt**. Complexity is earned, not gifted.
+
+### The decision trick
+
+Before you split, write the task in one line. If the line has **one real decision**, it stays in one prompt. If it has several genuinely independent decisions (classify AND extract AND summarize), then split.
+
+Look at the two designs on the right. One is honest: one decision, one prompt. The other invents steps to look like engineering. Pick the one you'd ship.

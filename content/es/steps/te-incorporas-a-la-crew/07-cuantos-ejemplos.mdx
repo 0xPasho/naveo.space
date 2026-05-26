@@ -1,0 +1,121 @@
+---
+title: "Cuántos ejemplos, cuáles ejemplos"
+order: 7
+estimatedMinutes: 5
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo tiene dos versiones del clasificador de mensajes. Ambas usan
+    few-shot con 3 ejemplos. ¿Cuál va a fallar menos en producción?
+  optionA: |
+    ```
+    Clasifica en urgent, normal o spam.
+
+    Mensaje: "Reactor at 102%, venting now"
+    Clasificación: urgent
+
+    Mensaje: "Coolant leak in bay 7, need maintenance NOW"
+    Clasificación: urgent
+
+    Mensaje: "EMERGENCY: oxygen drop in deck 3"
+    Clasificación: urgent
+
+    Mensaje: {{input}}
+    Clasificación:
+    ```
+  optionB: |
+    ```
+    Clasifica en urgent, normal o spam.
+
+    Mensaje: "Reactor at 102%, venting now"
+    Clasificación: urgent
+
+    Mensaje: "Monthly diagnostics scheduled Thursday 09:00"
+    Clasificación: normal
+
+    Mensaje: "FREE crew tokens! Claim before midnight!!!"
+    Clasificación: spam
+
+    Mensaje: {{input}}
+    Clasificación:
+    ```
+  correct: B
+  explanation: |
+    El prompt A tiene 3 ejemplos, todos urgent. El modelo no aprende a
+    distinguir entre categorías: aprende que **todo es urgent**. Cuando
+    llegue un mensaje normal o spam, va a clasificar como urgent porque
+    es lo que vio.
+
+    El prompt B tiene un ejemplo por categoría. El modelo aprende la
+    **diferencia**, no la similitud. Tres ejemplos bien elegidos enseñan
+    más que diez ejemplos del mismo tipo.
+
+    Esta es la regla central de few-shot: **cobertura gana a cantidad**.
+    Asegurate de que cada categoría tenga al menos un ejemplo, antes de
+    agregar redundancia.
+hints:
+  - "Mirá los 3 ejemplos de cada prompt. ¿Cuántas categorías cubren?"
+  - "Si el modelo solo ve ejemplos de una categoría, ¿qué va a predecir para todos los casos siguientes?"
+  - "Few-shot enseña por patrón. Si el patrón visible es 'todo es urgent', el modelo lo replica."
+teaches:
+  - few-shot-selection
+requires:
+  - few-shot-basics
+---
+
+## Few-shot: dos preguntas, no una
+
+Ya viste **qué** es few-shot y **por qué** funciona. Ahora las dos preguntas que faltan: ¿cuántos ejemplos? ¿cuáles?
+
+### Cuántos: 2 a 5 suele ganar
+
+Demasiados pocos: el modelo no detecta el patrón. Demasiados: empieza a fijarse en cosas superficiales (palabras específicas, longitud, signos de puntuación) en vez del concepto.
+
+Regla práctica:
+
+| Cantidad | Cuándo usar |
+| --- | --- |
+| 1 ejemplo | Solo si la tarea es trivial (formato muy claro, una sola regla) |
+| 2-3 ejemplos | Sweet spot para clasificación simple, extracción de datos |
+| 4-5 ejemplos | Tareas con matices o categorías borrosas |
+| 6+ ejemplos | Rara vez ayudan. Costo crece, el modelo se confunde |
+
+### Cuáles: cobertura > redundancia
+
+Tres ejemplos del mismo tipo enseñan menos que un ejemplo por tipo.
+
+**Mal seleccionados:**
+
+```
+- urgent: "reactor 102%"
+- urgent: "leak in bay 7"
+- urgent: "emergency in dock"
+```
+
+El modelo "ve" 3 ejemplos pero todos dicen lo mismo. Aprende que **todo es urgent**. Cuando llegue un mensaje normal va a clasificar como urgent porque es lo que vio.
+
+**Bien seleccionados:**
+
+```
+- urgent: "reactor 102%, venting now"
+- normal: "monthly diagnostics Thursday 09:00"
+- spam: "FREE crew tokens. claim before midnight"
+```
+
+Cada ejemplo cubre una **categoría distinta**. El modelo aprende la diferencia, no la similitud.
+
+### Bonus: incluí el caso borroso
+
+Si tu clasificador va a fallar en algún caso, va a fallar en los **bordes**: el mensaje que parece urgent pero no lo es, el que parece spam pero es legítimo. Si sabés cuál es ese borde, **agregalo como ejemplo extra**.
+
+```
+- normal: "Bru: hey, ¿revisamos el panel de bay 2 hoy o esperamos al turno de mañana?"
+```
+
+Ese mensaje **parece** urgente (menciona bay, hace pregunta directa), pero la prioridad real es normal. Un ejemplo así le enseña al modelo a no caer en la trampa de *"toda mención de bay = urgent"*.
+
+> Regla: 3-5 ejemplos, cubriendo todas las categorías, más 1 caso borroso si lo conoces. Es más valioso que 10 ejemplos del caso fácil.
+
+A la derecha, dos prompts con few-shot. Mismo formato, distinta selección. ¿Cuál clasifica mejor?

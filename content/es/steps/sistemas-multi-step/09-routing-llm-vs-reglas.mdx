@@ -1,0 +1,135 @@
+---
+title: "Routing por reglas vs por LLM"
+order: 9
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Orbit te muestra dos routers para el mismo problema: enrutar
+    mensajes entrantes a uno de cuatro flows. Los inputs reales que
+    recibís son **muy variados** (formato libre, jerga, idiomas
+    mezclados, errores de tipeo). ¿Cuál router elegís?
+  optionA: |
+    ROUTER POR REGLAS (código):
+
+    ```
+    function route(text) {
+      const lower = text.toLowerCase()
+      if (lower.includes("ticket") || lower.includes("incident") || lower.includes("falla")) return "incident_report"
+      if (lower.includes("turno") || lower.includes("shift") || lower.includes("quién está")) return "shift_info"
+      if (lower.startsWith("¿quién es") || lower.startsWith("who is")) return "crewmate_lookup"
+      return "escalate_to_human"
+    }
+    ```
+
+    Rápido (<1ms), determinista, gratis. Mantenido a mano.
+  optionB: |
+    ROUTER POR LLM (prompt):
+
+    "Sos un router. Leé el mensaje del usuario y devolvé exactamente
+    una de: incident_report, shift_info, crewmate_lookup, escalate_to_human.
+    Si dudás, escalá."
+
+    + el input del usuario en `{{input}}`.
+
+    Latencia: ~500ms. Costo: ~500 tokens por llamada. Sin código que
+    mantener cuando cambian los patrones de entrada.
+  correct: B
+  explanation: |
+    Para inputs **variados, en formato libre, con jerga e idiomas
+    mezclados**, las reglas se rompen al primer caso que no anticipaste.
+    El router por LLM generaliza por **significado**, no por keywords.
+
+    Cuándo elegir cada uno:
+
+    | Caso | Router |
+    |---|---|
+    | Inputs estructurados (forms, dropdowns, IDs) | Reglas |
+    | 2-3 categorías muy diferenciables (urgent vs no-urgent) | Reglas |
+    | Latencia crítica (<10ms) | Reglas |
+    | Inputs libres, multilenguaje, jerga | LLM |
+    | Más de 4-5 rutas con solapamiento semántico | LLM |
+    | Necesitás un "default seguro" no obvio | LLM |
+
+    El error común: hacer rules-based "por ahorrar costo" en inputs que
+    SON libres. Termina con un router lleno de excepciones, miles de
+    parches por cada caso nuevo, y sigue mis-routing en producción.
+
+    Regla práctica de <Character name="orbit" />: **arrancá con LLM,
+    medí accuracy con tu eval set, y solo bajá a reglas cuando demuestres
+    con datos que las reglas matchean igual de bien**. Casi nunca pasa.
+hints:
+  - "Las reglas funcionan cuando podés enumerar los inputs. Si no podés enumerarlos, son las reglas equivocadas."
+  - "El costo del LLM suena alto hasta que comparás con el costo de tu tiempo manteniendo las reglas + los bugs que filtran a producción."
+  - "Caso límite: para routing en hot paths con miles de QPS, podés usar un classifier chico (no el modelo grande) como router. Es la mezcla 'LLM barato como reglas adaptativas'."
+teaches:
+  - rules-vs-llm-routing
+requires:
+  - prompt-router
+---
+
+## Dos sabores de router, dos contextos distintos
+
+En el step 08 escribiste un router por LLM. Pero existe otra alternativa: **router por reglas**, una función de código con `if/else` sobre keywords y patrones. ¿Cuándo conviene cada uno?
+
+### Reglas: rápido, barato, frágil
+
+Pros:
+
+- Latencia <1ms.
+- Costo cero por invocación.
+- Determinista. Mismo input, misma ruta, siempre.
+- Auditable. Cualquiera lee el código y entiende qué hace.
+
+Contras:
+
+- Frágil ante variaciones de input. Un typo, un sinónimo, una traducción y la regla falla.
+- Mantenimiento explota. Cada caso nuevo es otra rama, y nunca termina.
+- No generaliza. Si el corpus de inputs cambia, las reglas no aprenden.
+
+### LLM: flexible, caro, no determinista
+
+Pros:
+
+- Generaliza por significado, no por keywords.
+- Maneja sinónimos, multilenguaje, errores de tipeo gratis.
+- Te das cuenta del default seguro (escalar) en la descripción de la ruta, no en código.
+
+Contras:
+
+- Latencia 200-2000ms.
+- Costo por invocación.
+- No determinista (sin temperature=0 y eval set bien armado).
+
+### El árbol de decisión
+
+```
+¿El input es estructurado (form, JSON, dropdown)?
+  SÍ → reglas. Punto.
+  NO → seguimos.
+
+¿Tenés 2-3 categorías muy distintas que un regex sencillo separa?
+  SÍ → reglas con un fallback claro.
+  NO → seguimos.
+
+¿La latencia crítica es <50ms o tenés miles de QPS?
+  SÍ → reglas + escalación opcional a LLM para los casos default.
+  NO → LLM.
+```
+
+> El error que <Character name="orbit" /> ve más: equipos que arrancan con reglas "para ahorrar" y, seis meses después, tienen 4000 líneas de `if/else` que nadie entiende, accuracy del 60%, y un backlog de "casos especiales" que crece más rápido de lo que se cierra.
+
+### Híbrido: lo mejor de los dos
+
+En sistemas serios, el patrón ganador suele ser:
+
+1. **Una capa de reglas rapidísima** para los casos obvios (95% del tráfico real).
+2. **Una capa LLM** que toma todo lo que las reglas marcan como "no estoy seguro".
+
+Las reglas dan latencia baja en el camino feliz; el LLM atrapa la cola larga sin que el costo explote.
+
+### Tu ejercicio
+
+A la derecha, dos routers para el mismo problema: input libre, multilenguaje, con jerga interna. Elegí cuál mandarías a producción y por qué.

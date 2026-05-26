@@ -1,0 +1,36 @@
+---
+title: "Audit signed"
+order: 19
+estimatedMinutes: 1
+characters:
+  - atlas
+  - hex
+demo:
+  id: lesson-complete
+  props:
+    signedBy: atlas
+---
+
+## Audit signed. <Character name="hex" /> reports nothing. <Character name="atlas" /> stamps the protocol.
+
+> <Character name="hex" />: *"Didn't find anything this time."* That's the only way Atlas signs.
+
+You came into this track to learn the failure modes that ship real incidents. You leave with the discipline to catch them **before** they ship.
+
+**What you carry on every system you build from here:**
+
+- **Label the incident before you patch.** Injection, leak, hallucination. each one has different defenses. treating the wrong failure mode is wasted time.
+- **Prompt injection is structural.** You don't out-clever it. you tag boundaries, restate scope under untrusted data, refuse out-of-scope, log suspicious patterns. and you validate at the output what might have slipped past the input.
+- **Assume all external content is hostile.** Documents, tool responses, RAG. the user can be innocent and the attacker can be in the file. wrap in tags, declare as data, separate capabilities.
+- **Data classification.** Public, operational, PII, secret. Only the first two reach the model in plaintext. The rest lives in the vault, accessed by reference. secrets NEVER go in the model's context.
+- **Detect PII before it enters. Detect leaks before they exit.** Layers: cheap regex, small contextual model, audit log. on output, placeholders and refusal to direct requests.
+- **Draw the trust boundary.** Every arrow between components is green (trusted) or red (untrusted). every red arrow needs a validation layer before crossing.
+- **Small tools, scoped capabilities.** One tool, one capability. Privilege level lives in the wiring, not in the `action` enum. Destructive goes with dry-run and two-phase confirmation.
+- **An audit log that doesn't sink you.** Operational plain, sensitive hashed, secrets and PII never. If your leaked log gives the attacker anything new, it's not audit log. it's second problem.
+- **Calibrate confident lies.** A model that returns `UNKNOWN` on what it can't verify is a model you can route through humans, retries, or fallback tools. A model that always invents has no trust budget left.
+- **Rate limit is defense, not just cost.** Per IP, per sensitive argument, per tokens-per-minute. and always log when it trips.
+- **Red-team before you ship.** Role impersonation, hypothetical framing, indirect retrieval, multi-turn rapport. every leak you find in the sandbox is a leak you don't ship.
+
+You've got every track signed. That's not the end. it's the floor you build the rest of your work on top of.
+
+> <Character name="atlas" />: *"You shipped a system someone tried to break and it held. That's the only review I trust."*

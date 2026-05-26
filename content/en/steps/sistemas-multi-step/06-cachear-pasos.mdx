@@ -1,0 +1,112 @@
+---
+title: "Caching steps: same input, run once"
+order: 6
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: wiring-dnd
+  task: |
+    Your chain has six steps and shift reports repeat with small
+    variations (same bay, same fault, different time). Without cache,
+    you run all 6 steps every time. With cache, you reuse the steps
+    whose inputs didn't change.
+
+    But **not every step is cacheable**: some have side effects, some
+    depend on the time, some query live data. Connect each step to the
+    cache type it deserves.
+
+    Three cache types available, plus a "do not cache" option.
+  sources:
+    - id: classify
+      label: "classify_incident"
+      detail: "Takes raw text, returns category. Deterministic for same input."
+    - id: extract
+      label: "extract_fields"
+      detail: "Takes text + category, returns fields. Deterministic."
+    - id: severity
+      label: "score_severity"
+      detail: "Takes text + category, returns high/med/low. Deterministic."
+    - id: lookup-roster
+      label: "lookup_oncall_roster"
+      detail: "Queries the roster API. The roster changes per shift."
+    - id: file-ticket
+      label: "file_ticket"
+      detail: "Creates a ticket in the system. SIDE EFFECT: each call inserts a row."
+    - id: notify
+      label: "notify_humans"
+      detail: "Sends a message to the channel. SIDE EFFECT by definition."
+  targets:
+    - id: cache-by-hash
+      label: "Permanent cache by input hash"
+      detail: "Hash(input) → output. Lasts days/weeks. Ideal for pure steps."
+    - id: cache-ttl
+      label: "Short-TTL cache (e.g. 5 minutes)"
+      detail: "Hash(input) → output with expiration. Ideal for slowly changing data."
+    - id: never-cache
+      label: "Never cache"
+      detail: "The step has side effects, or needs to ALWAYS run."
+  correctConnections:
+    - from: classify
+      to: cache-by-hash
+    - from: extract
+      to: cache-by-hash
+    - from: severity
+      to: cache-by-hash
+    - from: lookup-roster
+      to: cache-ttl
+    - from: file-ticket
+      to: never-cache
+    - from: notify
+      to: never-cache
+hints:
+  - "Any step that calls an LLM with a fixed input and a fixed prompt is **pure**: same input, same output (with temperature=0). Cacheable by hash."
+  - "If the output depends on the **world** (rosters, stocks, weather), a short TTL gives you fresh data without re-running every time."
+  - "Anything that **changes the world** (inserts rows, sends emails, calls webhooks) NEVER caches. Caching a side effect = guaranteed silent bug."
+teaches:
+  - chain-caching
+requires:
+  - chain-state-management
+---
+
+## Every call you don't make is money and time saved
+
+When a chain runs often with **equal or similar inputs**, you can avoid repeating work. The trick: identify which steps are **pure functions** (same input → same output) and store the result under a hash of the input.
+
+Next time the same input arrives, you hit the cache, return the output, skip the LLM call. Latency: 5ms. Cost: zero.
+
+### The three caching rules
+
+1. **Cache only the deterministic.** If the step uses the model with temperature=0 and a fixed prompt, it's cacheable. If it uses temperature>0, NO (every call gives a different output; caching destroys intentional randomness).
+2. **Cache with TTL for world data.** Lookups, rosters, stocks, relative dates. cache with short TTL (seconds to minutes). Better than always running, doesn't serve stale info.
+3. **NEVER cache side effects.** If the step inserts, sends, pays, or notifies, running it twice does TWO things. If you cache, the second time it doesn't run and you break the system contract.
+
+### What a cacheable step looks like
+
+```yaml
+- id: classify_incident
+  cache:
+    kind: hash
+    key: hash(input.text + prompt_version)
+    ttl: forever
+  prompt: |
+    Classify the following report ...
+```
+
+The runtime, before calling the LLM, computes `hash(input.text + prompt_version)`. If it finds an entry, returns it. If not, runs and stores.
+
+### Why include prompt_version in the key
+
+> If you only cache by input and tomorrow you change the prompt, the cache returns outputs from the OLD prompt. It's the most common bug with LLM caches. The key must include the prompt version to invalidate automatically.
+
+### When caching bites you
+
+- **Silent bugs.** If you cache a step that depends on something not declared in the input (a secret, an env var, the clock), different contexts share output incorrectly.
+- **Stale data.** Long TTLs on changing data give you outdated answers. User reports "the system said X but it already changed to Y".
+- **Tests that lie.** If your tests run against the cache, you're not testing the system. You're testing that the cache works.
+
+### Your exercise
+
+On the right, six steps of your pipeline. Some are pure (deterministic, ideal for hash cache), some depend on the world (short TTL), some NEVER can be cached (side effects). Connect each step to its correct type.
+
+> The "never cache" criterion: ask yourself *what happens if I run it twice?*. If both runs are equivalent, cacheable. If the second one does something new in the world, never.

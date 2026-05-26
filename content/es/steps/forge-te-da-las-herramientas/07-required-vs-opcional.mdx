@@ -1,0 +1,84 @@
+---
+title: "Required vs opcional: qué hace bloqueo y qué da espacio"
+order: 7
+estimatedMinutes: 5
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Forge está terminando el schema de `list_inventory_items` y necesita
+    decidir cada parámetro: ¿required o opcional? Arrastrá cada parámetro
+    al slot correcto. Pista: si la operación tiene sentido sin ese dato,
+    es opcional. Si sin ese dato la operación es ambigua o imposible, es
+    required.
+  slots:
+    - id: required
+      label: "Required (sin esto el tool no puede correr)"
+    - id: opcional
+      label: "Opcional (filtros, refinamientos, defaults sanos)"
+  pieces:
+    - id: item_id
+      label: "item_id (para get_inventory_item: traer un item por su id)"
+      correctSlot: required
+    - id: category
+      label: "category (para list_inventory_items: filtrar por tipo)"
+      correctSlot: opcional
+    - id: location
+      label: "location (para list_inventory_items: filtrar por bay)"
+      correctSlot: opcional
+    - id: quantity
+      label: "quantity (para add_inventory: cuántas unidades sumar)"
+      correctSlot: required
+    - id: include_archived
+      label: "include_archived (para list_inventory_items: ver items dados de baja)"
+      correctSlot: opcional
+    - id: reason
+      label: "reason (para mark_item_low_stock: por qué se marca)"
+      correctSlot: required
+hints:
+  - "Test mental: si llamás el tool sin ese parámetro, ¿el handler puede hacer algo razonable? Si sí, es opcional. Si no, es required."
+  - "`category` y `location` son **filtros**: list sin filtro devuelve todo. Eso es razonable. Por eso opcionales."
+  - "`reason` en `mark_item_low_stock` parece opcional, pero el caso de uso es que alguien después audite por qué se marcó. Sin razón, el registro no sirve. Es required de producto, no técnico."
+teaches:
+  - required-vs-optional-tradeoff
+requires:
+  - tool-schema-author-basics
+---
+
+## Cada `required` es un bloqueo. cada opcional es un default.
+
+Cuando marcás un parámetro como `required`, le decís al modelo: "sin esto, no llames el tool". El modelo respeta esa regla **a rajatabla**. Si no tiene el dato, va a preguntar al usuario, va a buscar en otra tool, o va a desistir. nunca va a inventar el campo (en general).
+
+Eso suena bueno hasta que required cualquier cosa. Entonces:
+
+- El modelo tiene que **juntar más datos antes de invocar**. más turnos.
+- Cualquier ambigüedad menor bloquea la llamada entera.
+- Los usuarios tienen que dar contexto que el sistema podría haber asumido por default.
+
+Por eso required no es la opción "segura". es una decisión de producto.
+
+### Cuándo marcar required
+
+Marcalo required solo si:
+
+1. **Sin ese dato, el handler no puede correr.** Ejemplo: `transfer_credits(from, to, amount)`. los tres son required. Sin `amount`, ¿qué transferimos?
+2. **El default seguro no existe.** Si vos no podés inventar un valor por default sin riesgo, el modelo tampoco. Pasalo a required.
+3. **Es ambiguo no tenerlo.** `mark_item_low_stock` sin `reason` deja un registro inútil para auditoría. Required de producto.
+
+### Cuándo dejarlo opcional
+
+Dejalo opcional cuando:
+
+1. **Es un filtro o refinamiento.** `list_inventory_items()` sin filtros devuelve todo. Eso es válido y útil.
+2. **Hay un default sano.** Si el sistema puede asumir "todos los activos", "los últimos 30 días", "el usuario actual", esos no van a required.
+3. **Es metadata que ayuda pero no bloquea.** `notes`, `tags`, `priority` cuando hay un default razonable.
+
+### El costo de cada lado
+
+| Lado | Costo |
+|---|---|
+| Required cuando podría ser opcional | El modelo pide datos extra al usuario. fricción. A veces no invoca por miedo a equivocarse. |
+| Opcional cuando debería ser required | El modelo invoca con campos vacíos. el handler crashea o devuelve basura. peor que no invocar. |
+
+> Regla práctica: **lo mínimo viable en required, lo demás opcional con default explícito**. Si dudás, escribilo en la description: "Si no se especifica `category`, devuelve todos los items activos." El modelo lee. y respeta.
+
+A la derecha tenés seis parámetros de tools que ya viste. Arrastralos al slot correcto.

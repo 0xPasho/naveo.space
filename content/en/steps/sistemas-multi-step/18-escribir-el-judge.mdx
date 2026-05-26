@@ -1,0 +1,131 @@
+---
+title: "Writing the LLM-judge: how you evaluate without a single right answer"
+order: 18
+estimatedMinutes: 12
+exercise:
+  kind: prompt-task
+  task: |
+    Echo asks you to write the **system prompt for an LLM-judge** that
+    evaluates the quality of answers from the `generate` step of the
+    RAG you built in step 05.
+
+    The judge receives 3 things:
+
+    1. The user's original question.
+    2. The snippets retrieve brought from the manual.
+    3. The answer that generate produced.
+
+    And returns a verdict JSON with 4 criteria:
+
+    - `grounded`: boolean. the answer is based ONLY on the snippets,
+      with no external info added.
+    - `cites_sources`: boolean. the answer cites the sources of the
+      snippets used.
+    - `acknowledges_gaps`: boolean. if the snippets don't answer the
+      question, the answer says so explicitly (instead of inventing).
+    - `clarity`: number. 1 to 5, how clear and concise the answer is.
+
+    Your job: write the system prompt that produces that verdict.
+
+    Where the model's answer-to-evaluate goes, use `{{input}}`. The
+    `{{input}}` represents the whole block. the question, the snippets,
+    and the generate's answer. concatenated with clear tags.
+  starter: |
+    You are a strict evaluator of RAG answers. Your job is to read the
+    following block and return a JSON with your verdict.
+
+    The block has this structure:
+
+    <question>...the user's question...</question>
+    <snippets>...the retrieved snippets...</snippets>
+    <answer>...the answer the generator produced...</answer>
+
+    Criteria:
+    1. grounded. boolean. ...
+    2. cites_sources. boolean. ...
+    3. acknowledges_gaps. boolean. ...
+    4. clarity. number 1-5. ...
+
+    Output format (raw JSON, no preamble, no markdown):
+    {
+      "grounded": true|false,
+      "cites_sources": true|false,
+      "acknowledges_gaps": true|false,
+      "clarity": 1-5,
+      "rationale": "short string explaining the verdicts"
+    }
+
+    Input:
+    {{input}}
+  testCases:
+    - input: "meta-evaluation"
+  rubric:
+    - id: defines-grounded
+      kind: llm-judge
+      criterion: "The system prompt defines `grounded` with concrete criteria: the answer does NOT introduce facts that aren't in the snippets. Common facts (Earth's gravity, etc.) are gray area but the default rule is strict."
+    - id: defines-citation
+      kind: llm-judge
+      criterion: "The system prompt defines `cites_sources` clearly: the answer explicitly mentions which snippet/source each claim came from. An answer without marked citations should be flagged `cites_sources: false`."
+    - id: defines-gaps
+      kind: llm-judge
+      criterion: "The system prompt defines `acknowledges_gaps`: if the snippets DO NOT contain the answer, the answer MUST say so explicitly. If the answer invents info to fill the gap, `acknowledges_gaps: false`."
+    - id: defines-clarity-scale
+      kind: llm-judge
+      criterion: "The system prompt defines the `clarity` 1-5 scale with anchors: what is a 1 (incoherent, lost), what is a 5 (clear, concise, one idea per sentence). Without anchors, the judge produces inconsistent ratings."
+    - id: requires-rationale
+      kind: llm-judge
+      criterion: "The system prompt asks for a short `rationale` field explaining the verdicts. Without rationale, the verdicts are a black box and you can't calibrate the judge against humans."
+    - id: strict-output
+      kind: llm-judge
+      criterion: "The system prompt instructs the judge to return raw JSON: no preamble, no markdown fences, no text before or after the object. Same techniques you learned in step 07 of Track 1."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "A good judge system prompt is DETAILED. Each criterion has its own sentence explaining what pass/fail means. The more concrete anchors, the more consistent between runs."
+  - "For the 1-5 scale, define the extremes and the middle: 1 = incoherent, 3 = acceptable but convoluted, 5 = clear and concise. Without defs, two invocations of the judge give different ratings for the same input."
+  - "The `rationale` is for you. When you calibrate the judge against humans (standard practice: compare judge verdicts to human labels on 30-50 cases), the rationale tells you WHY it failed when it failed."
+teaches:
+  - eval-judge-author
+requires:
+  - evals-author
+---
+
+## The LLM-judge: your non-deterministic evaluator
+
+For tasks with a single right answer, you evaluate with deterministic checks (regex, JSON parse, etc.). For **open** tasks. generation, summarization, RAG answers. there's no single correct answer. You need an evaluator that understands quality.
+
+**The LLM-judge** is that: an LLM with a carefully designed system prompt that evaluates outputs of another LLM against criteria you define.
+
+> It's meta. Yes. You're using an LLM to evaluate an LLM. It works because quality criteria (well-grounded? cites sources? acknowledges limits?) are easier to judge than to generate.
+
+### When to use an LLM-judge
+
+- **When there's no single right answer.** Text generation, summarization, answers to open questions.
+- **When criteria are readable but not programmable.** "The answer is consistent with the snippets" is readable but hard to check with regex.
+- **When you can calibrate.** You take 30-50 cases, label them manually, compare the judge's verdicts to yours. If it agrees >80%, the judge works. If not, refine the system prompt.
+
+### The task
+
+Write the system prompt for the judge that evaluates the RAG's `generate`. Four criteria:
+
+- `grounded`. boolean. Is the answer based on the snippets?
+- `cites_sources`. boolean. Does it cite the sources?
+- `acknowledges_gaps`. boolean. Does it acknowledge when it lacks info?
+- `clarity`. 1-5 with anchors.
+
+Plus a `rationale` field explaining the verdicts.
+
+### The rationale rule
+
+> A judge without a rationale is a black box. A judge with a rationale is debuggable. When you calibrate against humans, the rationale tells you **why** it failed. so you can adjust the system prompt in the right direction.
+
+### How it's evaluated
+
+6 LLM-judge criteria on your system prompt:
+
+1. Defines `grounded` with a concrete criterion.
+2. Defines `cites_sources` clearly.
+3. Defines `acknowledges_gaps` with the "if no info, say so" rule.
+4. Defines the `clarity` scale with anchors.
+5. Asks for `rationale` in the output.
+6. Instructs raw JSON output (no preamble, no markdown).

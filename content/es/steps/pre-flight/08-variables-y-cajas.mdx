@@ -1,0 +1,81 @@
+---
+title: "Variables: cajas etiquetadas"
+order: 8
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    El puente tiene cinco indicadores. Cada uno es una **variable**. una
+    caja etiquetada que guarda un valor. Arrastrá cada valor al indicador
+    que le corresponde.
+  slots:
+    - id: fuel
+      label: "Nivel de combustible"
+    - id: oxygen
+      label: "Reserva de oxígeno"
+    - id: heading
+      label: "Rumbo"
+    - id: cargo
+      label: "Masa de carga"
+    - id: crew
+      label: "Crew a bordo"
+  pieces:
+    - id: pct
+      label: "87%"
+      correctSlot: fuel
+    - id: hours
+      label: "14.2 horas"
+      correctSlot: oxygen
+    - id: bearing
+      label: "042° NO"
+      correctSlot: heading
+    - id: tons
+      label: "2.3 toneladas"
+      correctSlot: cargo
+    - id: count
+      label: "4"
+      correctSlot: crew
+hints:
+  - "Leé la **unidad**, no el número. `toneladas` va con masa. `horas` va con una duración."
+  - "`042° NO` es un rumbo en brújula. Solo un indicador toma rumbo."
+  - "Si te trabás en los últimos dos, eliminá los otros primero. Las variables encajan por *qué miden*, no por estética."
+teaches:
+  - variables-basics
+requires:
+  - sequencing-basics
+---
+
+## Una variable es una caja etiquetada
+
+Imaginate cinco cajas en el puente. Cada una tiene una etiqueta pintada: `Nivel de combustible`, `Reserva de oxígeno`, `Rumbo`. La etiqueta nunca cambia. **Lo que cambia es el valor adentro.**
+
+Eso es todo lo que es una variable. La caja (el nombre) es fija. El contenido (el valor) se puede cambiar, actualizar, leer, reemplazar.
+
+```
+Nivel de combustible = 87%
+Reserva de oxígeno = 14.2 horas
+Rumbo = 042° NO
+```
+
+La crew lee las etiquetas para saber qué pasa. <Character name="echo" /> lee `Reserva de oxígeno` para saber cuánto falta hasta que falle el soporte vital. <Character name="forge" /> lee `Nivel de combustible` para saber si los motores están sanos.
+
+### Una caja, muchos valores en el tiempo
+
+Mirá la caja `combustible` durante el primer cuarto de turno:
+
+```
+00:00  combustible = 100%
+00:15  combustible = 92%
+00:30  combustible = 85%
+00:45  combustible = 78%
+```
+
+Cuatro snapshots distintos. Misma caja. **La etiqueta nunca se movió**. siempre se llamó `combustible`. Lo que se actualizó fue el valor adentro, porque la nave consumió combustible entre cada lectura.
+
+Cuando <Character name="echo" /> te avise *"combustible bajo"*, está leyendo el valor **actual** de esa caja. No el de hace 15 minutos. La variable siempre se lee en el momento en que se la pide.
+
+> Cuando escribís un prompt que dice `<bio>{{input}}</bio>`, estás haciendo lo mismo. `input` es una variable. La etiqueta se queda. El bio adentro cambia por cada llamada. exactamente como la caja `combustible` cambia entre lectura y lectura.
+
+A la derecha: cinco indicadores etiquetados y cinco valores. Arrastrá cada valor al indicador que le va. Las etiquetas te dicen qué tipo de valor corresponde.

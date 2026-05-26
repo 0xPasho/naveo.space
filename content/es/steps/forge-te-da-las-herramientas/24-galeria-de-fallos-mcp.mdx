@@ -1,0 +1,78 @@
+---
+title: "Galería de fallos: lo que vas a debuggear en producción"
+order: 24
+estimatedMinutes: 6
+demo:
+  id: output-gallery
+  props:
+    presenter: forge
+    intent: "Cuatro fallos típicos. Vas a verlos todos."
+    cases:
+      - title: "Tipos mal definidos. el modelo manda string donde esperabas number"
+        prompt: |
+          Tool: set_temperature
+          Parameters: { value: string }   // ⚠ debió ser number
+        output: |
+          Tool call: set_temperature({ value: "veinticinco grados" })
+
+          Handler response: 500. TypeError: cannot parse "veinticinco grados" as float
+        why: |
+          El schema decía `string` y el modelo le hizo caso. No es que el
+          modelo "se confundió". vos le dijiste que aceptara strings y
+          eligió el más natural. Cuando el dominio es numérico, declaralo
+          numérico: `{ value: number, unit: "celsius" | "fahrenheit" }`.
+      - title: "Handler crashea. y el agente queda colgado"
+        prompt: |
+          Tool: fetch_user_orders
+          Handler: async (userId) => db.orders.findMany({ user: userId })
+        output: |
+          Tool call: fetch_user_orders({ userId: "u_42" })
+
+          Handler crash: TypeError: db is undefined
+          Agent: (sin respuesta, intenta reintentar 3 veces)
+        why: |
+          El handler tiró una excepción no capturada. El agente recibe
+          `undefined` o un timeout y queda en loop. Todo handler debe devolver
+          un **objeto estructurado** con `{ ok: false, error: "..." }` ante
+          fallos. nunca dejar que la excepción se propague al runtime del
+          agente.
+      - title: "Description ambigua. el agente la invoca cuando no debía"
+        prompt: |
+          Tool: delete_user
+          Description: "remove a user from the system"
+          Parameters: { userId: string }
+        output: |
+          Usuario: "borrá el último mensaje que mandé"
+          Tool call: delete_user({ userId: "current" })
+          Result: usuario "current" no encontrado (también: pánico interno)
+        why: |
+          "remove a user" disparó cuando el usuario quería borrar un mensaje.
+          Las tools destructivas necesitan descriptions que excluyan
+          explícitamente ambigüedad: "Permanently deletes a user account.
+          Requires explicit user_id, NOT context-dependent strings like
+          'current' or 'me'. Triggers irreversible cascade delete of...".
+      - title: "Schema recursivo. el modelo no puede satisfacerlo"
+        prompt: |
+          Tool: create_org_chart
+          Parameters: {
+            person: {
+              name: string,
+              reports: Person[]   // ⚠ tipo auto-referencial sin límite
+            }
+          }
+        output: |
+          Tool call: create_org_chart({ person: { name: "Atlas", reports: [] } })
+          (segundo intento) create_org_chart({ person: { name: "Atlas", reports: [{ name: "Vega", reports: [...] }] } })
+          ... infinito
+        why: |
+          Tipos recursivos sin profundidad máxima paralizan al modelo: no sabe
+          cuándo cortar la recursión. Dividilo en dos tools (`create_person`
+          + `set_reports_to`), o agregá una profundidad máxima explícita en
+          la description ("max 3 levels deep").
+---
+
+Estos cuatro fallos cubren ~80% de los tickets que <Character name="Forge" /> ve en MCPs que llegan a producción. No son bugs del modelo. son contratos rotos entre tu schema y la realidad.
+
+Tocá cada caso, mirá el output, y antes de pulsar "Ver diagnóstico" intentá adivinar **dónde está el contrato roto**. Después comparalo con la lectura de Forge.
+
+Si los reconocés acá, los vas a reconocer cuando aparezcan en tus propios MCPs.

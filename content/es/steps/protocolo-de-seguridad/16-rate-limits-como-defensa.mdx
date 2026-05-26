@@ -1,0 +1,100 @@
+---
+title: "Rate limits como defensa, no como performance"
+order: 16
+estimatedMinutes: 6
+characters:
+  - hex
+exercise:
+  kind: prompt-AB
+  question: |
+    Estás revisando un asistente que llama a tools sobre la base de
+    pedidos. El asistente está disponible al público (no requiere
+    login). Tiene una tool `lookup_order(order_id)` que devuelve estado,
+    cliente y dirección de envío.
+
+    El sistema ya tiene un rate limit cableado: **1000 llamadas por
+    minuto** por IP, para que el modelo del proveedor no te facture de
+    más. Atlas mira la métrica y pregunta: *"¿es suficiente?"*
+
+    ¿Qué configuración es **más defendible**?
+  optionA: |
+    Mantener el rate limit en 1000 por minuto. Es generoso para usuarios
+    legítimos y nadie se queja. Subirlo o bajarlo no cambia mucho. el
+    proveedor cobra por llamada al modelo, no por llamada a la tool.
+  optionB: |
+    Bajar a 30 llamadas por minuto por IP para el endpoint público.
+    Agregar segundo límite: 5 llamadas por minuto sobre el mismo
+    `order_id` desde IPs distintas (anti-enumeration). Loggear cualquier
+    sesión que dispare cualquiera de los dos límites como sospechosa.
+    Ofrecer un endpoint autenticado separado con límites más altos para
+    usuarios legítimos.
+  correct: B
+  explanation: |
+    Los rate limits empiezan como una herramienta de performance y costo.
+    cuando subís a un agente con tools al público, se convierten en
+    **defensa principal contra dos clases de ataque**:
+
+    **1. Enumeration.** Un atacante con un `order_id` válido puede
+    descubrir la PII de cualquier pedido si tu sistema responde a 1000
+    llamadas por minuto. Tirando `order_id` aleatorios (16 dígitos)
+    eventualmente encuentra reales. Con un rate limit chico
+    (30/min/IP) y otro segundo límite por `order_id` cruzado de IPs
+    distintas, el costo del ataque pasa de "tarde" a "años".
+
+    **2. Cost-bombing.** Cada llamada al asistente cuesta tokens. Un
+    atacante puede tirarte mil llamadas elaboradas por minuto y
+    quemarte el presupuesto del mes en una tarde. Rate limit defiende
+    tu wallet además de tus datos.
+
+    La opción A trata el rate limit como solo costo de tokens. Es la
+    visión clásica de "el modelo es la métrica". Pero un asistente con
+    tools tiene **más superficies de ataque que el LLM**: las tools
+    pueden devolver PII, pueden disparar acciones, pueden ser
+    enumeradas.
+
+    La opción B reconoce que **el rate limit es defensa-en-profundidad**:
+
+    - Límite por IP frena ataques desde una sola fuente.
+    - Límite por `order_id` cruzado de IPs frena botnets que distribuyen
+      el ataque.
+    - Loggear los disparos del límite te da inteligencia sobre quién
+      está intentando qué.
+    - Endpoint autenticado separado deja respirar a los usuarios
+      legítimos sin abrir el público.
+
+    > Regla de <Character name="hex" />: cuando exponés un endpoint con
+    > acceso a datos, el rate limit no es performance. es la primera
+    > capa de defensa adaptiva. configurala con la cabeza de atacante,
+    > no con la cabeza de "ojalá que nadie note".
+teaches:
+  - rate-limiting-as-security
+requires:
+  - data-classification-for-llms
+---
+
+## El rate limit es la primera defensa que se subestima
+
+Cuando arrancás a desplegar agentes, el rate limit te lo mete el proveedor o el equipo de infra: *"para que no te facturen de más"*. Eso es cierto. también es **la mitad de la historia**.
+
+Una vez que tu asistente pega contra tools que leen datos o disparan acciones, el rate limit es **defensa contra ataques de volumen**:
+
+- **Enumeration:** intentar muchas combinaciones de input hasta encontrar las que devuelven info útil.
+- **Brute force:** probar muchas variantes de payload de inyección hasta encontrar la que el modelo no rechaza.
+- **Cost-bombing:** quemar tu presupuesto de tokens / API a propósito.
+- **Tool-flooding:** llamar tools que disparan side effects (emails, webhooks, notificaciones) en loop.
+
+### Tres rate limits que vale la pena tener
+
+**1. Por IP / por usuario.** El más obvio. Limita el daño de un atacante con una sola identidad.
+
+**2. Por argumento sensible.** Si tu tool toma un `order_id`, `user_id`, `email`, limitá las llamadas que comparten ese valor incluso si vienen de IPs distintas. Esto es lo que detiene un atacante distribuido que ya tiene una lista de targets.
+
+**3. Por costo, no por llamada.** Algunos modelos tienen llamadas baratas (200 tokens) y caras (10k tokens). un atacante puede explotar la métrica. limitá tokens-por-minuto, no solo llamadas-por-minuto.
+
+### Combiná con observación
+
+El rate limit que solo bloquea no aporta inteligencia. El rate limit que **bloquea y logea** te dice quién está empujando los bordes. Esa señal entra a tu monitoreo, dispara alertas cuando el patrón es sospechoso, y te deja ajustar antes de que pase a incidente.
+
+> El rate limit no atrapa al atacante hábil. eleva el costo. lo hace lento. le quita la ventaja del volumen. eso es lo que vos podés hacer desde el lado defensivo. el resto es responder a alertas a tiempo.
+
+A la derecha: dos configuraciones para el mismo endpoint público. Elegí la que sobrevive un atacante motivado.

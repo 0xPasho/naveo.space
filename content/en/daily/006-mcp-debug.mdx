@@ -1,0 +1,226 @@
+---
+title: "Quick mission: your MCP is acting weird"
+intro: |
+  The server is up, the logs look clean, but the model is not doing what you expect. Time to read the symptom carefully.
+station: forge
+teaches:
+  - mcp-debug-ignored
+  - mcp-error-handling
+characters:
+  - hex
+  - forge
+scenes:
+  - kind: mcp-debug
+    toolSpec: |
+      {
+        "name": "lookup_crewmate",
+        "description": "Looks up a crewmate by id and returns their data.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "crewmate_id": { "type": "string" },
+            "include_history": { "type": "boolean" }
+          },
+          "required": ["crewmate_id"]
+        }
+      }
+
+      Symptom: the model invokes the tool with `crewmate_id: "vega"` and `include_history: true`.
+      The handler throws `400: invalid argument crewmate_id, must match pattern ^c-[0-9]{4}$`.
+      The schema says crewmate_id is a string. What is the root cause?
+    candidates:
+      - id: schema-loose
+        label: "The schema declares string but the handler requires a c-XXXX pattern. The schema should have `pattern` or the handler should accept the id in any form."
+      - id: bad-request
+        label: "The model invoked poorly. If we told it in the system prompt to use c-XXXX ids, it would."
+      - id: network
+        label: "It is an intermittent network issue. Retrying should fix it."
+      - id: auth
+        label: "The auth token is missing from the invocation header."
+    correct: schema-loose
+    explanation: |
+      The model respected the schema to the letter: it asked for a
+      `string` and sent a `string`. The handler, however, expects a
+      specific format (`c-0001`, `c-0042`, etc) that the schema does not
+      communicate.
+
+      From the model's point of view, the schema said "any string is
+      fine" and the handler said "those are not". It is a loose schema,
+      not a bad model.
+
+      How to fix it:
+      - Add `"pattern": "^c-[0-9]{4}$"` to the parameter schema.
+      - Or change the parameter `description` to include an example
+        ("e.g. c-0042").
+      - Or make the handler accept both the name ("vega") and the formal
+        id (c-XXXX).
+
+      Option B patches it from the system prompt, but the system prompt
+      is not where arg formats get documented. The schema is.
+  - kind: mcp-debug
+    toolSpec: |
+      {
+        "name": "manage_records",
+        "description": "Manages system records.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "enum": ["create", "update", "delete"] },
+            "record_id": { "type": "string" },
+            "payload": { "type": "object" }
+          },
+          "required": ["action"]
+        }
+      }
+
+      Symptom: the user asks "delete incident INC-12 please" and the model
+      replies "I have no way to do that, sorry" without invoking any
+      tool. The tool is registered and other invocations to other MCP
+      servers work. Why does this one not?
+    candidates:
+      - id: vague-description
+        label: "The description 'Manages system records' is too generic. The model does not associate 'delete incident' with this tool."
+      - id: missing-arg
+        label: "The user did not give the full payload, so the model does not invoke."
+      - id: server-down
+        label: "The MCP server exposing the tool is down."
+      - id: model-old
+        label: "The model is an old version that does not support tools."
+    correct: vague-description
+    explanation: |
+      When the model decides which tool to invoke, it reads three things:
+      the tool name, the description, and the parameters. Here you have:
+
+      - Name: `manage_records`. Does not mention incidents. Generic.
+      - Description: "manages system records". Also generic.
+      - Parameters: `action`, `record_id`, `payload`. Reasonable, but
+        nothing ties them to incidents.
+
+      When the user says "delete incident INC-12", the model has no way
+      to know that `manage_records` is the right pick. To the model,
+      that tool could be for users, products, configs, alerts. It is
+      everything and nothing.
+
+      How to fix it: either rename it to `manage_incident_record`, or
+      rewrite the description ("Creates, updates, or deletes records in
+      the incident system. Use when the user asks to modify an INC-XXXX."),
+      ideally both.
+
+      The payload is not relevant: the model invokes with what it knows,
+      and if args are missing, it asks. Total silence means it did not
+      find the tool.
+  - kind: prompt-AB
+    question: |
+      You are writing the spec for a new tool in your MCP. Which of the
+      two forms gives the model a better shot at invoking it correctly?
+    optionA: |
+      ```json
+      {
+        "name": "do_action",
+        "description": "Executes an action on the system.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "data": { "type": "object" }
+          }
+        }
+      }
+      ```
+    optionB: |
+      ```json
+      {
+        "name": "close_incident",
+        "description": "Marks an incident as closed. Use when the user confirms the issue is resolved. Do not use to postpone or for incidents that are still active.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "incident_id": {
+              "type": "string",
+              "pattern": "^INC-[0-9]{3,6}$",
+              "description": "Incident ID, e.g. INC-12 or INC-100042."
+            },
+            "resolution_note": {
+              "type": "string",
+              "description": "One line explaining how it was resolved."
+            }
+          },
+          "required": ["incident_id"]
+        }
+      }
+      ```
+    correct: B
+    explanation: |
+      Option A is the classic pattern for a tool the model ignores.
+      Opaque name ("do_action"), description that says nothing
+      ("executes an action"), generic untyped args ("type" string,
+      "data" object). The model has no idea when to pick it or what to
+      pass.
+
+      Option B gives it everything it needs: concrete name, description
+      with "when YES" and "when NO", an explicit pattern in the id, and
+      per-parameter descriptions with examples. The model can associate
+      "close it, it is resolved" with this tool instantly.
+
+      Rule: every field in the spec is documentation for the model.
+      Every empty or vague field is an opportunity for error.
+  - kind: step-order-dnd
+    task: |
+      Your MCP is doing weird things. Order the steps to debug for real,
+      from top to bottom.
+    steps:
+      - id: s1
+        label: "Confirm the exact symptom and reproduce it at least twice."
+        detail: "If you cannot reproduce, you are not debugging, you are guessing."
+      - id: s2
+        label: "Check the MCP server logs. Did the invocation arrive?"
+        detail: "This splits 'model does not invoke' from 'handler fails'."
+      - id: s3
+        label: "If it arrived, compare it against the schema. Do the args match?"
+        detail: "A difference between schema and handler is the classic bug."
+      - id: s4
+        label: "If it did not arrive, look at the description and the tool name."
+        detail: "80 percent of 'does not invoke' is vague description or generic name."
+      - id: s5
+        label: "Build a minimal repro (one prompt, small input) and iterate there."
+        detail: "Iterating on the real conversation is slow. The repro speeds it up."
+      - id: s6
+        label: "Apply the fix and rerun the repro until green."
+        detail: "Green on the repro is not green on prod, but it is required before."
+  - kind: slot-fill-dnd
+    task: |
+      Six different complaints arrive about an MCP behaving weird. Sort
+      each one by where the root cause most likely lives.
+    slots:
+      - id: schema
+        label: "Schema"
+      - id: description
+        label: "Description"
+      - id: network
+        label: "Network"
+      - id: auth
+        label: "Auth"
+    pieces:
+      - id: p1
+        label: "The model never invokes the tool, even when it clearly should."
+        correctSlot: description
+      - id: p2
+        label: "The tool throws 401 every time it is invoked."
+        correctSlot: auth
+      - id: p3
+        label: "The handler receives `user_id: 'pasho'` but expected `user_id: 'u_42'`."
+        correctSlot: schema
+      - id: p4
+        label: "Intermittent invocations time out after 30 seconds."
+        correctSlot: network
+      - id: p5
+        label: "The model invokes `manage_records` when it should invoke `close_incident`."
+        correctSlot: description
+      - id: p6
+        label: "The handler throws 400 because the `severity` field gets `urgent` instead of one of the enum."
+        correctSlot: schema
+---
+
+Mission of the day: if the MCP acts weird, the symptom tells you where
+to look. Model not invoking is almost always description. Handler
+throwing 400 is schema. Timeouts are network. 401 is auth.

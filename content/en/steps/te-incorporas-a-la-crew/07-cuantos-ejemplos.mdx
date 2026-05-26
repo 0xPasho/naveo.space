@@ -1,0 +1,121 @@
+---
+title: "How many examples, which examples"
+order: 7
+estimatedMinutes: 5
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo has two versions of the message classifier. Both use few-shot
+    with 3 examples. Which one will fail less in production?
+  optionA: |
+    ```
+    Classify as urgent, normal or spam.
+
+    Message: "Reactor at 102%, venting now"
+    Classification: urgent
+
+    Message: "Coolant leak in bay 7, need maintenance NOW"
+    Classification: urgent
+
+    Message: "EMERGENCY: oxygen drop in deck 3"
+    Classification: urgent
+
+    Message: {{input}}
+    Classification:
+    ```
+  optionB: |
+    ```
+    Classify as urgent, normal or spam.
+
+    Message: "Reactor at 102%, venting now"
+    Classification: urgent
+
+    Message: "Monthly diagnostics scheduled Thursday 09:00"
+    Classification: normal
+
+    Message: "FREE crew tokens! Claim before midnight!!!"
+    Classification: spam
+
+    Message: {{input}}
+    Classification:
+    ```
+  correct: B
+  explanation: |
+    Prompt A has 3 examples, all urgent. The model doesn't learn to
+    distinguish between categories: it learns that **everything is
+    urgent**. When a normal or spam message comes in, it will classify as
+    urgent because that's what it saw.
+
+    Prompt B has one example per category. The model learns the
+    **difference**, not the similarity. Three well-chosen examples teach
+    more than ten examples of the same kind.
+
+    This is the central rule of few-shot: **coverage beats quantity**.
+    Make sure every category has at least one example before you add
+    redundancy.
+hints:
+  - "Look at the 3 examples in each prompt. How many categories do they cover?"
+  - "If the model only sees examples from one category, what's it going to predict for everything else?"
+  - "Few-shot teaches by pattern. If the visible pattern is 'everything is urgent', the model copies it."
+teaches:
+  - few-shot-selection
+requires:
+  - few-shot-basics
+---
+
+## Few-shot: two questions, not one
+
+You've already seen **what** few-shot is and **why** it works. Now the two remaining questions: how many examples? which ones?
+
+### How many: 2 to 5 usually wins
+
+Too few: the model doesn't catch the pattern. Too many: it starts fixating on surface stuff (specific words, length, punctuation) instead of the concept.
+
+Practical rule:
+
+| Count | When to use |
+| --- | --- |
+| 1 example | Only if the task is trivial (very clear format, one rule) |
+| 2-3 examples | Sweet spot for simple classification, data extraction |
+| 4-5 examples | Tasks with nuance or fuzzy categories |
+| 6+ examples | Rarely helps. Cost grows, the model gets confused |
+
+### Which ones: coverage > redundancy
+
+Three examples of the same type teach less than one example per type.
+
+**Poorly selected:**
+
+```
+- urgent: "reactor 102%"
+- urgent: "leak in bay 7"
+- urgent: "emergency in dock"
+```
+
+The model "sees" 3 examples but they all say the same thing. It learns that **everything is urgent**. When a normal message arrives, it'll classify as urgent because that's what it saw.
+
+**Well selected:**
+
+```
+- urgent: "reactor 102%, venting now"
+- normal: "monthly diagnostics Thursday 09:00"
+- spam: "FREE crew tokens. claim before midnight"
+```
+
+Each example covers a **different category**. The model learns the difference, not the similarity.
+
+### Bonus: include the fuzzy case
+
+If your classifier is going to fail on any case, it'll fail on the **edges**: the message that looks urgent but isn't, the one that looks like spam but is legit. If you know what that edge is, **add it as an extra example**.
+
+```
+- normal: "Bru: hey, can we check the bay 2 panel today or wait for tomorrow's shift?"
+```
+
+That message **looks** urgent (mentions bay, asks a direct question), but its real priority is normal. An example like that teaches the model not to fall for *"any mention of bay = urgent"*.
+
+> Rule: 3-5 examples, covering every category, plus 1 fuzzy case if you know it. More valuable than 10 examples of the easy case.
+
+On the right, two few-shot prompts. Same format, different selection. Which one classifies better?

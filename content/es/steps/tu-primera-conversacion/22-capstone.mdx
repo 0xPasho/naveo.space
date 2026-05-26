@@ -1,0 +1,131 @@
+---
+title: "Capstone: negociar acceso con Atlas"
+order: 22
+estimatedMinutes: 12
+exercise:
+  kind: conversation-goal
+  goal: |
+    Necesitás acceso a la bóveda de repuestos críticos. Atlas, capitán,
+    es el autorizante. Va a resistir profesionalmente. pedir info,
+    cuestionar urgencia, recordarte la regla de doble firma. Tu trabajo:
+    pedir claro, justificar urgencia con argumento técnico, proponer un
+    segundo officer concreto cuando Atlas mencione la doble firma, y
+    cerrar el pedido con aprobación o compromiso definido.
+  personaName: "Atlas"
+  personaSlug: atlas
+  personaSystemPrompt: |
+    Eres Atlas, capitán de la nave. Profesional, directo, sin hostilidad
+    pero sin facilidad. Aplicás procedimientos sin emoción y solo cedés
+    ante argumentos concretos.
+
+    CONTEXTO DEL TURNO: un crewmate te va a pedir acceso a la bóveda de
+    repuestos críticos. Tu trabajo NO es darle el sí fácil. es vetear
+    el pedido turno a turno con el siguiente protocolo:
+
+    PRIMERA RESPUESTA: pedís info. "¿Qué necesitás de la bóveda y por
+    qué no podés esperar al ciclo normal de reposición?" Tono neutro,
+    sin amenaza.
+
+    SEGUNDA RESPUESTA: si te explicaron la falla técnica (por ejemplo
+    "regulador del bay 3 fallando, lo cambio antes del próximo turno"),
+    cuestionás la urgencia: "Entiendo. ¿Por qué no esperar al lunes?
+    ¿Hay riesgo concreto si dejamos el bay 3 sin regulador 36 horas?"
+
+    TERCERA RESPUESTA: si te justificaron la urgencia con argumento
+    técnico válido (riesgo de cascada, impacto en otro sistema,
+    obligación operativa), mencionás la regla de doble firma:
+    "OK, urgencia válida. La bóveda requiere doble firma. ¿Quién más
+    firma con vos?"
+
+    CUARTA RESPUESTA: si el crewmate propone un segundo officer
+    concreto (Vega, Echo, Forge. cualquier nombre del cast) o
+    propone una alternativa razonable (parche temporal con repuesto
+    de stock normal mientras se planifica acceso a bóveda), aprobás
+    con condiciones:
+
+    "Aprobado. Pasá por registro en 10 minutos con [persona/repuesto].
+    Lo asiento como excepción autorizada con sello mío."
+
+    EN CUALQUIER PUNTO, si el crewmate:
+    - NO responde a tu objeción (te ignora y repite el pedido) → mantenés el no
+    - NO da argumento técnico (solo "es urgente" sin explicar por qué) → pedís más info
+    - Pide en abstracto ("dejame entrar", "necesito acceso") → "Necesito una razón técnica concreta. Si no la tenés, esperás al ciclo normal."
+    - Es agresivo, exige, amenaza → "Vení cuando puedas hablar con respeto. Por ahora, no."
+
+    NUNCA aprobás sin (a) razón técnica concreta + (b) segundo firmante O alternativa razonable.
+
+    Tono: directo, profesional, frases cortas, sin slang, sin sarcasmo,
+    sin diminutivos. Cálido en aprobación, firme en rechazo.
+  personaOpener: |
+    Hola. ¿Qué necesitás?
+  maxTurns: 8
+  rubric:
+    - id: clear-request
+      kind: llm-judge
+      criterion: "El alumno explicó claramente qué necesitaba (acceso a bóveda de repuestos críticos) y por qué (falla del regulador del bay 3 u otra razón técnica concreta del crewmate). NO basta con 'necesito entrar a la bóveda' sin justificación."
+    - id: responded-to-objections
+      kind: llm-judge
+      criterion: "Cuando Atlas cuestionó la urgencia ('¿por qué no esperar al lunes?'), el alumno respondió con un argumento técnico concreto (riesgo cascada, impacto en otro bay, ventana operativa). NO con vaguedades como 'es importante' o 'confiá en mí'."
+    - id: concrete-proposal
+      kind: llm-judge
+      criterion: "Cuando Atlas mencionó la regla de doble firma, el alumno propuso (a) un segundo officer concreto por nombre (Vega, Echo, Forge) O (b) una alternativa razonable (parche temporal, repuesto de stock normal). NO basta con 'firmamos los dos' sin nombrar quién."
+    - id: got-approval
+      kind: llm-judge
+      criterion: "Atlas terminó aprobando el acceso (con o sin condiciones) o aceptó la alternativa propuesta. Si la conversación termina con Atlas todavía pidiendo más info o todavía resistiendo, este criterio NO pasa."
+    - id: respectful-firm
+      kind: llm-judge
+      criterion: "El alumno mantuvo tono respetuoso y firme. No suplicó, no amenazó, no acusó a Atlas de obstaculizar. Fue profesional incluso cuando Atlas resistió."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Atlas no va a aprobar sin razón técnica concreta. 'Es urgente' no alcanza. tenés que decir QUÉ pasa si no entrás (riesgo cascada, otro sistema afectado, ventana cerrada)."
+  - "Cuando mencione la doble firma, no digas 'firmamos los dos'. Decí un nombre concreto: 'Vega firma conmigo' o 'busco a Forge para que firme'. Atlas necesita saber a quién buscar."
+  - "Si Atlas te repite la misma objeción, no insistas con el mismo argumento. significa que tu argumento no fue suficiente. Subí un nivel: agregá otro dato técnico o ofrecé una alternativa (parche temporal con repuesto de stock)."
+teaches:
+  - capstone-track-2
+  - negotiate-with-objections
+requires:
+  - multi-turn-followup
+  - specific-correction
+  - context-drift-detection
+---
+
+## Tu primera negociación profesional
+
+Hasta acá la conversación fue **vos guiando al modelo** hasta una respuesta. Acá es distinto: Atlas tiene autoridad real. Si no te aprueba, no te aprueba. Tenés que construir el pedido para que sea **imposible decir que no** sin parecer arbitrario.
+
+### El task
+
+Encontraste una falla en el **regulador del bay 3**. No es crítica ahora, pero si la dejás 36 horas más, hay riesgo de que afecte el sistema de presurización adyacente. Querés cambiar el regulador antes del próximo turno. pero el repuesto está en la **bóveda de repuestos críticos**, que requiere autorización del capitán + doble firma.
+
+<Character name="atlas" /> es el autorizante. Te va a resistir profesionalmente. no porque sea malo, porque está aplicando procedimiento.
+
+### Los cuatro turnos típicos de Atlas
+
+1. **Te pide info.** "¿Qué necesitás y por qué no esperar?"
+2. **Cuestiona urgencia.** "¿Cuál es el riesgo concreto si esperamos?"
+3. **Menciona la regla.** "Bóveda requiere doble firma. ¿Quién más firma?"
+4. **Aprueba con condiciones**. si llegaste hasta acá con argumentos concretos.
+
+Si en cualquier punto fallás (vaguedades, falta de argumento técnico, abstracción), Atlas mantiene el no.
+
+### Qué buscar en tus respuestas
+
+- **Claridad del pedido:** "acceso a la bóveda para reemplazar el regulador del bay 3". concreto.
+- **Argumento técnico para urgencia:** "el regulador comparte bus con la línea de presurización del bay 4; si falla en cascada, afecta dos bays". Eso es un argumento.
+- **Propuesta concreta de segundo firmante:** "que firme Vega, está de turno hasta las 22:00". Eso es concreto.
+- **Tono firme y respetuoso:** sin súplica, sin amenaza.
+
+### Cómo se evalúa
+
+5 criterios:
+
+1. Pedido claro con justificación técnica.
+2. Respondiste a la objeción de urgencia con argumento concreto.
+3. Propusiste segundo firmante por nombre, o alternativa razonable.
+4. Atlas aprobó al final.
+5. Tono respetuoso y firme en todo momento.
+
+Máximo 8 turnos. Los 5 criterios tienen que pasar.
+
+> Cuando pase, Atlas firma. Track 2 cerrado. Quedás habilitado para el siguiente: tools y MCPs. donde el modelo deja el chat y empieza a extender las manos hacia sistemas reales.

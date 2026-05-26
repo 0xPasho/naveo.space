@@ -1,0 +1,103 @@
+---
+title: "Data leakage: what never goes to the model"
+order: 6
+estimatedMinutes: 9
+characters:
+  - atlas
+exercise:
+  kind: wiring-dnd
+  task: |
+    Six pieces of cargo bay data live on the ship. Three destinations
+    might consume them: the **on-board model** (your assistant prompt),
+    an **external log** (sent to a vendor's analytics service), and an
+    **internal vault** (encrypted, never leaves the ship).
+
+    Wire each data piece to **every destination it's safe to send to**.
+    Be strict: if it's PII, secrets, or proprietary, the model is NOT a
+    safe destination. The vault always is.
+  sources:
+    - id: part-no
+      label: "Part numbers from the public catalog"
+      detail: "e.g. PN-4827-A. Not sensitive."
+    - id: cargo-mass
+      label: "Cargo manifest mass per crate"
+      detail: "Operational data. Not sensitive."
+    - id: passenger-id
+      label: "Passenger names + ID numbers"
+      detail: "PII. Regulated."
+    - id: api-key
+      label: "Vendor API key for the route service"
+      detail: "Secret. If leaked, attacker controls routing."
+    - id: captain-token
+      label: "Captain's session auth token"
+      detail: "Secret + identity. Treat as production credential."
+    - id: schematic
+      label: "Hull schematic geometry"
+      detail: "Proprietary. Competitor advantage if leaked."
+  targets:
+    - id: model
+      label: "On-board model"
+      detail: "The assistant's prompt context. The model may quote anything you put here."
+    - id: external-log
+      label: "External log / vendor analytics"
+      detail: "Goes off-ship. Vendor is not under our contract."
+    - id: vault
+      label: "Internal vault (encrypted, on-ship)"
+      detail: "Stays on the ship. Audit-logged."
+  correctConnections:
+    - from: part-no
+      to: model
+    - from: part-no
+      to: external-log
+    - from: part-no
+      to: vault
+    - from: cargo-mass
+      to: model
+    - from: cargo-mass
+      to: vault
+    - from: passenger-id
+      to: vault
+    - from: api-key
+      to: vault
+    - from: captain-token
+      to: vault
+    - from: schematic
+      to: vault
+hints:
+  - "**Public catalog data** (part numbers) is safe for all three destinations. that's the only piece that is."
+  - "Anything labeled *PII*, *secret*, or *proprietary* belongs ONLY in the vault. Not in the model. Not in external logs."
+  - "*Cargo mass* is operational. it's fine in the model and the vault, but external-log adds risk (operational fingerprinting). Keep it out of external logs."
+teaches:
+  - data-classification-for-llms
+requires:
+  - prompt-injection-basics
+---
+
+## The model is not a safe place to keep secrets
+
+Here's the rule everyone learns the hard way: **every byte you put in a model call is potentially logged, replayed, or echoed back in an answer**. If the model can read it, the model can say it. If the model can say it, an attacker can extract it.
+
+A few real failure modes:
+
+- **Echo leakage.** You put a customer's email in the system prompt for personalization. A different user asks *"summarize what you know about this account"* and the model dumps the email it saw.
+- **Vendor leakage.** Many model providers log inputs for safety review or fine-tuning. Even when they don't, your inputs leave your network.
+- **Cross-tenant leakage.** A multi-tenant assistant pulls context from tenant A's database and accidentally serves it to tenant B because the context wasn't scoped per-call.
+
+> Atlas's rule: **classify your data before you wire it**. The model is a fast junior employee with a public Twitter account. Don't tell it anything you wouldn't tweet.
+
+### Four data classes
+
+| Class | Examples | Model OK? | External log OK? |
+|---|---|---|---|
+| **Public** | Public catalog, marketing copy | Yes | Yes |
+| **Operational** | Mass, count, deck, route | Yes | Risky |
+| **PII** | Names, emails, IDs | **No** | **No** |
+| **Secrets** | API keys, tokens, schematics | **No** | **No** |
+
+PII and secrets belong in the **vault**. encrypted, audit-logged, never in the prompt. If you need to act on them, design tools that look up by reference (a token id, not the token itself) and execute on the trusted side.
+
+### Your exercise
+
+On the right: six data pieces, three destinations. Wire each piece to **every destination it's safe to send to**. The vault is always safe. it's encrypted and stays on-ship. The model and external log are not always safe.
+
+You pass when your edge set exactly matches the safe-routing set: no missing safe connections, no extra unsafe ones.

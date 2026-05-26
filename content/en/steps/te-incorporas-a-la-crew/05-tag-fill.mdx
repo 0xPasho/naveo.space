@@ -1,0 +1,58 @@
+---
+title: "Fill in the context: your first introduction"
+order: 5
+estimatedMinutes: 6
+exercise:
+  kind: prompt-tag-fill
+  template: |
+    <rol>
+      You are Vega, first officer of the crew. You welcome a new crewmate.
+    </rol>
+
+    <!-- Your turn: fill this block with valid XML. It must contain at
+         least the tags <contexto>, <crewmate> and <intencion>. -->
+    <CONTEXTO_AQUI/>
+
+    <formato>
+      Respond in JSON: { "respuesta": "...", "tono": "..." }
+    </formato>
+  requiredTags:
+    - contexto
+    - crewmate
+    - intencion
+hints:
+  - "Replace `<CONTEXTO_AQUI/>` with a `<contexto>...</contexto>` block."
+  - "Inside `<contexto>`, nest `<crewmate>` (who you are) and `<intencion>` (what you want to learn)."
+  - "Don't forget to close every tag. A single unclosed `<` and the XML is no longer valid."
+teaches:
+  - xml-tags-claude
+requires:
+  - prompt-anatomy-basics
+  - xml-tags-claude
+passThreshold:
+  rule: all-criteria
+---
+
+## Introduce yourself to <Character name="vega" /> with structure
+
+In the previous step you saw **why** XML tags help Claude. Here you'll use them yourself.
+
+We give you a prompt skeleton. the one <Character name="vega" /> expects from every new crewmate. There's a marked hole:
+
+```xml
+<CONTEXTO_AQUI/>
+```
+
+Your job: replace it with a `<contexto>` block that contains at least:
+
+- `<crewmate>`. who you are (the one introducing yourself).
+- `<intencion>`. what you want to get out of the conversation.
+
+**The validator is strict but dumb**: it only checks two things.
+
+1. That your output is **well-formed XML** (every tag opens and closes).
+2. That the tags `<contexto>`, `<crewmate>` and `<intencion>` are present (in any order).
+
+It doesn't check whether what you say is good or bad. that comes in later steps when the rubric kicks in. For now, **structure first, content later**. Aboard, order matters.
+
+> Tip: write it in a separate document if it doesn't come out on the first try. When it's clean, paste it here.

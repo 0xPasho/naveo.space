@@ -1,0 +1,97 @@
+---
+title: "Rate limits as defense, not as performance"
+order: 16
+estimatedMinutes: 6
+characters:
+  - hex
+exercise:
+  kind: prompt-AB
+  question: |
+    You're reviewing an assistant that calls tools against the orders
+    database. The assistant is public (no login required). It has a
+    `lookup_order(order_id)` tool that returns status, customer, and
+    shipping address.
+
+    The system already has a rate limit wired: **1000 calls per minute**
+    per IP, so the provider model doesn't bill you extra. Atlas looks at
+    the metric and asks: *"is it enough?"*
+
+    Which configuration is **more defensible**?
+  optionA: |
+    Keep the rate limit at 1000 per minute. It's generous for legitimate
+    users and no one complains. Raising or lowering doesn't change much.
+    the provider bills per model call, not per tool call.
+  optionB: |
+    Drop to 30 calls per minute per IP for the public endpoint. Add a
+    second limit: 5 calls per minute on the same `order_id` from
+    different IPs (anti-enumeration). Log any session that trips either
+    limit as suspicious. Offer a separate authenticated endpoint with
+    higher limits for legitimate users.
+  correct: B
+  explanation: |
+    Rate limits start as a performance and cost tool. when you ship an
+    agent with tools to the public, they become the **primary defense
+    against two classes of attack**:
+
+    **1. Enumeration.** An attacker with a valid `order_id` can discover
+    PII for any order if your system answers 1000 calls per minute.
+    Throwing random `order_id`s (16 digits) eventually finds real ones.
+    With a small rate limit (30/min/IP) and a second one per `order_id`
+    crossed from distinct IPs, the attack cost goes from "an afternoon"
+    to "years".
+
+    **2. Cost-bombing.** Each assistant call costs tokens. An attacker
+    can throw a thousand elaborate calls per minute at you and burn
+    your monthly budget in one afternoon. Rate limit defends your
+    wallet alongside your data.
+
+    Option A treats rate limit as just token cost. It's the classic
+    "the model is the metric" view. But an assistant with tools has
+    **more attack surfaces than the LLM**: tools can return PII, can
+    trigger actions, can be enumerated.
+
+    Option B recognizes that **rate limit is defense-in-depth**:
+
+    - Per-IP limit slows single-source attacks.
+    - Per-`order_id`-across-IPs limit slows botnets distributing the
+      attack.
+    - Logging limit trips gives you intelligence on who is trying what.
+    - Separate authenticated endpoint lets legitimate users breathe
+      without opening the public surface.
+
+    > <Character name="hex" />'s rule: when you expose an endpoint with
+    > data access, the rate limit isn't performance. it's the first
+    > adaptive defense layer. configure it with the attacker's head, not
+    > the "hope no one notices" head.
+teaches:
+  - rate-limiting-as-security
+requires:
+  - data-classification-for-llms
+---
+
+## The rate limit is the first defense that gets underestimated
+
+When you start shipping agents, the rate limit gets handed to you by the provider or infra team: *"so they don't bill you extra"*. That's true. it's also **half the story**.
+
+Once your assistant hits tools that read data or trigger actions, the rate limit is **defense against volume attacks**:
+
+- **Enumeration:** trying many input combinations until you find ones returning useful info.
+- **Brute force:** trying many injection payload variants until you find one the model doesn't refuse.
+- **Cost-bombing:** burning your token/API budget on purpose.
+- **Tool-flooding:** calling tools that trigger side effects (emails, webhooks, notifications) in a loop.
+
+### Three rate limits worth having
+
+**1. Per IP / per user.** The most obvious. Limits damage from a single-identity attacker.
+
+**2. Per sensitive argument.** If your tool takes `order_id`, `user_id`, `email`, limit calls sharing that value even from different IPs. This is what stops a distributed attacker who already has a target list.
+
+**3. Per cost, not per call.** Some models have cheap calls (200 tokens) and expensive ones (10k tokens). an attacker can exploit the metric. limit tokens-per-minute, not just calls-per-minute.
+
+### Combine with observation
+
+A rate limit that only blocks adds no intelligence. A rate limit that **blocks and logs** tells you who is pushing edges. That signal enters your monitoring, fires alerts when the pattern is suspicious, and lets you adjust before it becomes an incident.
+
+> The rate limit doesn't catch the skilled attacker. it raises cost. it slows them. it removes their volume advantage. that's what you can do from the defensive side. the rest is responding to alerts in time.
+
+On the right: two configurations for the same public endpoint. Pick the one that survives a motivated attacker.

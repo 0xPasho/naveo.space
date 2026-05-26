@@ -1,0 +1,85 @@
+---
+title: "Your first real prompt"
+order: 20
+estimatedMinutes: 8
+characters:
+  - vega
+exercise:
+  kind: prompt-task
+  task: |
+    Vega needs you to write a prompt that takes a
+    short ship-event log (where it says `{{input}}`) and returns a single
+    sentence describing what happened.
+
+    The sentence must be in English (regardless of the input language) and
+    must **not** invent any detail that isn't in the log. If something is
+    missing, say so explicitly ("no time reported", "no crew named").
+  starter: |
+    You are a ship's-log summarizer. Read the event below and return a single
+    English sentence describing what happened.
+
+    If the event is missing information (no time, no crew member, no
+    location), say so explicitly in the sentence instead of inventing.
+
+    Event:
+    {{input}}
+  testCases:
+    - input: "0742h. Forge reported a coolant leak in engine bay 2. Sealed in 4 minutes."
+    - input: "Echo logs a failed handshake with the cargo bay terminal."
+    - input: "Crewmate reported a strange noise from deck 4."
+  rubric:
+    - id: english
+      kind: llm-judge
+      criterion: "The response is in English."
+    - id: single-sentence
+      kind: llm-judge
+      criterion: "The response is one sentence (one terminating period). Not a paragraph, not a list, not a JSON object."
+    - id: no-hallucination
+      kind: llm-judge
+      criterion: "The sentence does not invent any specific detail (name, time, location, deck number) that does not appear in the input. If a detail is missing in the input, the response either omits it or explicitly notes it as missing."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Tell the model what you want **explicitly**: one sentence, in English, no invented details."
+  - "Cover the missing-data case in the prompt itself. The model only knows what you put in front of it."
+  - "If your first version passes cases 1 and 2 but fails case 3, what's happening is **pure hallucination**. the model is completing with a name that isn't in the log. Your missing-data clause exists but it's too gentle; turn up the language (*never*, *forbidden*, *do not invent under any circumstance*)."
+  - "If a case fails, look at the model output for that case. the bug is usually that your instructions didn't cover that situation."
+teaches:
+  - prompt-task-basics
+requires:
+  - llm-mental-model
+---
+
+## Bridge to Track 1: write a prompt that runs
+
+You've got it now. A program is a list of steps. A condition decides which step runs. A variable holds a value. An LLM predicts the next token.
+
+Put it all together: **a prompt is a program written in English.**
+
+On the right, you write a real prompt. The system will:
+
+1. Replace `{{input}}` with each of three test cases (real-looking ship logs).
+2. Send the resulting text to the model.
+3. Check the model's output against three rubric criteria.
+
+To pass, **every test case** must satisfy **every criterion**:
+
+- Output is in English.
+- Output is exactly one sentence.
+- Output invents nothing the input doesn't say.
+
+### What's actually testing your understanding
+
+The third case is the one that catches you:
+
+```
+Crewmate reported a strange noise from deck 4.
+```
+
+The model doesn't know **which** crewmate. If your prompt doesn't explicitly tell the model what to do when a detail is missing, you'll get a hallucinated name. *"Forge reported a strange noise from deck 4."* Confident. Wrong.
+
+You learned in lesson 14 that the model predicts the most likely continuation. *"A crewmate"* is generic; the training data has a lot of *"Forge"* and *"Echo"* in those slots. So that's what bubbles up. unless you steer.
+
+> The rest of Track 1 spends ten lessons on this exact problem with progressively higher stakes. This is the warm-up. Pass it and <Character name="vega" /> signs your pre-flight.
+
+If you get stuck, the hints come in order. soft to explicit.

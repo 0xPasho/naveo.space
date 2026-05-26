@@ -1,0 +1,69 @@
+---
+title: "Conditions: how the ship decides"
+order: 4
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    The radar pings 3 obstacles ahead. The flight protocol reads:
+
+    <DecisionFlow condition="obstacle in path?" ifLabel="IF" elseLabel="ELSE" ifAction="reroute" elseAction="continue at speed" />
+
+    Which path does the ship take?
+  optionA: |
+    **Reroute.** The condition matches. obstacles are in the path, so the
+    `IF` branch fires.
+  optionB: |
+    **Continue at speed.** The ship was already going, so it stays going
+    unless something stops it.
+  correct: A
+  explanation: |
+    A program with an `IF` doesn't ask what was happening before. It checks
+    the condition **right now**. The radar says obstacles are in the path
+    → the `IF` branch runs. The `ELSE` only fires when the condition is
+    false. Same shape applies to a prompt: *"if the bio doesn't have an
+    email, return null. otherwise return the email"*. Same `IF / ELSE`.
+teaches:
+  - conditionals-basics
+requires:
+  - sequencing-basics
+---
+
+## Two paths, one decision
+
+A sequence runs everything top-to-bottom. But sometimes the crew has to **decide**: do A, or do B, depending on what's happening right now.
+
+That's a **condition**. In code:
+
+<DecisionFlow condition="condition?" ifLabel="IF" elseLabel="ELSE" ifAction="action_A" elseAction="action_B" />
+
+In the ship:
+
+- _If the airlock is closed, ignite. else, abort._
+- _If oxygen is below 20%, sound the alarm. else, stay silent._
+- _If the captain's hand is on the key, fire. else, wait._
+
+The condition is a question with a yes/no answer. The `IF` branch runs when yes. The `ELSE` branch runs when no.
+
+### Watch it run with a real value
+
+Take the oxygen rule and feed it two different sensor readings:
+
+<DecisionFlow condition="oxygen < 20%?" ifLabel="IF" elseLabel="ELSE" ifAction="sound alarm" elseAction="stay silent" />
+
+- Sensor reads **35%** → the condition is **false**. The `ELSE` branch runs: silence.
+- Sensor reads **12%** → the condition is **true**. The `IF` branch runs: sound the alarm.
+
+Same structure, two outcomes. the only thing that changed was the value the ship was reading in that instant. The program doesn't "remember" what was happening before; every time it hits the condition, it **measures again**.
+
+### The same shape works for a prompt
+
+When you ask the model for something later, you'll write the exact same decision in plain English:
+
+> *"If the bio mentions an email, return the email. Otherwise, return null."*
+
+Same binary decision, same two branches. The only thing that changed is that the "sensor" is now the input text and the "actuator" is what the model returns to you.
+
+On the right, a single binary call. Read the protocol. Read the situation. Pick.

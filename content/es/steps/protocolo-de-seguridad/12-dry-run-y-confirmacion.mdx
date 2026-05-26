@@ -1,0 +1,67 @@
+---
+title: "Dry-run y confirmación en dos fases"
+order: 12
+estimatedMinutes: 6
+characters:
+  - hex
+exercise:
+  kind: step-order-dnd
+  task: |
+    Atlas te pidió cablear `delete_user` con el patrón de **dos fases**:
+    el modelo nunca borra en una sola llamada. La primera llamada simula,
+    la segunda confirma. Ordená los siete pasos del protocolo.
+  steps:
+    - id: model-decides
+      label: "1. El modelo decide intentar borrar el usuario X"
+      detail: "Basado en la conversación con un humano de soporte."
+    - id: dry-run-call
+      label: "2. El modelo llama delete_user(user_id=X, dry_run=true)"
+      detail: "Primera fase. La tool NO modifica nada."
+    - id: tool-preview
+      label: "3. La tool devuelve un preview"
+      detail: "Lista lo que pasaría: cuenta borrada, sesiones invalidadas, datos afectados, plazo de retención."
+    - id: model-shows-human
+      label: "4. El modelo presenta el preview al humano de soporte"
+      detail: "Texto plano: 'voy a borrar el usuario X. esto afectará Y, Z. ¿confirmás?'"
+    - id: human-confirms
+      label: "5. El humano responde 'sí, confirmá'"
+      detail: "La autoridad sobre destrucción NO es el modelo. es el humano del lado confiable."
+    - id: confirm-call
+      label: "6. El modelo llama delete_user(user_id=X, dry_run=false, confirm_token=...)"
+      detail: "Segunda fase. El token de confirmación viene del preview anterior, no del modelo."
+    - id: tool-executes
+      label: "7. La tool ejecuta, escribe al audit log, devuelve resultado"
+      detail: "Acción irrevocable hecha bajo doble registro."
+hints:
+  - "El dry-run viene **primero** y NO modifica nada. el modelo nunca ejecuta destrucción sin haber visto el preview antes."
+  - "El humano confirma **entre** las dos fases. la confirmación NO es generada por el modelo. el modelo no puede auto-aprobarse la destrucción."
+  - "El `confirm_token` que mueve la segunda fase tiene que venir del preview (es decir, de tu runtime), no del modelo. si el modelo puede inventar el token, no hay segunda fase real."
+teaches:
+  - two-phase-destructive-confirmation
+requires:
+  - destructive-tool-mitigation
+---
+
+## La acción destructiva nunca sucede en una sola llamada
+
+Cualquier acción que no puede deshacerse pasa por dos fases. <Character name="hex" /> no aprueba un cableado destructivo sin este patrón. Es la única defensa que aguanta contra un modelo inyectado, un modelo confundido, o un modelo simplemente apresurado.
+
+### Por qué dos fases
+
+**Fase 1, dry-run.** El modelo llama la tool con `dry_run=true`. La tool **no ejecuta nada**. Solo calcula y devuelve qué pasaría: qué se borra, qué se invalida, qué se notifica, qué retención queda. Esto es lo que el modelo (y vos, vía audit log) puede inspeccionar antes de comprometer.
+
+**Fase 2, confirmación.** El modelo presenta el preview al humano, espera el OK explícito, y solo entonces llama otra vez con `dry_run=false` y un `confirm_token` que vino del preview. La tool valida el token y, si coincide, ejecuta.
+
+### Tres cosas que la cabeza tiende a hacer mal
+
+1. **Confirmación generada por el modelo.** El modelo dice *"voy a borrar X, ¿confirmás?"* y luego llama la confirmación sin esperar. Eso no es dos fases. es una fase con teatro. La confirmación tiene que cruzar a un canal distinto (el humano, otra app, una sesión separada) y volver.
+
+2. **Token de confirmación inventado.** Si el modelo puede generar el `confirm_token`, no hay validación. El token tiene que venir del runtime (de la fase 1) y la fase 2 tiene que rechazar tokens que no emitiste.
+
+3. **Dry-run que igual escribe.** Algunos "dry-runs" reservan recursos, escriben logs de "intento", o disparan webhooks. Eso ya no es dry. Tu dry-run tiene que ser **idéntico a no hacer nada** desde afuera, excepto por la respuesta al modelo.
+
+> Cuando una acción es irreversible, la prudencia es estructural. Si tu cableado depende de que el modelo "elija bien", no tenés prudencia. tenés esperanza.
+
+### El protocolo completo
+
+A la derecha hay siete pasos. ponelos en orden. Hay UN orden correcto. Cualquier otro deja un agujero.

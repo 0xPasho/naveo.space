@@ -1,0 +1,65 @@
+---
+title: "Un prompt tiene partes"
+order: 19
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-anatomy
+  parts:
+    - id: rol
+      label: "Rol e instrucción"
+      text: "Sos un resumidor de logs de la nave. Devolveme una sola oración en español describiendo qué pasó en el evento."
+    - id: regla
+      label: "Regla"
+      text: "Si al evento le falta información, decilo explícitamente en la oración en vez de inventarla."
+    - id: input
+      label: "Input"
+      text: |
+        Evento:
+        {{input}}
+hints:
+  - "El **rol e instrucción** dice quién es el modelo y qué tiene que hacer."
+  - "La **regla** cubre un caso especial o restricción. Acordate de la lección 18: pedirle explícitamente que no invente reduce alucinaciones."
+  - "El **input** es la parte variable que cambia en cada llamada. Suele tener `{{algo}}` o un nombre que se reemplaza."
+teaches:
+  - prompt-anatomy-basics
+requires:
+  - llm-mental-model
+  - hallucination-mechanics
+  - function-io-basics
+---
+
+## Un prompt tiene partes
+
+Ya tenés todas las piezas mentales. Sabés qué es un LLM (lección 14), cómo predice token por token, cómo muestrea (17), cómo alucina (18). Sabés qué es una entrada y una salida (13). Sabés que la entrada controla la salida.
+
+Ahora una última pieza antes del capstone: **un prompt no es un bloque homogéneo de texto**. Tiene **partes**, cada una con un trabajo distinto.
+
+### Las tres partes mínimas
+
+Cualquier prompt útil tiene al menos:
+
+1. **Rol e instrucción.** Quién es el modelo y qué tiene que hacer. *"Sos un resumidor de logs. Devolveme una oración."*
+2. **Regla.** Qué NO hacer, casos especiales, restricciones. *"Si falta información, decilo en vez de inventar."*
+3. **Input.** El dato variable que cambia por cada llamada. *"Evento: {{input}}"*
+
+Track 1 va a meter dos partes más (contexto, ejemplos, formato estructurado). Por ahora con estas tres alcanza para entrar en juego.
+
+### Por qué importa: cada parte se ajusta sola
+
+Si tu prompt no funciona, no tenés que reescribirlo entero. Identificás **qué parte falla**:
+
+- ¿La salida está en el idioma equivocado? → arreglá la **instrucción**.
+- ¿El modelo inventa datos? → reforzá las **reglas** (lección 18).
+- ¿Tira basura sin sentido? → revisá el **input** (¿estás mandando lo que pensás?).
+
+Esa capacidad de ajustar una parte sin tocar las otras es la diferencia entre "prompt engineering" y "darle vueltas al texto".
+
+### Lo que vas a hacer en el capstone
+
+La lección que viene (la última de pre-vuelo) te pide escribir un prompt **desde cero** para una tarea concreta. Ese prompt va a tener exactamente estas tres partes.
+
+Antes de escribirlo vos, primero leelo. A la derecha tenés el prompt completo, partido en tres pedazos. Tu trabajo: poner la etiqueta correcta en cada uno.
+
+Si internalizás esta estructura ahora, cuando llegues al capstone vas a saber qué parte modificar cuando un test case falle.

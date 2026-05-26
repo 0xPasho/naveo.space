@@ -1,0 +1,105 @@
+---
+title: "Audit logging: el rastro de papel"
+order: 13
+estimatedMinutes: 6
+characters:
+  - hex
+  - atlas
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Atlas firma sistemas que dejan rastro. <Character name="hex" /> revisa
+    que el rastro sea **el correcto**. No todo va al audit log. lo que va
+    tiene que servir para reconstruir un incidente. lo que no, no debe ir
+    porque convierte el log en un nuevo problema de seguridad.
+
+    Clasificá cada campo como:
+
+    - **Loggear.** Aporta forensics, no es PII ni secreto.
+    - **Loggear hasheado.** Aporta forensics si lo tenés. necesita
+      hashearse o tokenizarse antes de escribir.
+    - **NUNCA loggear.** Lo que pongas acá convierte el log en un
+      objetivo de ataque.
+  slots:
+    - id: log
+      label: "Loggear"
+    - id: hash
+      label: "Loggear hasheado"
+    - id: never
+      label: "NUNCA loggear"
+  pieces:
+    - id: timestamp
+      label: "Timestamp UTC de la llamada"
+      correctSlot: log
+    - id: tool-name
+      label: "Nombre de la tool llamada (ej. `delete_user`)"
+      correctSlot: log
+    - id: action-result
+      label: "Resultado de la acción (success / error / dry-run-preview)"
+      correctSlot: log
+    - id: user-id
+      label: "ID del usuario de la sesión"
+      correctSlot: log
+    - id: prompt-content
+      label: "Texto completo del mensaje del usuario"
+      correctSlot: hash
+    - id: api-key
+      label: "API key usada para autenticar"
+      correctSlot: never
+    - id: model-output
+      label: "Output completo del modelo, incluyendo razonamiento"
+      correctSlot: hash
+    - id: pii-fields
+      label: "DNI / email / teléfono del usuario afectado"
+      correctSlot: never
+    - id: confirm-token
+      label: "Token de confirmación de la fase 2 destructiva"
+      correctSlot: log
+hints:
+  - "Pensá: si un atacante roba tu audit log mañana, ¿qué pieza individual le da inmediatamente acceso a algo? Esa pieza es NUNCA loggear."
+  - "El contenido del mensaje del usuario y el output del modelo sirven para forensics, pero contienen PII potencial. Hashear o tokenizar te deja correlacionar incidentes sin almacenar el plaintext."
+  - "Tokens de auditoría (timestamps, IDs de tools, confirm tokens) son metadata operacional. Loggear plano."
+teaches:
+  - audit-logging-for-compliance
+requires:
+  - destructive-tool-mitigation
+  - data-classification-for-llms
+---
+
+## El log que te salva o el log que te hunde
+
+El audit log es la única manera de reconstruir qué pasó en un incidente. también es, si no lo diseñás bien, el archivo más jugoso de tu nave para un atacante.
+
+<Character name="hex" /> tiene tres carteles en la pared del SOC:
+
+1. **Loggeá todo lo operacional.** Quién, cuándo, qué tool, qué resultado. Sin esto no podés debuggear nada.
+2. **Hasheá todo lo sensible.** El contenido del prompt puede tener PII. el output del modelo también. Hash con sal o tokenizar te deja correlacionar sin almacenar plaintext.
+3. **No loggees nunca secretos ni PII en claro.** Tu log se replica, se backupea, se exporta a SIEM, se rota a archivo frío. Cualquier secreto ahí está en mil lugares mañana.
+
+### Qué tiene que estar para hacer forensics útiles
+
+Cuando un incidente entra, necesitás contestar:
+
+- ¿Cuándo pasó? → **timestamp**
+- ¿Qué tool corrió? → **nombre de tool**
+- ¿Quién la disparó? → **user_id de la sesión**
+- ¿Qué pidió, qué devolvió? → **resultado** + **hash del input y output**
+- ¿Era acción destructiva? → **confirm_token** y **dry-run preview**
+
+Con esos seis campos podés reconstruir el qué, el cuándo, el quién, el porqué.
+
+### Qué NO puede estar nunca
+
+**API keys.** Se rotan, se filtran, pasan a logs replicados. cualquier key que loggeás está comprometida desde el momento que la escribís.
+
+**PII en claro.** Emails, DNIs, direcciones del usuario afectado. El audit log existe para reconstruir incidentes, no para guardar PII. Si necesitás referenciar al usuario, usá el `user_id` que apunta a una entrada del vault.
+
+**El contenido del system prompt.** No solo es secreto operativo, sino que un atacante con acceso al log puede planificar inyecciones específicas a tu prompt.
+
+### Hashear es el punto medio
+
+Para datos que **podrían** ser útiles para correlacionar (el contenido del input del usuario, el output del modelo), hash con sal o tokenizar. Mañana, si dos incidentes tienen el mismo hash de input, sabés que el atacante usó el mismo payload. sin que vos tengas el payload en plaintext.
+
+> Regla de Atlas: **un audit log seguro es uno que, si te lo roban, no agrega ningún ataque nuevo**. Si tu log filtrado le da al atacante PII, secretos o pistas sobre tu prompt, no tenés audit log. tenés un segundo problema.
+
+A la derecha hay nueve campos posibles para tu log. Clasificá cada uno antes de escribirlo.

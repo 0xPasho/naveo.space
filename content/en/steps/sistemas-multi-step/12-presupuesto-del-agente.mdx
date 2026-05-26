@@ -1,0 +1,124 @@
+---
+title: "Agent budget: three ceilings"
+order: 12
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: prompt-task
+  task: |
+    Orbit asks you to design the **system prompt** for the agent you
+    built in step 11, now with explicit budgets communicated to the
+    model. The code-side loop already has the limits; now the AGENT
+    has to know them and respect them so it doesn't crash into them.
+
+    Three ceilings the agent must understand and report:
+
+    - **max_steps**: 10 tool calls before having to give a final answer.
+    - **max_tokens_used**: when it sees it's close to the token budget, it must condense.
+    - **max_cost_usd**: when it sees it's close to the money budget, it must prioritize cheap tools.
+
+    The system prompt must teach the agent to:
+
+    1. Track which step it's on (the runtime injects it as context).
+    2. **Warn the user** when it's close to a ceiling, explaining what's going to happen.
+    3. Give a partial-but-useful answer when it hits a ceiling, instead of dying silently.
+
+    Where the user's goal goes, use `{{input}}`. The runtime injects
+    each turn a `<budget_status>` section with steps_used, tokens_used,
+    cost_so_far, and the remaining ceilings.
+  starter: |
+    You are an onboard operations agent. Your job: fulfill the user's goal
+    by invoking tools from the available toolkit.
+
+    <budget_rules>
+      You have three ceilings:
+      1. # TODO: describe how to handle max_steps
+      2. # TODO: describe how to handle max_tokens
+      3. # TODO: describe how to handle max_cost_usd
+
+      Each turn you receive <budget_status> with consumption and remaining.
+      # TODO: rule for when to warn the user that you're close to a ceiling
+      # TODO: rule for what to do when you reach a ceiling
+    </budget_rules>
+
+    <output_format>
+      # TODO: how you want the agent to report partial vs final status
+    </output_format>
+
+    <goal>
+      {{input}}
+    </goal>
+  testCases:
+    - input: "Get the Friday night shift roster and put together a summary of who's on call."
+    - input: "Process the last 20 tickets, group them by bay, and return the 3 most urgent."
+    - input: "List all crewmates with welding permits and check which ones have current certification."
+  rubric:
+    - id: defines-three-budgets
+      kind: llm-judge
+      criterion: "The system prompt defines the three ceilings (max_steps, max_tokens, max_cost_usd) and how the agent should interpret them. Does NOT mention them only in passing. each one has a concrete behavior rule."
+    - id: reads-budget-status
+      kind: llm-judge
+      criterion: "The prompt instructs the agent to READ <budget_status> each turn before deciding the next tool call. Without this, the agent doesn't know consumption."
+    - id: warns-user-near-limit
+      kind: llm-judge
+      criterion: "The prompt instructs the agent to warn the user when close (e.g. 80%) to a ceiling, explaining what's going to happen (cut, give partial answer, offer to continue)."
+    - id: graceful-on-budget-hit
+      kind: llm-judge
+      criterion: "The prompt instructs the agent to give a **useful partial answer** when it hits a ceiling. Does NOT die silently. Does NOT return only 'budget exceeded'. Summarizes what it did achieve and declares what's pending."
+    - id: prioritizes-cheap-tools-near-cost-limit
+      kind: llm-judge
+      criterion: "The prompt instructs the agent, when close to the cost ceiling, to prioritize cheaper or summarized tools instead of expensive ones. Demonstrates understanding of the cost/completeness trade-off."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Code-side ceilings (step 11) protect the system from model bugs. System-prompt ceilings protect the user from **lack of transparency**: the agent must know it has limits and communicate them."
+  - "Good pattern: 'If fewer than N steps remain, WARN the user you'll have to cut soon, and offer to deliver what you have or continue in a follow-up call.'"
+  - "The cost budget is the subtlest. The agent can invoke the 'cheap' version of a tool (e.g. `lookup_summary` instead of `lookup_full`) when it sees the budget is running out."
+teaches:
+  - agent-budgets
+requires:
+  - agent-loop-stop-conditions
+---
+
+## The agent knows its ceilings, doesn't crash into them
+
+In step 11 you implemented ceilings on the **runtime** side: max_steps protects against loops, loop_detection against stuck, tool errors don't terminate the loop. That protects the system from model bugs.
+
+But the other half is missing: **the agent has to KNOW its ceilings** and behave accordingly. If it only has runtime-side ceilings, when it hits them it stops **abruptly**, without warning, leaving the user with an empty answer.
+
+### The three classic ceilings
+
+1. **max_steps**. how many tool calls before having to give a final answer. Typical: 10-15 for operational tasks, 30-50 for deep analyses.
+2. **max_tokens_used**. how many tokens (in + out) the agent can consume cumulatively. Protects against context windows that balloon step by step.
+3. **max_cost_usd**. how much money the agent can spend in this session. The absolute ceiling. No negotiation here: when it's gone, it's gone.
+
+### The system prompt teaches the agent to use them
+
+Each turn the runtime injects a section like:
+
+```xml
+<budget_status>
+  steps_used: 6 / 10
+  tokens_used: 8400 / 16000
+  cost_so_far: $0.018 / $0.05
+</budget_status>
+```
+
+The system prompt instructs the agent to:
+
+1. **Read that block** before deciding the next tool call.
+2. **When at 80% of any ceiling**, warn the user: *"2 steps left. If you want me to go deep on X, that fits. If you want to cover everything, I'll have to cut sooner."*
+3. **When it reaches a ceiling**, **give a useful partial answer**: summarize what it accomplished, declare what's pending, offer to continue in another call.
+
+### What to avoid
+
+- **Dying silently.** The agent hits max_steps and returns `null` or a cryptic error. The user doesn't know what happened or what they have from the work done.
+- **Returning only "budget exceeded".** Throwing the error without a summary is mistreating the user. If you did 8 tool calls before cutting, those 8 have useful information. Summarize them.
+- **Not reading the status.** The agent decides blindly step by step, ignores the block, and is surprised when cut off. If it doesn't read, it doesn't act accordingly.
+
+> An agent well-trained in budgets looks **considerate**: warns, proposes, condenses, and respects the limits. An agent without budgets looks **unstable**: sometimes it finishes perfectly, sometimes it leaves the user hanging, and you can never tell which you'll get.
+
+### Your task
+
+Write the agent's system prompt. Three ceilings to manage, a warning rule, a partial-answer rule. The judge evaluates five criteria on your prompt.

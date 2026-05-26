@@ -1,0 +1,87 @@
+---
+title: "Cuándo el LLM llama un tool"
+order: 3
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Dos versiones de la descripción del **mismo tool** (`lookup_crewmate`).
+    Una hace que el modelo lo invoque cuando corresponde y solo cuando
+    corresponde. La otra es ambigua y se va a invocar mal. o no invocarse
+    cuando hace falta. ¿Cuál es la buena?
+  optionA: |
+    {
+      "name": "lookup_crewmate",
+      "description": "Busca un crewmate.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "alias": { "type": "string" }
+        },
+        "required": ["alias"]
+      }
+    }
+  optionB: |
+    {
+      "name": "lookup_crewmate",
+      "description": "Devuelve la información registrada de un crewmate (nombre completo, puesto y método de contacto) a partir de su alias. Usar cuando el usuario pregunta por un crewmate específico identificándolo por alias. NO usar para listar varios crewmates a la vez ni para crear o modificar un registro.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "description": "El alias del crewmate (cadena corta usada a bordo, ej. 'Em', 'Bru', 'Ly')."
+          }
+        },
+        "required": ["alias"]
+      }
+    }
+  correct: B
+  explanation: |
+    El modelo NO ejecuta el tool. solo decide si invocarlo. Esa decisión
+    se basa **exclusivamente** en lo que vos escribiste en `description`.
+
+    La opción A dice "Busca un crewmate". Demasiado vago: ¿busca por alias
+    o por nombre? ¿devuelve uno o varios? ¿modifica o solo lee? El modelo
+    tiene que adivinar. a veces va a llamar el tool cuando no debería
+    (preguntas genéricas de gente), a veces no lo va a llamar cuando sí
+    debería (porque "buscar" suena tan amplio que el modelo prefiere
+    contestar de memoria).
+
+    La opción B nombra:
+    - **Qué devuelve** (nombre, puesto, contacto).
+    - **Cuándo usarlo** (preguntas por crewmate específico, por alias).
+    - **Cuándo NO usarlo** (listar, crear, modificar).
+
+    Las tres cosas. La regla más importante de Track 3: **tu descripción
+    de tool es el único contrato que el modelo lee. Si no está en la
+    descripción, no existe para él.**
+hints:
+  - "El modelo NO ve el código del handler. Solo ve `name`, `description`, `parameters`."
+  - "Una buena descripción incluye: qué devuelve, cuándo usarlo, cuándo NO usarlo."
+teaches:
+  - tool-description-precision
+requires:
+  - tool-schema-author-basics
+---
+
+## El modelo lee tu descripción. Eso es todo lo que tiene.
+
+Lo más anti-intuitivo de tool use es esto: **el modelo no entiende tu tool por su nombre o su código**. Lo entiende por la descripción que vos escribiste. Y solo por eso.
+
+Si la descripción dice "Busca un crewmate", el modelo tiene que adivinar:
+- ¿Busca por alias? ¿por nombre? ¿por puesto?
+- ¿Devuelve uno o muchos?
+- ¿Es lectura solamente o también modifica?
+- ¿Qué pasa si no encuentra?
+
+El modelo se equivoca en una de estas adivinanzas y el tool queda mal usado o ignorado. La métrica que importa es **precision + recall**:
+
+- **Recall**. ¿el modelo invoca el tool cuando debería? (Si no, está alucinando respuestas que deberían venir de tool.)
+- **Precision**. ¿el modelo evita invocar el tool cuando NO debería? (Si no, está llamando funciones de más, gastando dinero y latencia.)
+
+Las dos suben cuando la descripción es **específica y delimitada**: dice cuándo SÍ, cuándo NO, y qué garantiza.
+
+> Cuando una description dice algo que el modelo no podría inferir solo del nombre, está agregando valor. Cuando dice lo mismo que ya dice el nombre, está ocupando espacio.
+
+Elegí la opción correcta a la derecha.

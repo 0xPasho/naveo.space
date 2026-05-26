@@ -1,0 +1,144 @@
+---
+title: "Mensajes de error que ayudan al agente a recuperarse"
+order: 15
+estimatedMinutes: 10
+exercise:
+  kind: tool-handler-implement
+  toolName: book_room
+  toolSchema: |
+    {
+      "name": "book_room",
+      "description": "Reserva una sala de la nave para un crewmate, en una franja horaria, con una capacidad mínima requerida.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "room_id": { "type": "string", "description": "Id de la sala. Formato 'room-DECK-NN'." },
+          "crewmate_alias": { "type": "string" },
+          "starts_at": { "type": "string", "format": "date-time" },
+          "ends_at": { "type": "string", "format": "date-time" },
+          "required_capacity": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["room_id", "crewmate_alias", "starts_at", "ends_at", "required_capacity"]
+      }
+    }
+  starter: |
+    // Handler para book_room.
+    // Disponible:
+    //   db.rooms.get(room_id) → {room_id, capacity, deck} | null
+    //   db.bookings.findOverlapping(room_id, starts_at, ends_at) → [{booking_id, crewmate_alias, starts_at, ends_at}, ...]
+    //   db.bookings.create({room_id, crewmate_alias, starts_at, ends_at}) → {booking_id}
+    //
+    // Tu trabajo: implementar el handler de manera que CADA error
+    // contenga la info que el agente necesita para sugerir un siguiente
+    // paso al usuario. No alcanza con `{ ok: false, error: "no funcionó" }`.
+
+    async function handle({ room_id, crewmate_alias, starts_at, ends_at, required_capacity }) {
+      // TODO
+      const booking = await db.bookings.create({ room_id, crewmate_alias, starts_at, ends_at });
+      return { ok: true, booking_id: booking.booking_id };
+    }
+  language: javascript
+  scenarios:
+    - description: "Sala no existe: room_id no está en la DB."
+      expected: "ok: false, error con code='room_not_found' y suggestion (ej: 'listar salas disponibles')."
+    - description: "Capacidad insuficiente: la sala tiene 4 de capacidad y se piden 8."
+      expected: "ok: false, error con code='capacity_too_small', incluye capacity actual y required, suggestion de buscar salas más grandes."
+    - description: "Conflicto de horario: ya hay un booking que overlapea."
+      expected: "ok: false, error con code='time_conflict', incluye el slot ocupado (starts/ends) y el alias del que reservó, suggestion de slot alternativo."
+    - description: "Rango inválido: ends_at es anterior a starts_at."
+      expected: "ok: false, error con code='invalid_time_range', mensaje claro de cuál fecha es cuál."
+    - description: "Happy path: sala existe, capacidad ok, sin conflicto, rango válido."
+      expected: "ok: true con booking_id."
+  rubric:
+    - id: validates-time-range
+      kind: llm-judge
+      criterion: "Valida ANTES de tocar la DB que ends_at > starts_at. Si no, retorna { ok: false, error: { code: 'invalid_time_range', message: ... } }."
+    - id: room-not-found-has-suggestion
+      kind: llm-judge
+      criterion: "Si la sala no existe, retorna code='room_not_found' Y en el error incluye una `suggestion` o `recovery_hint` (string) que sugiera al agente listar salas o pedir otra. NO devuelve solo 'no encontrada'."
+    - id: capacity-error-has-numbers
+      kind: llm-judge
+      criterion: "Si la capacidad es insuficiente, el error incluye los NÚMEROS: capacity actual de la sala y required_capacity pedida. Sin esos números, el agente no puede explicarle al usuario por qué falla."
+    - id: conflict-error-has-context
+      kind: llm-judge
+      criterion: "Si hay conflicto de horario, el error incluye el slot ocupado (starts_at + ends_at del booking existente) y opcionalmente el alias que lo tiene. El agente puede entonces sugerir un horario distinto al usuario."
+    - id: error-structure-consistent
+      kind: llm-judge
+      criterion: "Todos los errores siguen { ok: false, error: { code, message, ...extra } }. El `code` es un string identificable (snake_case), no un texto narrativo. El `message` es legible para humanos."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Cada error debería tener: `code` (machine-readable), `message` (human-readable), y datos extra que el agente necesita para razonar (capacidades, slots, sugerencias)."
+  - "El orden óptimo de validaciones: lo más barato primero. range válido → room existe → capacidad → conflicto. Cortás temprano cada vez que podés."
+  - "Para `room_not_found`, agregá `recovery_hint: 'Use list_available_rooms() to find another room.'`. El agente lee la frase y suele hacer exactamente eso."
+teaches:
+  - error-message-design
+requires:
+  - mcp-error-handling
+---
+
+## El error es información, no un final
+
+En el step anterior aprendiste a **no tirar excepciones**. retornás `{ ok: false, error: ... }` en lugar de crashear. Ese fue el primer 50%. el segundo 50% es **qué metés adentro de `error`**.
+
+Hay una diferencia enorme entre estos dos errores:
+
+```js
+// Inútil
+{ ok: false, error: "no se puede" }
+
+// Accionable
+{
+  ok: false,
+  error: {
+    code: "capacity_too_small",
+    message: "Room room-B-04 has capacity 4, but you requested 8 people.",
+    available_capacity: 4,
+    requested_capacity: 8,
+    recovery_hint: "Try list_rooms({ min_capacity: 8 }) to find a bigger room."
+  }
+}
+```
+
+Con el segundo, el agente puede:
+
+1. Decirle al usuario por qué no se pudo (con números reales).
+2. Invocar la siguiente tool con los parámetros correctos (`list_rooms` con `min_capacity: 8`).
+3. No reintentar el mismo book con los mismos parámetros (sabe que va a fallar igual).
+
+Con el primero, el agente no sabe nada. lo más probable es que reintente, o le diga al usuario "no funcionó" y corte la conversación.
+
+### El esquema canónico de error
+
+```js
+{
+  ok: false,
+  error: {
+    code: string,           // machine-readable, snake_case
+    message: string,        // human-readable
+    ...extra_context        // datos para razonar
+  }
+}
+```
+
+**Los campos extra son lo que distingue un error útil de uno inútil.** Cada `code` debería traer la info específica del caso:
+
+- `not_found` → qué buscabas (`looked_up: "room-B-04"`).
+- `permission_denied` → qué permiso falta (`required_role: "admin"`).
+- `validation_failed` → qué campo y qué regla (`field: "amount", rule: "min:1"`).
+- `conflict` → con qué entra en conflicto (`conflicts_with: {...}`).
+- `rate_limited` → cuándo se puede reintentar (`retry_after: "30s"`).
+
+### El campo `recovery_hint`
+
+Una técnica que paga: agregá `recovery_hint` como string libre, sugiriendo el siguiente paso. El agente lee esa frase y casi siempre la sigue. Es como darle un consejo de tu lado.
+
+```js
+recovery_hint: "Try list_available_rooms({ min_capacity: 8, deck: 'B' }) to find a fitting room."
+```
+
+### Tu tarea
+
+A la derecha tenés `book_room`. El starter funciona en el happy path. Tu trabajo: cubrir 4 casos de error con mensajes ricos, **cada uno con su `code` específico y datos extra para que el agente pueda actuar**.
+
+> El agente solo es tan inteligente como la información que le das. Errores pobres = agente pobre. Errores ricos = agente que se autocorrige.

@@ -1,0 +1,91 @@
+---
+title: "Cuando el orden se rompe"
+order: 2
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Dos protocolos de despegue. Los dos llegan al final sin mostrar
+    ningún error. Pero uno **deja a alguien atrás**. ¿Cuál?
+
+    **Protocolo A**
+    1. Cerrar esclusa
+    2. Confirmar crew a bordo
+    3. Capitán autoriza ignición
+    4. Activar propulsores
+
+    **Protocolo B**
+    1. Confirmar crew a bordo
+    2. Cerrar esclusa
+    3. Capitán autoriza ignición
+    4. Activar propulsores
+  optionA: |
+    **Protocolo A está roto.** Sellás la esclusa antes de contar la crew.
+    Si alguien está afuera se queda afuera. El protocolo "completa" pero
+    hay un crewmate en el muelle.
+  optionB: |
+    **Protocolo B está roto.** Contás la crew antes de sellar la esclusa,
+    así que cualquiera puede entrar después y descontrolar el conteo.
+  correct: A
+  explanation: |
+    En el A invertir los pasos 1 y 2 cambia el sentido del paso 2:
+    "Confirmar crew" pierde su trabajo si la puerta ya está cerrada. El
+    conteo en el A pasa pero ignora a quien quedó fuera.
+
+    En el B confirmás cabezas primero y después sellás, así que el conteo
+    es la última lectura **antes** del cierre. Funciona como debería.
+
+    Esta es la forma más fea de los bugs: el sistema **no avisa**. No hay
+    pantalla roja, no hay alarma. Solo descubrís que algo está mal cuando
+    llegás al destino y falta gente. Por eso debugging no es buscar "el
+    error". Es leer la cadena y preguntarte *"este paso, ¿todavía hace lo
+    que prometía cuando lo escribimos?"*
+hints:
+  - "Los dos protocolos terminan sin error. La pregunta es cuál cumple lo que **prometía** el paso."
+  - "¿Qué hace 'Confirmar crew' después de cerrar la esclusa? ¿Sigue protegiendo de algo?"
+  - "La diferencia entre los dos protocolos es solo el orden de los dos primeros pasos."
+teaches:
+  - sequencing-debugging
+requires:
+  - sequencing-basics
+---
+
+## El bug que no te avisa
+
+En la lección anterior los swaps eran obvios. *Activar propulsores antes de cerrar esclusa*, y la atmósfera se va al espacio. Alarma roja, todo el mundo gritando. Fácil de detectar.
+
+Pero la mayoría de los bugs reales no son así. Son **silenciosos**. El protocolo corre. La nave despega. Todos los indicadores en verde. Y el daño aparece tres turnos más tarde, cuando ya es tarde para reaccionar.
+
+### Anatomía de un swap silencioso
+
+Tomá dos pasos del despegue de la lección 1:
+
+```
+Confirmar crew a bordo
+Cerrar esclusa
+```
+
+En este orden, "Confirmar crew" cuenta cabezas mientras la esclusa todavía está abierta. Si alguien está afuera entra ahora. Si nadie está afuera, sellás con la cuenta correcta.
+
+Invertí los dos:
+
+```
+Cerrar esclusa
+Confirmar crew a bordo
+```
+
+El sello se ejecuta primero. Después contás. La cuenta dice "4" porque hay 4 personas adentro, pero la nave salía con 5 tripulantes. **Cuatro adentro, uno en el muelle, sin saberlo.**
+
+El protocolo nunca falló. Solo dejó de proteger contra el problema para el que fue diseñado.
+
+### La pregunta que tenés que aprender a hacer
+
+Cuando algo sale mal y no encontrás "el error", la pregunta no es *"¿qué línea está rota?"*. La pregunta es:
+
+> **"Cada paso, ¿todavía hace lo que prometía cuando lo escribimos?"**
+
+Esa pregunta es la diferencia entre un debug de 2 minutos y un debug de 2 días. La vas a usar en cada bug de prompt que escribas: el prompt "corre", el modelo "responde", pero la respuesta dejó de ser la que vos necesitabas porque algún paso anterior cambió lo que llegaba.
+
+A la derecha, dos protocolos. Los dos terminan. Uno deja a alguien atrás.

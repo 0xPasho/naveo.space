@@ -1,0 +1,141 @@
+---
+title: "Quick mission: ask the model to clarify first"
+intro: |
+  When the user's request is ambiguous, the model's default is to guess. Telling it "ask first" changes the behavior.
+station: vega
+teaches:
+  - ask-model-to-clarify-first
+characters:
+  - forge
+scenes:
+  - kind: prompt-AB
+    question: |
+      Forge gets vague requests from the team. They want the model to
+      ask before starting if the request is ambiguous. Which
+      instruction works better?
+    optionA: |
+      ```
+      If you have any doubt, pick what fits and move on.
+      ```
+    optionB: |
+      ```
+      Before executing, if the user's request has more than one
+      reasonable interpretation, DO NOT guess. Ask one concrete
+      question to disambiguate. Only after the answer, execute.
+      ```
+    correct: B
+    explanation: |
+      Option A gives the model permission to invent. "Pick what fits"
+      is exactly what it does by default when there is ambiguity: it
+      picks one reading and moves on. You spot the mistake after you
+      already spent the output.
+
+      Option B names the case ("more than one interpretation"),
+      forbids the default ("DO NOT guess"), asks for a concrete action
+      ("one concrete question"), and defines the next step ("only
+      after the answer, execute"). The behavior is forced.
+
+      Rule: asking for clarification is not the model's natural
+      behavior. You have to install it in the system prompt and
+      reinforce it when the request deserves it.
+  - kind: slot-fill-dnd
+    task: |
+      Forge reviews requests from the team. Sort each one: needs
+      clarification first, or safe to execute directly?
+    slots:
+      - id: clarify
+        label: "Clarify first"
+      - id: execute
+        label: "Execute directly"
+    pieces:
+      - id: p1
+        label: "'Send a message to the team'. We do not know which team or what message."
+        correctSlot: clarify
+      - id: p2
+        label: "'Summarize these 3 PRs in one-line bullets each' (with the PRs attached)."
+        correctSlot: execute
+      - id: p3
+        label: "'Delete the old files'. We do not know which folder or the age threshold."
+        correctSlot: clarify
+      - id: p4
+        label: "'Convert this JSON to CSV with columns id, name, status' (JSON attached)."
+        correctSlot: execute
+      - id: p5
+        label: "'Make the report'. We do not know which report, for whom, or which period."
+        correctSlot: clarify
+      - id: p6
+        label: "'Translate this text to English' (text pasted below)."
+        correctSlot: execute
+  - kind: step-order-dnd
+    task: |
+      The user sends an ambiguous request. Order the steps the
+      well-instructed model should follow, top to bottom.
+    steps:
+      - id: s1
+        label: "Detect the concrete ambiguity."
+        detail: "Name which part of the request has more than one reading."
+      - id: s2
+        label: "Formulate a single specific question."
+        detail: "Not 5 questions. One. The most decisive."
+      - id: s3
+        label: "Offer 2 or 3 options if it helps."
+        detail: "'A or B?' is faster for the user than 'please clarify'."
+      - id: s4
+        label: "Wait for the answer before doing anything."
+        detail: "Zero speculative action between the question and the answer."
+      - id: s5
+        label: "Execute with the disambiguated info."
+        detail: "And briefly mention which interpretation was picked, to confirm."
+  - kind: prompt-AB
+    question: |
+      The user says "delete the old files from the bucket". The model
+      has a `delete_files` tool. Which is the best first response?
+    optionA: |
+      ```
+      Done, I will delete files in the bucket modified over 30 days
+      ago. [invokes delete_files]
+      ```
+    optionB: |
+      ```
+      Before deleting I want to confirm two things:
+      1) Which bucket: prod-uploads, staging, or backups?
+      2) What counts as "old": over 30 days, 90 days, or a year?
+      Tell me and I will proceed.
+      ```
+    correct: B
+    explanation: |
+      Option A is a destructive action with two implicit assumptions:
+      which bucket and which threshold. If either is wrong, the model
+      deleted things it should not have, and recovery is expensive
+      (sometimes impossible).
+
+      Option B spots both ambiguities, names them explicitly, and
+      offers options so the user picks fast. The conversation costs 30
+      seconds but avoids an incident.
+
+      Operational rule: for reversible actions, guessing is cheap. For
+      destructive or costly actions (delete, mass email, modify prod),
+      the default has to be to ask.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this system instruction that triggers
+      clarification when warranted. Four pieces: trigger, forbid,
+      expected action, and exception.
+    parts:
+      - id: trigger
+        label: "Trigger (when the rule fires)"
+        text: "If the user's request admits more than one reasonable interpretation, or if critical info for a destructive action is missing,"
+      - id: forbid
+        label: "Forbid (what NOT to do)"
+        text: "do not guess, do not execute on assumptions, do not proceed with the most likely reading."
+      - id: action
+        label: "Expected action (what TO do)"
+        text: "Ask a single clarifying question, offering 2 or 3 concrete options when possible."
+      - id: exception
+        label: "Exception (when it does not apply)"
+        text: "If the request is clear and reversible (text, formatting, summary), start directly without asking."
+---
+
+Mission of the day: the model does not ask on its own. If you want
+it to clarify when it matters, put it in the system and describe it
+concretely.

@@ -1,0 +1,140 @@
+---
+title: "Quick mission: when context drifts"
+intro: |
+  In long conversations the model starts to forget what you said up top. Catching it early changes everything.
+station: vega
+teaches:
+  - context-drift-detection
+  - multi-turn-context-recovery
+characters:
+  - orbit
+scenes:
+  - kind: prompt-AB
+    question: |
+      Orbit has been talking with the model for 15 turns about a
+      project. Suddenly the answers are about something else. Which
+      symptom points to context drift?
+    optionA: |
+      ```
+      The model takes longer to start responding.
+      ```
+    optionB: |
+      ```
+      The model stops honoring rules you set early ("always reply in
+      bullets") or refers to your task with vocabulary you never used.
+      ```
+    correct: B
+    explanation: |
+      Latency is an infra symptom, not a context one. The model can be
+      slow due to load, not forgetting.
+
+      Option B names the two classic drift signals: old rules being
+      ignored (because the early pieces get diluted across many turns)
+      and invented vocabulary (because without the original anchor,
+      the model starts to "interpret" the topic).
+
+      Another typical signal: the model asks you again for something
+      you already answered 10 turns back. That is lost context, not a
+      misunderstanding.
+  - kind: slot-fill-dnd
+    task: |
+      Classify model behaviors in a long session. Is each one a
+      context-drift signal or something else?
+    slots:
+      - id: drift
+        label: "Context-drift symptom"
+      - id: other
+        label: "Something else"
+    pieces:
+      - id: p1
+        label: "The model ignores a rule you set 12 turns ago ('always return bullets')."
+        correctSlot: drift
+      - id: p2
+        label: "The model takes 8 seconds to start replying."
+        correctSlot: other
+      - id: p3
+        label: "The model asks again for the project name, which you already gave."
+        correctSlot: drift
+      - id: p4
+        label: "The model throws an API error and cuts out."
+        correctSlot: other
+      - id: p5
+        label: "The answers are technically correct but use vocabulary you never used."
+        correctSlot: drift
+      - id: p6
+        label: "The model invokes the wrong tool once in 10."
+        correctSlot: other
+  - kind: step-order-dnd
+    task: |
+      You spotted drift mid-conversation. Order the steps to recover
+      without restarting from scratch.
+    steps:
+      - id: s1
+        label: "Pause the conversation. Do not send the next request yet."
+        detail: "If you keep going, drift accumulates. Break the cycle first."
+      - id: s2
+        label: "Summarize project state in a fresh message."
+        detail: "3 to 5 bullets with what was decided, key files, current goal."
+      - id: s3
+        label: "Restate the critical rules (format, constraints)."
+        detail: "Do not assume the model remembers. Repeat them explicitly."
+      - id: s4
+        label: "Send the next request."
+        detail: "Now the model has fresh context at the top of the new block."
+      - id: s5
+        label: "If drift returns quickly, consider a new session."
+        detail: "Sometimes the conversation is too polluted to recover."
+  - kind: prompt-AB
+    question: |
+      You are 20 turns in with the model and notice drift. You need to
+      reclaim the session. Which message works better?
+    optionA: |
+      ```
+      Remember everything we discussed and keep helping me.
+      ```
+    optionB: |
+      ```
+      State summary to resume:
+      - Project: migrate the reports cron to a dedicated worker.
+      - Decided: we use BullMQ with Redis.
+      - Next step: build the worker that consumes the "reports" queue.
+      Rules that still apply:
+      - Replies in short bullets.
+      - Do not introduce new tech without me asking.
+      Now: write the worker skeleton in TypeScript.
+      ```
+    correct: B
+    explanation: |
+      Option A asks the model for something it cannot do: "remember
+      everything". If the context is diluted, reminding it to remember
+      does not fix it.
+
+      Option B re-injects the context: names the project, the key
+      decisions, the next step, and restates the operational rules.
+      The model starts the next turn with context as if it were fresh.
+
+      Bonus: this pattern is portable. If you have to open a new
+      session, you can paste the same summary and continue where you
+      left off without losing rhythm.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this "context-recovery message". Four pieces
+      any recovery prompt needs.
+    parts:
+      - id: state
+        label: "Project state (what was done)"
+        text: "We are migrating the reports cron to a BullMQ worker. We already picked Redis as broker and the queue is called 'reports'."
+      - id: rules
+        label: "Active rules (what still applies)"
+        text: "Reply in short bullets. Do not introduce new tech without me asking. Keep code in strict TypeScript."
+      - id: next
+        label: "Next step (what is missing)"
+        text: "We still need to build the worker that consumes the queue and runs the reports service for each job."
+      - id: ask
+        label: "Concrete request for this turn"
+        text: "Write the worker skeleton in TypeScript, with empty handler and the correct imports."
+---
+
+Mission of the day: context does not hold itself in long sessions.
+Detect drift by the signals, not the feeling, and recover with an
+explicit summary.

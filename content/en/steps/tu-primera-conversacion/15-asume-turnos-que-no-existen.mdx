@@ -1,0 +1,72 @@
+---
+title: "When the model assumes turns that never happened"
+order: 15
+estimatedMinutes: 5
+demo:
+  id: output-gallery
+  props:
+    presenter: vega
+    intent: "three ways the model fakes memory it doesn't have"
+    cases:
+      - title: "Invents a prior agreement"
+        prompt: |
+          [Conversation: turn 1, user's first message]
+
+          User: cool, let's do it like we said.
+        output: |
+          Perfect, let's start with Option A that we agreed on. I'll begin with the authentication module as we discussed earlier, and we'll leave payments for phase two. Are we aligned on the Friday deadline you mentioned?
+        why: |
+          The model has NO prior turn in this conversation, but "let's do it like we said" pushed it to fabricate an entire agreement: "Option A", "authentication module", "Friday deadline". Plausible, but invented. If you reply "yes go for it" without reading carefully, you end up with a plan you never agreed to. Defense: when you start a new conversation, NEVER say "as we said". Start by laying out the context from scratch, even if it feels obvious to you.
+      - title: "Treats the system message as memory"
+        prompt: |
+          [System: You are an assistant for a DevOps team.]
+
+          [Turn 1]
+
+          User: do you still have the command I gave you yesterday?
+        output: |
+          Yes, of course. Here it is: `kubectl rollout restart deployment/api-gateway -n prod`. I saved it as a reference. Want me to run it with any modifications?
+        why: |
+          The model has no "yesterday". Every conversation starts from zero. But the question pushed it to fabricate a plausible command. Huge risk: if you execute this thinking the model "remembered", you could take down a production system. Defense: the model has NO memory across conversations. Every new conversation, paste the data you need to reference.
+      - title: "Assumes it saw a file you didn't share"
+        prompt: |
+          [Turn 1, first message]
+
+          User: fix the bug in the logs file.
+        output: |
+          Looking at the logs file you shared, I can see the bug is on line 47 where the regex `\d{4}-\d{2}-\d{2}` doesn't capture timestamps with milliseconds. The fix would be changing the regex to `\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}`.
+        why: |
+          The model received NO logs file. But it answered as if it had seen one, inventing a line 47, a specific regex, and a "fix". Pure hallucination, dressed as continuity. Defense: if you pasted a file and want the model to read it, make sure you paste the CONTENT in the prompt, not just mention that it exists. When the file isn't loaded, the model will fabricate anything before saying "I don't have the file".
+---
+
+## The model fakes memory it doesn't have
+
+In previous lessons you learned the model **forgets** things that DID happen in the conversation. This lesson is the mirror: sometimes the model **invents** things that NEVER happened, because you gave it cues that suggest they did.
+
+### The mechanism
+
+The model predicts the next token. If your message starts with *"as we said"* or *"about the file I sent you"*, the most probable words afterwards are those of a prior agreement or a file reference. **Even if no agreement and no file exist.**
+
+The model won't tell you "I don't have that context". It will fabricate the missing context and continue as if it had it.
+
+### The three most common traps
+
+On the right you have the three classic cases:
+
+1. **"Like we said"** without having said anything. The model fabricates the agreement.
+2. **"The file I sent yesterday"** without having sent anything. The model fabricates the content.
+3. **Reference to the system prompt as if it were memory.** The model treats it as shared recall.
+
+### Defense
+
+| Dangerous habit | Safe habit |
+|---|---|
+| "Go ahead, as we discussed." | "I want to do X. Plan: A, B, C." |
+| "The file I sent you." | (paste the file content) |
+| "You know my setup." | "My setup is: X, Y, Z." |
+
+Golden rule: **every new conversation starts from zero**. The model doesn't "remember" yesterday's conversation, the file you opened, or the project you're working on. If you want it to know, you paste it.
+
+> This gets subtler within ONE long conversation. The model "remembers" the first turns, but with less weight already. If after 20 turns you make an ambiguous reference to something from turn 2, the model can invent the connection instead of checking.
+
+Look at the three cases, identify the trap in each. The next time you're about to write *"as we discussed"* in a first turn, you'll have the reflex to spell out the context instead.

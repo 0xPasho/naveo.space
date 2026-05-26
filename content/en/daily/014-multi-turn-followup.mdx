@@ -1,0 +1,141 @@
+---
+title: "Quick mission: the follow-up that works"
+intro: |
+  Multi-turn chat is not free chat. A good follow-up pushes the task forward, it does not reopen it.
+station: vega
+teaches:
+  - multi-turn-followup
+  - multi-turn-closing-discipline
+characters:
+  - hex
+scenes:
+  - kind: prompt-AB
+    question: |
+      Hex asked the model for a DB schema for an app. The model
+      returned a reasonable one but missed the timestamps. Which
+      follow-up pushes the task forward?
+    optionA: |
+      ```
+      Hmm, it is kind of okay but I am not fully convinced. Could you
+      think it over and give me a more complete version?
+      ```
+    optionB: |
+      ```
+      Keep the current schema. Just add a createdAt and updatedAt
+      column to each table (timestamp, default now()). Do not touch
+      anything else.
+      ```
+    correct: B
+    explanation: |
+      Option A is a follow-up that reopens everything. "Think it over"
+      gives the model permission to rewrite the whole schema,
+      including the parts that were already fine. You will end up
+      reviewing the whole thing again.
+
+      Option B is a follow-up that advances: names what stays ("keep
+      the current schema"), the concrete change ("add createdAt and
+      updatedAt"), and the preservation rule ("do not touch anything
+      else"). The model makes a small change and the task progresses.
+
+      Rule: a good follow-up is additive or subtractive, and
+      explicit. "Another version" or "think it over" are resets in
+      disguise.
+  - kind: slot-fill-dnd
+    task: |
+      Hex reviews follow-ups the team sent into a multi-turn
+      conversation. Sort each one: pushes the task forward, or
+      reopens from scratch?
+    slots:
+      - id: forward
+        label: "Pushes forward"
+      - id: reopen
+        label: "Reopens the task"
+    pieces:
+      - id: p1
+        label: "'Add a deleted_at column to the users table, default null.'"
+        correctSlot: forward
+      - id: p2
+        label: "'Do it again but better.'"
+        correctSlot: reopen
+      - id: p3
+        label: "'Remove the legacy_id field from the three models that have it.'"
+        correctSlot: forward
+      - id: p4
+        label: "'This is not really clicking for me.'"
+        correctSlot: reopen
+      - id: p5
+        label: "'Instead of string, use uuid for the orders.id field.'"
+        correctSlot: forward
+      - id: p6
+        label: "'Try a different approach.'"
+        correctSlot: reopen
+  - kind: step-order-dnd
+    task: |
+      You just got a response from the model and want to send a good
+      follow-up. Order the steps, top to bottom.
+    steps:
+      - id: s1
+        label: "Read the full output before typing anything."
+        detail: "If you start writing while reading, you will over-correct."
+      - id: s2
+        label: "Mark what is fine and what is not."
+        detail: "You need to know what stays before asking for changes."
+      - id: s3
+        label: "If everything is wrong, start a new session."
+        detail: "If the output is at 20%, follow-ups stack debt. Reset and start over."
+      - id: s4
+        label: "If it is mostly fine, write a surgical follow-up."
+        detail: "Name what stays, list the small change, close with 'do not touch anything else'."
+      - id: s5
+        label: "Send one change per turn, not three."
+        detail: "Three changes at once confuse. One at a time, you validate each step."
+  - kind: prompt-AB
+    question: |
+      The conversation has reached the point where the task is done.
+      Which closing discipline prevents the model from adding things
+      you did not ask for?
+    optionA: |
+      ```
+      Thanks, talk to you later.
+      ```
+    optionB: |
+      ```
+      Done. Summarize in 3 bullets what was decided and which files
+      I touched, without suggesting any more changes. Then we close.
+      ```
+    correct: B
+    explanation: |
+      Option A is fine socially but leaves the model space to slip in
+      one more suggestion, an option you did not consider, a
+      "just-in-case". Sometimes that reopens the conversation when it
+      was already done.
+
+      Option B closes explicitly: asks for the summary, restricts the
+      format ("3 bullets"), names what you do NOT want ("without
+      suggesting any more changes"), and declares the close ("then we
+      close"). The model has no room to extend.
+
+      Closing discipline: name what was decided, which files changed,
+      and end the session. If something else comes up later, it is a
+      new follow-up, not part of this one.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this well-built follow-up. Notice how each
+      piece bounds what the model can do.
+    parts:
+      - id: anchor
+        label: "Anchor (what is preserved)"
+        text: "Keep the table schema, the column names, and the types exactly as they are."
+      - id: change
+        label: "Specific change (what gets modified)"
+        text: "Just add two columns to the users and orders tables: createdAt and updatedAt, both timestamp with default now()."
+      - id: lock
+        label: "Lock (what NOT to touch)"
+        text: "Do not add columns to other tables, do not change indexes, do not introduce extra migrations."
+      - id: format
+        label: "Response shape (how you want the output)"
+        text: "Return only the ALTER TABLE SQL for those two tables, with no explanations or surrounding comments."
+---
+
+Mission of the day: a good follow-up is a diff. A bad one is a reset
+in feedback clothing. And the close is explicit, not by inertia.

@@ -1,0 +1,120 @@
+---
+title: "Input and output"
+order: 13
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Three ship functions, with their signatures:
+
+    ```
+    calcRemainingFuel(distance, weight)  → available_minutes
+    soundAlarm(intensity, duration)      → (no output)
+    inspectHull()                         → hull_status
+    ```
+
+    Sort each item as either an **input** (something the function receives)
+    or an **output** (something the function returns).
+  slots:
+    - id: input
+      label: "Input"
+    - id: output
+      label: "Output"
+  pieces:
+    - id: distance
+      label: "distance (in calcRemainingFuel)"
+      correctSlot: input
+    - id: weight
+      label: "weight (in calcRemainingFuel)"
+      correctSlot: input
+    - id: minutes
+      label: "available_minutes (from calcRemainingFuel)"
+      correctSlot: output
+    - id: intensity
+      label: "intensity (in soundAlarm)"
+      correctSlot: input
+    - id: status
+      label: "hull_status (from inspectHull)"
+      correctSlot: output
+    - id: duration
+      label: "duration (in soundAlarm)"
+      correctSlot: input
+hints:
+  - "**Input:** whatever sits **inside the parentheses** when you define or call the function. What the function needs to do its work."
+  - "**Output:** whatever appears after the `→` arrow in the signature. What the function gives back."
+  - "If you're unsure, mentally rephrase: *'the function calculates fuel **from** distance and weight'*. The 'from' marks the inputs."
+teaches:
+  - function-io-basics
+requires:
+  - functions-basics
+---
+
+## Input and output: a function's contract
+
+A function is a black box. You feed things in. Different things come out. What matters to understand:
+
+- **Inputs:** what the function needs to do its job. The parameters you pass when you call it.
+- **Output:** what the function returns at the end. The result.
+
+```
+FUNCTION calcRemainingFuel(distance, weight):
+  ...calculations...
+  return available_minutes
+```
+
+- Inputs: `distance`, `weight`
+- Output: `available_minutes`
+
+### Why thinking in input/output matters
+
+When you see a new function, before reading the body, look at the **signature**: name + inputs + output. That tells you 90% of what it does.
+
+Look at this one:
+
+```
+formatTimestamp(epoch, timezone) → string
+```
+
+Without reading a single line inside, you already know:
+
+- It needs an `epoch` (seconds) and a `timezone` (text).
+- It returns a formatted `string`.
+- It doesn't modify global variables on the side, at least according to its signature.
+
+That fast reading is what lets you use functions without having to understand every implementation detail.
+
+### Functions with no output (or no input)
+
+Some don't return anything. They just **do** something:
+
+```
+soundAlarm("critical", 30)   # inputs: 2. output: none.
+```
+
+Others don't need inputs:
+
+```
+currentTime()                # inputs: none. output: timestamp.
+```
+
+Both are legit functions. But the most useful ones have **at least one of each**.
+
+### The LLM also has a signature
+
+This is the most important idea for the rest of the curriculum:
+
+```
+LLM(prompt) → response
+```
+
+The model is a function. **Input:** a prompt (text). **Output:** a response (text). That's it. Everything you learned about functions applies to the model:
+
+- The exact same input can produce a different output (it's not 100% deterministic, you'll see why in lessons 17-18).
+- Designing the input (the prompt) well is half the job. The function can't invent what you didn't give it.
+- The output is only useful if the input covered everything needed.
+
+> **This is the mental foundation for prompting:** you understand the LLM as a function `text → text`. When you get frustrated because *"it doesn't do what I want"*, the first thing to check is always the input.
+
+On the right, six items that appear in different ship functions. Sort each one as either **input** or **output**.

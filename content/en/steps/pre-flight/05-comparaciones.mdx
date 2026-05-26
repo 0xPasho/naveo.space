@@ -1,0 +1,95 @@
+---
+title: "Comparisons: greater, less, equal"
+order: 5
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    The ship has this rule:
+
+    <DecisionFlow condition="fuel < 20%?" ifLabel="IF" elseLabel="ELSE" ifAction="sound alarm" elseAction="stay silent" />
+
+    Three sensor readings come in, in this order: **18%**, **22%**, **20%**.
+
+    Which of the two responses has all three cases correct?
+  optionA: |
+    - **18%** → sound alarm
+    - **22%** → stay silent
+    - **20%** → sound alarm
+  optionB: |
+    - **18%** → sound alarm
+    - **22%** → stay silent
+    - **20%** → stay silent
+  correct: B
+  explanation: |
+    The `<` operator is **strict**. It reads literally as *"less than"*. 20
+    is not less than 20, so the condition is false and the `ELSE` branch
+    runs: silence.
+
+    Option A gets this wrong: it treats `<` as if it included the
+    boundary. If you want the boundary to also fire the alarm, you have to
+    write `<=` (less than or equal).
+
+    This is the kind of bug that shows up in production and nobody knows
+    how to explain it: the alarm just doesn't fire **at the critical
+    point** because the operator was strict and the reading landed exactly
+    on the threshold.
+hints:
+  - "The `<` operator means **strictly less than**. It doesn't include the boundary."
+  - "If the reading is exactly 20 and the rule is `< 20%`, is 20 less than 20?"
+  - "Take each reading separately. Does the rule return true or false? That alone decides which branch runs."
+teaches:
+  - comparison-operators
+requires:
+  - conditionals-basics
+---
+
+## How the IF gets computed
+
+In the last lesson you learned `IF / ELSE`. Now one step deeper: how does that condition get computed?
+
+The condition is a **comparison**. Three basic operators cover almost everything you'll see:
+
+| Symbol | Meaning |
+| --- | --- |
+| `<` | less than |
+| `>` | greater than |
+| `==` | equal to |
+
+And their close siblings: `<=` (less than or equal), `>=` (greater than or equal), `!=` (not equal).
+
+Each comparison takes two values and returns **true** or **false**. That's all the `IF` needs in order to decide which branch runs.
+
+### The boundary trap
+
+`<` and `<=` look alike but **they are not the same**.
+
+Look at the rule:
+
+```
+fuel < 20%
+```
+
+With the sensor at:
+
+- **18%** → 18 is less than 20 → **true** → runs `IF`
+- **25%** → 25 is not less than 20 → **false** → runs `ELSE`
+- **20%** → 20 is not less than 20 (it's equal) → **false** → runs `ELSE`
+
+The boundary case (20%) is the easiest one to misread. The rule `<` is **strict**: it does NOT include the boundary. If you want the boundary to fire too, you write `<=`.
+
+> This detail is responsible for an absurd amount of production bugs. The alarm just "doesn't fire" exactly at the critical point because someone wrote `<` when they meant `<=`. Read them carefully.
+
+### What this looks like in plain language
+
+You'll use comparisons when you ask the model for something, even if you don't write them with symbols:
+
+- *"If the bio is **more than** 500 characters, summarize it."* → `len(bio) > 500`
+- *"If the user is **at least** 18 years old, show them section X."* → `age >= 18`
+- *"If the response is **exactly** empty, ask it to retry."* → `response == ""`
+
+When the model reads your prompt, it's assembling these comparisons in its head. The more explicit you are about the operator (*"at least", "more than", "exactly"*), the less room you leave for the model to interpret as it likes.
+
+On the right: one rule, three readings, two possible answers. One of the two has all three cases correct.

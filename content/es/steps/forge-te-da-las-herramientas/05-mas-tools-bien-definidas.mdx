@@ -1,0 +1,113 @@
+---
+title: "Más tools, parámetros más reales"
+order: 5
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: assign_shift
+  toolPurpose: |
+    Asignar a un crewmate a un turno específico con un rol concreto. El
+    sistema valida que el crewmate exista, que el rol sea válido para ese
+    turno, y registra la asignación en el roster.
+
+    Inputs:
+    - alias del crewmate (string)
+    - id del turno (string, formato "shift-YYYY-MM-DD-NN")
+    - rol durante el turno (uno de: lead, engineer, medic, comms, support)
+  exampleInvocations:
+    - 'assign_shift(crewmate_alias: "Em", shift_id: "shift-2026-05-14-N1", role: "medic") → {ok: true, registered_at: "..."}'
+    - 'assign_shift(crewmate_alias: "Bru", shift_id: "shift-2026-05-15-D1", role: "engineer") → {ok: true, registered_at: "..."}'
+  starter: |
+    {
+      "name": "assign_shift",
+      "description": "",
+      "parameters": {
+        "type": "object",
+        "properties": {
+
+        },
+        "required": []
+      }
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Schema es JSON válido"
+    - id: has-name
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"assign_shift\""
+      criterion: "name = \"assign_shift\""
+    - id: has-three-params
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"crewmate_alias\"[\\s\\S]*\"shift_id\"[\\s\\S]*\"role\""
+      criterion: "Define los tres parámetros: crewmate_alias, shift_id, role"
+    - id: all-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"required\"\\s*:\\s*\\[[^\\]]*\"crewmate_alias\"[^\\]]*\"shift_id\"[^\\]]*\"role\""
+      criterion: "Los tres parámetros están en required"
+    - id: role-is-enum
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"role\"[\\s\\S]{0,200}\"enum\""
+      criterion: "El parámetro `role` usa `enum` para limitar los valores (lead, engineer, medic, comms, support)"
+    - id: description-clear
+      kind: llm-judge
+      criterion: "La `description` del tool explica que asigna un crewmate a un turno con un rol, menciona que es una operación que MODIFICA el roster (no es solo lectura), y orienta al modelo sobre cuándo usarlo. NO es vaga tipo 'asigna a alguien'."
+    - id: parameter-descriptions
+      kind: llm-judge
+      criterion: "Cada uno de los tres parámetros (crewmate_alias, shift_id, role) tiene su propia descripción que ayuda al modelo a saber qué pasarle. Para shift_id, idealmente menciona el formato esperado. Para role, idealmente menciona los valores válidos."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Para `role` con valores limitados, usá `\"enum\": [\"lead\", \"engineer\", \"medic\", \"comms\", \"support\"]`. Así el modelo no inventa roles que no existen."
+  - "Para `shift_id`, agregá una description con el formato esperado (\"shift-YYYY-MM-DD-NN\"). El modelo lo va a respetar."
+  - "Mencioná en la description del tool que es una operación que MODIFICA estado. Si no lo decís, el modelo lo puede invocar para 'mirar' un turno cuando solo querías leerlo."
+teaches:
+  - tool-schema-multi-param
+  - tool-schema-enum
+requires:
+  - tool-schema-author-basics
+---
+
+## Tools de verdad tienen tres o cuatro parámetros
+
+El primer tool fue facilito. un solo input, una sola salida. La realidad es más fea: la mayoría de las funciones útiles toman 2-5 parámetros, algunos con valores limitados (`enum`), otros con formatos específicos (fechas, IDs).
+
+Tu trabajo acá es definir `assign_shift`: una operación que **modifica** el roster de turnos. Tres parámetros:
+
+- `crewmate_alias`. string. El alias del crewmate.
+- `shift_id`. string. Formato específico: `shift-YYYY-MM-DD-NN`.
+- `role`. string. Solo cinco valores válidos: `lead`, `engineer`, `medic`, `comms`, `support`.
+
+### Lo nuevo: `enum`
+
+Cuando un parámetro acepta solo un conjunto finito de valores, **usá `enum`**:
+
+```json
+"role": {
+  "type": "string",
+  "enum": ["lead", "engineer", "medic", "comms", "support"],
+  "description": "Rol durante el turno."
+}
+```
+
+Con `enum`, el modelo no puede inventar valores que no existen ("captain", "doctor", "comms_lead"). El sistema rechaza valores fuera del enum y el modelo aprende rápido el set válido.
+
+### Lo nuevo: descripciones de parámetros
+
+Cada parámetro tiene su propia `description`. Para tipos genéricos (string, number), la descripción es lo que le dice al modelo **qué meter ahí**. Ejemplo: `shift_id` es un string, pero el modelo no va a saber el formato a menos que lo digas.
+
+> Regla de oro: si pudieras pasar el parámetro mal (formato raro, valor inválido), agregá su description.
+
+### Operación que modifica vs. operación que lee
+
+`lookup_crewmate` es read-only. `assign_shift` **modifica estado**. La descripción del tool tiene que dejar claro cuál es cuál. el modelo decide diferente para operaciones que cambian cosas.

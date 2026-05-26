@@ -1,0 +1,123 @@
+---
+title: "Cheap classifier first, expensive responder last"
+order: 10
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Your system processes 100,000 messages per day. Most are trivial
+    (acks, "ok", emojis, "thanks"); a minority (~5%) need a real,
+    elaborate response. Two architectures. Which one do you ship?
+  optionA: |
+    ONE STEP, BIG MODEL:
+
+    All messages → Big model (≈$0.015 per call, 500ms latency).
+
+    The Big model decides whether to reply with a short ack or an
+    elaborate response. One call per message.
+
+    Daily cost: 100,000 × $0.015 = **$1500/day**.
+    Average latency: 500ms.
+  optionB: |
+    TWO STEPS, CHEAP + EXPENSIVE:
+
+    Step 1. Small model classifies: "trivial" vs "needs_response"
+      ($0.0005 per call, 80ms).
+
+    Step 2 (only if needs_response):
+      Big model generates the elaborate response
+      ($0.015 per call, 500ms).
+
+    Daily cost:
+      100,000 × $0.0005 (small) + 5,000 × $0.015 (big)
+      = $50 + $75 = **$125/day**.
+
+    Average latency: 80ms in 95% of cases, 580ms in the remaining 5%.
+  correct: B
+  explanation: |
+    **Model cascade**. the most universal optimization pattern in LLM
+    systems. The idea is simple: **the expensive model only runs when
+    needed**. A small classifier filters the bulk of traffic and only
+    escalates to a large model the cases that warrant it.
+
+    In this example, the saving is **12× lower cost** and **better
+    average latency** (because 95% of messages resolve in 80ms, not
+    500ms). The difference between $1500/day and $125/day in infra.
+    Multiplied by 365, it's $500K/year.
+
+    When it applies:
+
+    1. **Unbalanced traffic.** 80%+ are trivial cases a small model
+       handles perfectly.
+    2. **The classifier is reliable.** Small models classify "trivial vs
+       not" very well. If not, you escalate wrong or fail to escalate,
+       and the saving evaporates.
+    3. **Step 1 can be wrong with low cost.** If it misclassifies a
+       trivial as "needs_response", you run the big model unnecessarily.
+       Not a catastrophe.
+
+    When it does NOT apply:
+
+    1. **All traffic needs the big model.** If 90% asks for elaborate
+       responses, adding a classifier is useless overhead.
+    2. **The classifier can't be cheap.** If the small model is only 70%
+       accurate on "trivial vs not", you'll have to escalate almost
+       everything and you lose the edge.
+hints:
+  - "Before opting for cascade, measure the % of traffic that's actually trivial. If it's <30%, the gain dilutes."
+  - "The trick is picking the right small model. 2025 small models are surprisingly good at classifying, but bad at generating. That fits perfectly with the 'filter' role."
+  - "Cascade generalizes to N levels: small → medium → big. But each level adds latency and complexity. Start with 2 levels. Only grow if data demands it."
+teaches:
+  - cost-optimization-cascade
+requires:
+  - prompt-router
+---
+
+## The most universal cost-optimization trick
+
+When a system processes volume, model cost becomes the largest line on the balance sheet. The two naive answers:
+
+1. **Always use the big model.** High quality, disproportionate cost.
+2. **Always use the small model.** Low cost, insufficient quality on the hard cases.
+
+Neither answer works at scale. The one that does: **cascade**. Small model upfront to classify, big model only for cases that need it.
+
+### What it looks like
+
+```
+    [message]
+        ↓
+   [SMALL model]  → is it trivial?
+   ↙           ↘
+trivial      [BIG model]
+reply            ↓
+              elaborate
+              response
+```
+
+Step 1 processes 100% of traffic, but at 1/30 of the big model's cost. Step 2 only processes the 5-20% the small one flagged as "needs help". Aggregate cost drops 5-15×, and average latency improves because most are resolved at step 1.
+
+### Why it works
+
+Small models are **great at classifying** and **bad at generating**. That asymmetry is exactly what you need:
+
+- **Classifying** "trivial vs needs_response" is a binary decision. Small model, short prompt, 100 tokens, 80ms.
+- **Generating** an elaborate response needs real capability. Big model, long context, 500-2000ms.
+
+You put each model to do **what it does best**. And the big one stops paying tolls for the 95,000 invocations where it added nothing.
+
+### Variants you'll see
+
+- **N-level cascade.** small → medium → big. Each level only escalates what it couldn't resolve. Useful when there are three clear complexity bands.
+- **Confidence cascade.** Step 1 returns its decision + a score. If the score is high, you accept it. If low, you escalate to step 2.
+- **Per-task cascade.** Small model for summaries, big model only for creative generation. Different models per task, not per difficulty.
+
+### The error to avoid
+
+> If the classifier is bad (less than 85% accuracy), you lose almost all the saving: false negatives pay for the big model anyway, and false positives drop response quality. Measuring the classifier with an eval set before building the cascade is **mandatory**, not optional.
+
+### Your exercise
+
+On the right, two architectures for the same volume. One sends everything to the big model. The other uses cascade. Pick which one you ship.

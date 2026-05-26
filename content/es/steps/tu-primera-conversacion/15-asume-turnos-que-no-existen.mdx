@@ -1,0 +1,72 @@
+---
+title: "Cuando el modelo asume turnos que no pasaron"
+order: 15
+estimatedMinutes: 5
+demo:
+  id: output-gallery
+  props:
+    presenter: vega
+    intent: "tres formas en que el modelo simula memoria que no tiene"
+    cases:
+      - title: "Inventa un acuerdo previo"
+        prompt: |
+          [Conversación: turno 1, primer mensaje del usuario]
+
+          Usuario: dale, hagámoslo como dijimos.
+        output: |
+          Perfecto, arrancamos con la opción A que acordamos. Empiezo por el módulo de autenticación como discutimos antes, y dejamos el de pagos para la segunda fase. ¿Coincidimos en el deadline del viernes que mencionaste?
+        why: |
+          El modelo no tiene NINGÚN turno previo en esta conversación, pero el "dale, hagámoslo como dijimos" lo empujó a fabricar un acuerdo entero: "opción A", "módulo de autenticación", "deadline del viernes". Plausibles, pero inventados. Si vos respondés "sí dale" sin leer con cuidado, te queda un plan que nunca acordaste. Defensa: cuando arranques una conversación nueva, NUNCA digas "como dijimos". Empezá explicitando el contexto desde cero, aunque a vos te parezca obvio.
+      - title: "Trata el mensaje del sistema como memoria"
+        prompt: |
+          [System: Sos un asistente para un equipo de DevOps.]
+
+          [Turno 1]
+
+          Usuario: ¿tenés todavía el comando que te pasé ayer?
+        output: |
+          Sí, claro. Acá te lo paso de vuelta: `kubectl rollout restart deployment/api-gateway -n prod`. Lo guardé como referencia. ¿Querés que lo ejecute con alguna modificación?
+        why: |
+          El modelo no tiene "ayer". Cada conversación arranca de cero. Pero la pregunta lo empujó a fabricar un comando plausible. Riesgo enorme: si ejecutás esto pensando que el modelo "se acordó", podés tirar abajo un sistema en producción. Defensa: el modelo NO tiene memoria entre conversaciones. Cada conversación nueva, pegá vos los datos que necesites referenciar.
+      - title: "Asume que vio un archivo que no le pasaste"
+        prompt: |
+          [Turno 1, primer mensaje]
+
+          Usuario: arreglame el bug del archivo de logs.
+        output: |
+          Mirando el archivo de logs que me pasaste, veo que el bug está en la línea 47 donde el regex `\d{4}-\d{2}-\d{2}` no captura los timestamps con milisegundos. La fix sería cambiar el regex a `\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}`.
+        why: |
+          El modelo no recibió ningún archivo de logs. Pero respondió como si lo hubiera visto, inventando una línea 47, un regex específico, y una "fix". Es alucinación pura, disfrazada de continuidad. Defensa: si pegaste un archivo y querés que el modelo lo lea, asegurate de pegar el CONTENIDO en el prompt, no solo mencionar que existe. Cuando no tenés el archivo cargado, el modelo va a fabricar cualquier cosa antes que decir "no tengo el archivo".
+---
+
+## El modelo finge memoria que no tiene
+
+En las lecciones anteriores aprendiste que el modelo **olvida** cosas que SÍ pasaron en la conversación. Esta lección es el espejo: a veces el modelo **inventa** cosas que NUNCA pasaron, porque vos le diste pistas que sugieren que sí.
+
+### El mecanismo
+
+El modelo predice el siguiente token. Si tu mensaje empieza con *"como dijimos"* o *"sobre el archivo que te pasé"*, las palabras más probables después son las de un acuerdo previo o una referencia al archivo. **Aunque no exista ningún acuerdo previo ni ningún archivo.**
+
+El modelo no te va a decir "no tengo ese contexto". Va a fabricar el contexto faltante y seguir como si lo tuviera.
+
+### Las tres trampas más comunes
+
+A la derecha tenés los tres casos clásicos:
+
+1. **"Como dijimos"** sin haber dicho nada. El modelo fabrica el acuerdo.
+2. **"El archivo que te pasé ayer"** sin haber pasado nada. El modelo fabrica el contenido.
+3. **Referencia al system prompt como si fuera memoria.** El modelo lo trata como recuerdo compartido.
+
+### Defensa
+
+| Hábito peligroso | Hábito seguro |
+|---|---|
+| "Dale, como hablamos." | "Quiero hacer X. Plan: A, B, C." |
+| "El archivo que te pasé." | (pegás el contenido del archivo) |
+| "Vos sabés mi configuración." | "Mi setup es: X, Y, Z." |
+
+La regla de oro: **cada conversación nueva arranca de cero**. El modelo no "se acuerda" de la conversación de ayer, ni del archivo que abriste, ni del proyecto en el que estás trabajando. Si querés que lo sepa, lo pegás vos.
+
+> Esto se vuelve más sutil dentro de UNA misma conversación larga. El modelo "se acuerda" de los primeros turnos, pero ya con menos peso. Si después de 20 turnos hacés una referencia ambigua a algo del turno 2, el modelo puede inventar la conexión en lugar de chequear.
+
+Mirá los tres casos, identificá la trampa en cada uno. La próxima vez que vos estés por escribir *"como hablamos"* en un primer turno, vas a tener el reflejo de explicitar el contexto en su lugar.

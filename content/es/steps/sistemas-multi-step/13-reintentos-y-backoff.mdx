@@ -1,0 +1,121 @@
+---
+title: "Reintentos y backoff: qué reintentás, qué no"
+order: 13
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: prompt-task
+  task: |
+    Orbit te pide escribir una **política de reintentos** en forma de
+    objeto JSON que describa qué tipos de fallo el sistema reintenta,
+    cuántas veces, con qué backoff, y cuáles NUNCA se reintentan.
+
+    Tu sistema invoca tools que pueden fallar de cinco formas:
+
+    1. `network_timeout` (la conexión al proveedor expiró)
+    2. `rate_limit_exceeded` (el proveedor te limitó)
+    3. `invalid_response_format` (el modelo devolvió JSON malo)
+    4. `unauthorized` (auth falló)
+    5. `business_validation_failed` (ej: intentás cobrar a una tarjeta vencida)
+
+    Para cada uno, decidí si reintentar o no, cuántas veces, con qué
+    backoff (constante, lineal, exponencial), y cuál es el dead-letter
+    final si todos los reintentos fallan.
+
+    Formato esperado: JSON donde cada key es el código de error y el
+    valor es `{retry: boolean, max_attempts: int, backoff: "constant" | "linear" | "exponential", initial_delay_ms: int, dead_letter: string}`.
+  starter: |
+    {
+      "network_timeout": {
+        "retry": true,
+        "max_attempts": 3,
+        "backoff": "exponential",
+        "initial_delay_ms": 500,
+        "dead_letter": "queue_for_manual_review"
+      }
+      // TODO: rate_limit_exceeded
+      // TODO: invalid_response_format
+      // TODO: unauthorized
+      // TODO: business_validation_failed
+    }
+  testCases:
+    - input: "evaluación-meta"
+  rubric:
+    - id: covers-all-five
+      kind: llm-judge
+      criterion: "El JSON cubre los 5 códigos de error. Cada uno con su política completa: retry, max_attempts, backoff, initial_delay_ms, dead_letter."
+    - id: transient-uses-exponential
+      kind: llm-judge
+      criterion: "Para network_timeout y rate_limit_exceeded (fallos transitorios), el backoff es exponential (no constant). Y rate_limit_exceeded usa initial_delay_ms más alto (≥2000ms) para darle aire al proveedor. Reintentar rápido amplifica el problema."
+    - id: invalid-format-retry-with-strict
+      kind: llm-judge
+      criterion: "Para invalid_response_format, el agente reintenta MAX 1-2 veces. Reintentar muchas no ayuda. el modelo va a fallar igual. La política debería incluir 'reintentar con system prompt más estricto' o derivar a dead_letter rápido."
+    - id: unauthorized-no-retry
+      kind: llm-judge
+      criterion: "Para unauthorized, retry=false o max_attempts=1. Las credenciales no se arreglan solas; reintentar sin cambiar nada es regalar latencia. Dead letter: alertar al operador, no la queue de reintentos."
+    - id: business-validation-never-retry
+      kind: llm-judge
+      criterion: "Para business_validation_failed, retry=false. Reintentar una operación de negocio que falló validación es BUG: o cobrás dos veces, o creás dos tickets, o duplicás cualquier acción. Dead letter: notificar al usuario, no retry silencioso."
+    - id: dead-letter-meaningful
+      kind: llm-judge
+      criterion: "Cada dead_letter describe una acción concreta (queue_for_manual_review, alert_oncall, notify_user, fail_visible_to_user). No simplemente 'fail' o 'error'. Saber QUÉ pasa cuando reintentás todo y aún así falla es la mitad del valor de la política."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Regla mental: **transient = reintentar exponencial; permanente = nunca reintentar; ambiguo = reintentar pocas veces y escalar**."
+  - "Backoff exponencial: 500ms, 1000ms, 2000ms, 4000ms... Cada falla duplica el delay. Le da aire al sistema downstream y reduce thundering herd cuando muchos clientes reintentan a la vez."
+  - "Dead letter no es 'el bug nunca llega a vos'. es 'el bug llega a un lugar donde podés actuar': una cola que revisás, un alerta, una notificación al usuario."
+teaches:
+  - retry-strategies
+requires:
+  - agent-loop-stop-conditions
+---
+
+## No todos los errores se reintentan igual
+
+Cuando un tool falla, tu agente tiene tres opciones: reintentar, escalar, o dead-letter. Elegir mal te lleva a uno de tres bugs clásicos:
+
+- **Reintentás todo**: amplificás un outage (todos los clientes martillando al proveedor caído), gastás presupuesto en errores garantizados, o duplicás operaciones (cobros, tickets, emails).
+- **No reintentás nada**: cada hiccup de red es un fallo visible. Tu sistema parece frágil cuando solo necesita un reintento.
+- **Reintentás sin política**: a veces 1 vez, a veces 10, a veces forever. Comportamiento impredecible, observabilidad imposible.
+
+La solución: **política explícita por tipo de error**.
+
+### Las tres clases de error
+
+| Clase | Ejemplos | Retry |
+|---|---|---|
+| **Transitorio** | network timeout, 503, rate limit | SÍ, con backoff exponencial |
+| **Permanente** | unauthorized, 404 not found, schema mismatch | NO. Escalar o dead-letter |
+| **Negocio** | tarjeta vencida, inventario agotado, dato inválido | NO. Notificar al usuario |
+
+### Backoff exponencial
+
+La fórmula estándar: `delay = initial_delay × 2^attempt + jitter`.
+
+- Intento 1 falla → esperá 500ms.
+- Intento 2 falla → esperá 1000ms.
+- Intento 3 falla → esperá 2000ms.
+- Intento 4 falla → dead letter.
+
+El **jitter** (random pequeño) evita el "thundering herd": si 1000 clientes fallan al mismo tiempo y todos reintentan exactamente a los 500ms, agravás el outage. Con jitter, los reintentos se desparraman.
+
+### Retry budget
+
+Para sistemas grandes, agregás un **presupuesto de reintentos por sesión**: max 5 reintentos totales para toda la sesión del agente, no por error. Sin esto, una cascada de errores transitorios puede generar cientos de reintentos y consumir toda tu cuota.
+
+### Dead letter: el segundo paracaídas
+
+Cuando los reintentos fallan, ¿qué pasa? Esa es la mitad de la política que la gente olvida:
+
+- **queue_for_manual_review**: el caso va a una cola que un humano revisa. Bueno para errores raros.
+- **alert_oncall**: notifica al oncall en tiempo real. Bueno para auth y permisos rotos.
+- **notify_user**: el usuario ve el error explícitamente y puede actuar. Bueno para negocio.
+- **fail_visible**: la operación falla y la traza queda en logs. Bueno cuando el sistema downstream maneja la recuperación.
+
+> Una política sin dead-letter es media política. Diseñá los dos lados: qué reintentás, y qué pasa cuando aún reintentando no se arregla.
+
+### Tu task
+
+Escribí el JSON de política completo para los 5 códigos de error. El judge evalúa que cada uno tenga la estrategia correcta y un dead-letter accionable.

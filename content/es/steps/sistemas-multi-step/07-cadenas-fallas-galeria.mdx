@@ -1,0 +1,94 @@
+---
+title: "Galería de cadenas rotas"
+order: 7
+estimatedMinutes: 6
+characters:
+  - orbit
+demo:
+  id: output-gallery
+  props:
+    presenter: orbit
+    intent: "cinco maneras de romper una cadena que en papel parece bien"
+    cases:
+      - title: "Output del paso 1 no es lo que el paso 2 espera"
+        prompt: |
+          classify_report:
+            "Devolvé la categoría: safety, maintenance, social u other."
+          → "La categoría más probable es maintenance, aunque podría ser safety."
+
+          extract_fields:
+            "Recibí categoría = {category}. Si es safety, extraé risk..."
+        output: |
+          extract_fields recibió category = "La categoría más probable es maintenance, aunque podría ser safety."
+          → switch sobre el string completo. ningún case match. ramificación por default → fields = {}.
+        why: |
+          El paso 1 devolvió texto descriptivo en vez de una palabra única. El paso 2 ramificó sobre el string entero y NO matcheó ningún case. Fix: prompt del paso 1 con regla estricta. "Respondé SOLO una palabra: safety, maintenance, social u other. Sin explicación, sin puntuación." Y validación deterministica del output antes de pasarlo al siguiente.
+      - title: "Cache con prompt cambiado"
+        prompt: |
+          Día 1: prompt v1 cachea outputs.
+            classify("Bay 4 leak") → "maintenance"
+          Día 2: actualizás el prompt a v2 (más estricto).
+            classify("Bay 4 leak") → cache hit (v1) → "maintenance"
+          Pero v2 habría dicho "safety" (la nueva versión escala leaks).
+        output: |
+          El paso 1 sigue devolviendo "maintenance" porque cache hit en la entrada vieja.
+          Todos los pasos downstream ramifican como si fuera maintenance.
+          El reporte de "leak" en bay 4 termina en el flujo equivocado y nadie escala.
+        why: |
+          La cache key no incluía `prompt_version`. El cambio de prompt no invalidó las entradas viejas. Fix (step 06): la key del cache SIEMPRE incluye versión del prompt + versión del schema. Sin eso, cada cambio de prompt deja residuo de outputs viejos sirviéndose desde el cache por días.
+      - title: "Pasos paralelos compitiendo por la misma key"
+        prompt: |
+          extract_tech y extract_people corren en paralelo.
+          Los dos escriben al contexto con la key `extracted`:
+            extract_tech.output_key: extracted
+            extract_people.output_key: extracted
+        output: |
+          El más lento sobrescribe al más rápido.
+          El paso downstream recibe SOLO uno de los dos extractos.
+          La cadena ejecutó 2 llamadas LLM, usó solo 1, y el bug es no-determinista (depende de cuál termina antes).
+        why: |
+          Output keys duplicadas en pasos paralelos = carrera silenciosa. Fix: cada paso paralelo escribe a SU PROPIA key (`extracted_tech`, `extracted_people`). El paso downstream lee las dos explícitamente. Acá la disciplina de "output_keys únicas" (step 03) deja de ser estilo y pasa a ser supervivencia.
+      - title: "Estado pasado de más, prompt ahogado"
+        prompt: |
+          La cadena empuja TODO el contexto a cada paso. Para el paso 5:
+
+          - texto original (2500 tokens)
+          - clasificación (10 tokens)
+          - fields completos (300 tokens)
+          - severity raw + rationale (400 tokens)
+          - debug logs de los 4 pasos previos (1800 tokens)
+
+          → prompt del paso 5 = 5000+ tokens, de los cuales 200 son la
+          instrucción real.
+        output: |
+          El paso 5 produce respuestas vagas, mezcla datos del paso 1 con datos del paso 3, ignora la instrucción del final del prompt.
+          (Síntoma clásico de "lost in the middle": el modelo pierde la instrucción central cuando el contexto es ruido.)
+        why: |
+          Pasar todo el estado a todos los pasos parece prudente pero ahoga al modelo. Fix (step 05): cada paso declara explícitamente qué inputs necesita. Cargar el contexto con datos que ningún paso lee es regalar costo + degradar calidad simultáneamente.
+      - title: "Sin stop conditions, la cadena nunca termina"
+        prompt: |
+          El paso "recommend_action" devuelve un agent_loop opcional.
+          Sin max_steps, sin loop_detection, el agente decide que necesita
+          más info y vuelve a invocarse:
+
+          turn 1: pide lookup_roster
+          turn 2: pide lookup_history
+          turn 3: pide lookup_roster (otra vez, mismos args)
+          turn 4: pide lookup_history (otra vez)
+          ...
+          turn 47: sigue pidiendo cosas
+        output: |
+          El sistema sigue consumiendo tokens y dinero hasta que vos lo matás manualmente o el rate limit te corta. El usuario no recibe respuesta nunca.
+        why: |
+          Toda cadena que invoca un loop (incluso "solo cuando hace falta") necesita stop conditions explícitas. max_steps, loop_detection, error budget. Lo vas a ver en detalle en steps 11 y 12, pero la regla nace acá: cualquier rama que recurse sin tope es un incidente esperando suceder.
+---
+
+## Cinco patrones, cinco cadenas que se rompen en producción
+
+Ya viste cómo se diseña una cadena: pasos focales, dependencias declaradas, output keys únicas. Ahora <Character name="orbit" /> te muestra **cómo se rompen** en producción cuando alguno de esos principios se afloja.
+
+A la derecha, cinco diseños que en papel parecen bien. Cada uno **falla** por una razón distinta, y todas las razones aparecen en sistemas reales. Tu trabajo: antes de revelar el diagnóstico, mirar el patrón e intentar reconocer cuál de los principios del track se está rompiendo.
+
+Cuando reveles los cinco, vas a tener el catálogo mental para auditar tu propia cadena antes de mandarla a producción.
+
+> Este catálogo no es exhaustivo. Pero cubre el 80% de los fallos típicos en cadenas y agentes. El otro 20% (problemas de eval mal calibrada, drift de prompts en el tiempo) vienen en la unidad final del track.

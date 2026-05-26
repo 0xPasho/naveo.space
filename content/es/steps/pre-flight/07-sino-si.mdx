@@ -1,0 +1,112 @@
+---
+title: "Más de dos caminos: sino-si"
+order: 7
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    El protocolo de oxígeno tiene cuatro niveles de respuesta:
+
+    <DecisionChain branches="oxígeno < 10% => alarma crítica; oxígeno < 25% => alarma de advertencia; oxígeno < 50% => notificación informativa" fallback="silencio" />
+
+    Llegan seis lecturas del sensor. Arrastrá cada una a la rama que se dispara.
+  slots:
+    - id: critical
+      label: "Alarma crítica"
+    - id: warning
+      label: "Alarma de advertencia"
+    - id: info
+      label: "Notificación informativa"
+    - id: silent
+      label: "Silencio"
+  pieces:
+    - id: read_8
+      label: "8%"
+      correctSlot: critical
+    - id: read_17
+      label: "17%"
+      correctSlot: warning
+    - id: read_24
+      label: "24%"
+      correctSlot: warning
+    - id: read_35
+      label: "35%"
+      correctSlot: info
+    - id: read_50
+      label: "50%"
+      correctSlot: silent
+    - id: read_72
+      label: "72%"
+      correctSlot: silent
+hints:
+  - "La nave evalúa de arriba hacia abajo y se detiene en la primera condición que se cumple."
+  - "Cuidado con los bordes: `< 25%` se cumple con 24%, pero NO con 25%. `< 50%` NO se cumple con 50%."
+  - "Si una lectura no cumple ninguna de las tres condiciones, cae en el último `SINO` (silencio)."
+teaches:
+  - else-if-chains
+requires:
+  - conditionals-basics
+  - comparison-operators
+---
+
+## Cuando hay más de dos opciones
+
+Hasta acá las decisiones eran binarias: `SI` esto, `SINO` aquello. Dos ramas, una decisión.
+
+Pero la mayoría de las decisiones reales tienen **más de dos resultados posibles**. Pensá en el oxígeno:
+
+- 8% → crisis, todos los protocolos de emergencia
+- 22% → advertencia seria, prepararse
+- 40% → bajo pero manejable, avisar
+- 70% → normal, silencio
+
+Para expresar esto vas a encadenar varios `SI`. Se llama **sino-si** (en otros lenguajes: `else if`, `elif`).
+
+### Cómo se escribe
+
+<DecisionChain branches="oxígeno < 10% => alarma crítica; oxígeno < 25% => alarma de advertencia; oxígeno < 50% => notificación informativa" fallback="silencio" />
+
+La nave evalúa **de arriba hacia abajo** y se detiene en el **primero que cumple**. Después salta directo al final.
+
+### La regla clave: gana el primero
+
+Mirá qué pasa con `oxígeno = 8%`:
+
+1. ¿8 < 10? **sí** → corre `alarma crítica` y termina. **El resto no se evalúa.**
+
+Mirá qué pasa con `oxígeno = 22%`:
+
+1. ¿22 < 10? no, sigue.
+2. ¿22 < 25? **sí** → corre `alarma de advertencia` y termina.
+
+Y con `oxígeno = 72%`:
+
+1. ¿72 < 10? no.
+2. ¿72 < 25? no.
+3. ¿72 < 50? no.
+4. `SINO` → corre `silencio`.
+
+El último `SINO` (sin condición) es el **resto**: corre solo si ninguna de las anteriores se cumplió. Funciona como red de seguridad.
+
+### El bug clásico: orden invertido
+
+Si invertís el orden de las ramas, todo se rompe sin tirar error.
+
+```
+SI oxígeno < 50%:
+  notificación informativa
+SINO SI oxígeno < 25%:
+  alarma de advertencia
+SINO SI oxígeno < 10%:
+  alarma crítica
+```
+
+Con `oxígeno = 8%`, la primera condición (`8 < 50`) **ya es verdadera**. La nave corre *notificación informativa* y se va. La alarma crítica nunca se dispara.
+
+> Regla práctica: en cadenas de `SINO SI` ordenadas por umbral, va primero **el caso más restrictivo** (el rango más chico) y vas relajando hacia abajo.
+
+Vas a ver esta misma cadena en prompts complejos: *"Si el bio tiene email **y** teléfono, devolvé ambos. Si no, si tiene solo email, devolvé el email. Si no, si tiene solo teléfono, devolvé el teléfono. Si no, devolvé null."* Mismo patrón.
+
+A la derecha, seis lecturas del sensor. Cada una cae en una rama. Arrastralas.

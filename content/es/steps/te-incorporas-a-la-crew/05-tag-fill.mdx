@@ -1,0 +1,58 @@
+---
+title: "Llena el contexto: tu primera presentación"
+order: 5
+estimatedMinutes: 6
+exercise:
+  kind: prompt-tag-fill
+  template: |
+    <rol>
+      Eres Vega, primera oficial de la crew. Recibes a un nuevo crewmate.
+    </rol>
+
+    <!-- Tu turno: completa este bloque con XML válido. Debe contener al
+         menos las tags <contexto>, <crewmate> e <intencion>. -->
+    <CONTEXTO_AQUI/>
+
+    <formato>
+      Responde en JSON: { "respuesta": "...", "tono": "..." }
+    </formato>
+  requiredTags:
+    - contexto
+    - crewmate
+    - intencion
+hints:
+  - "Reemplaza `<CONTEXTO_AQUI/>` con un bloque `<contexto>...</contexto>`."
+  - "Dentro de `<contexto>`, anida `<crewmate>` (quién eres) e `<intencion>` (qué quieres aprender)."
+  - "No olvides cerrar todas las tags. Un solo `<` sin cerrar y el XML deja de ser válido."
+teaches:
+  - xml-tags-claude
+requires:
+  - prompt-anatomy-basics
+  - xml-tags-claude
+passThreshold:
+  rule: all-criteria
+---
+
+## Preséntate ante <Character name="vega" /> con estructura
+
+En el step anterior viste **por qué** los XML tags ayudan a Claude. Aquí los vas a usar tú.
+
+Te damos un esqueleto de prompt. el que <Character name="vega" /> espera de cualquier nuevo crewmate. Hay un hueco marcado:
+
+```xml
+<CONTEXTO_AQUI/>
+```
+
+Tu trabajo: reemplazarlo con un bloque `<contexto>` que tenga al menos:
+
+- `<crewmate>`. quién eres tú (el que se está presentando).
+- `<intencion>`. qué quieres conseguir con la conversación.
+
+**El validador es estricto pero tonto**: solo revisa dos cosas.
+
+1. Que tu output sea **XML bien formado** (todas las tags abren y cierran).
+2. Que existan las tags `<contexto>`, `<crewmate>` e `<intencion>` (en cualquier orden).
+
+No revisa si lo que dices es bueno o malo. eso lo veremos en pasos siguientes cuando aparezca la rúbrica. De momento, **estructura primero, contenido después**. A bordo, el orden cuenta.
+
+> Tip: prueba escribirlo en un documento aparte si no te sale al primer intento. Cuando esté limpio, lo pegas aquí.

@@ -1,0 +1,91 @@
+---
+title: "Repeating a step many times"
+order: 3
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Six actions from the morning shift. Some get done **once** for the
+    whole ship. Others **repeat for each crewmate**. Drag each action into
+    the column it belongs in.
+  slots:
+    - id: repeat_per_crewmate
+      label: "Repeat for each crewmate"
+    - id: once
+      label: "Do once"
+  pieces:
+    - id: oxygen
+      label: "Check suit oxygen"
+      correctSlot: repeat_per_crewmate
+    - id: engines
+      label: "Fire the main engines"
+      correctSlot: once
+    - id: biometric
+      label: "Confirm biometric signature"
+      correctSlot: repeat_per_crewmate
+    - id: clock
+      label: "Calibrate the ship's clock"
+      correctSlot: once
+    - id: patch
+      label: "Hand out the shift patch"
+      correctSlot: repeat_per_crewmate
+    - id: airlock
+      label: "Close the outer airlock"
+      correctSlot: once
+hints:
+  - "Ask yourself: does the **subject** of the action change between repetitions? If **each crewmate** has their own suit, oxygen, or signature, it goes in the loop column."
+  - "Ship systems (engines, clock, airlock) are unique. Firing the engines four times makes no sense."
+  - "If you're stuck on one, mentally rephrase it with 'each': *'check each crewmate's suit oxygen'* vs *'fire the engines'*. The 'each' marks the loop."
+teaches:
+  - loops-basics
+requires:
+  - sequencing-basics
+---
+
+## Repeating the same thing, many times
+
+Sometimes you don't need to write the same step six times. You write it **once**, and tell the ship: *do this for each crewmate*.
+
+That's a **loop**. In code it looks like:
+
+```
+FOR EACH crewmate IN crew:
+  check suit oxygen
+```
+
+That snippet "expands" at runtime. If the crew is 4 people, it runs 4 times. If it's 12, it runs 12 times. **You don't count.** The loop counts.
+
+### Two versions of the same job
+
+Without a loop:
+
+```
+Check Vega's suit oxygen
+Check Atlas's suit oxygen
+Check Echo's suit oxygen
+Check Forge's suit oxygen
+```
+
+With a loop:
+
+```
+FOR EACH crewmate IN crew:
+  Check suit oxygen
+```
+
+The second one isn't just shorter. It's **correct when the crew changes**. If someone new joins tomorrow, the loop includes them automatically. The no-loop version ignores newcomers until you remember to add a line.
+
+### How to spot a loop
+
+Look at whether the action's subject **changes between repetitions**:
+
+- *Check suit oxygen*: each suit belongs to a different person. **Loop.**
+- *Fire the main engines*: the engines are the same for everyone. **Do once.**
+
+If the subject is always the same, you don't need a loop. If the subject varies across runs, you do.
+
+> When you send the model a prompt with a list inside (for example *"for each bio, extract the email"*), you're using this exact shape. The loop is inside the prompt and runs once per bio.
+
+On the right, six actions from the morning shift. Some the ship does once. Others repeat for each crewmate. Sort them.

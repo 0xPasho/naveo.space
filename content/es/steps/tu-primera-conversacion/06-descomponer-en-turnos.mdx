@@ -1,0 +1,75 @@
+---
+title: "Descomponer una tarea en varios turnos"
+order: 6
+estimatedMinutes: 7
+characters:
+  - hex
+exercise:
+  kind: step-order-dnd
+  task: |
+    Hex te pasó una tarea grande: armar un reporte de incidente para
+    enviar al capitán. Si le tirás todo de un prompt, el output va a
+    salir mediocre en cinco partes a la vez. Si lo descomponés en
+    turnos y revisás cada salida antes de seguir, cada parte sale
+    sólida.
+
+    Ordená los 6 turnos que conviene encadenar para armarlo bien.
+  steps:
+    - id: scope
+      label: "1. Definir el scope del reporte"
+      detail: "Pedirle al modelo que primero te enumere qué secciones tiene que llevar un reporte de incidente (resumen, cronología, causa raíz, impacto, acciones). Vos confirmás o ajustás antes de continuar."
+    - id: timeline
+      label: "2. Pedir la cronología cruda"
+      detail: "Pasarle los logs y pedirle SOLO una cronología en orden, sin interpretación. Vos revisás que los timestamps estén bien antes del siguiente turno."
+    - id: cause
+      label: "3. Pedir el análisis de causa raíz"
+      detail: "Con la cronología confirmada, pedirle el análisis de qué evento disparó qué. Una respuesta, un análisis. Sin mezclar con impacto."
+    - id: impact
+      label: "4. Pedir el impacto operacional"
+      detail: "Con causa raíz fija, pedirle qué sistemas/personas se vieron afectados. Sigue siendo una pregunta por turno."
+    - id: actions
+      label: "5. Pedir las acciones recomendadas"
+      detail: "Recién con causa e impacto claros, pedir las recomendaciones. El modelo ahora propone con contexto sólido, no inventando."
+    - id: assemble
+      label: "6. Pedirle el ensamblaje final"
+      detail: "Le pedís que junte las 4 partes en un solo reporte coherente. Como cada parte fue revisada por separado, el ensamblaje no introduce errores nuevos."
+hints:
+  - "Antes de pedirle cualquier dato, fijá el scope. Si no, en el turno 3 vas a descubrir que olvidaste una sección entera."
+  - "La cronología va antes que la causa: no podés analizar causa raíz si no acordaron primero qué pasó cuándo."
+  - "Impacto va después de causa y antes de acciones: las acciones se justifican contra impacto, no contra cronología."
+teaches:
+  - multi-turn-task-decomposition
+requires:
+  - multi-turn-followup
+---
+
+## Una tarea grande no se hace en un solo turno
+
+En el Track anterior aprendiste a descomponer una tarea **dentro de un solo prompt**: rol + contexto + ejemplos + formato, todo junto. Para tareas chicas y bien acotadas, alcanza.
+
+Pero para tareas grandes (un reporte de incidente, un plan de migración, una propuesta técnica) un solo prompt te trae un output mediocre en cinco partes a la vez. La cronología sale floja porque el modelo gastó tokens en pensar la causa raíz. El impacto sale genérico porque ya no le queda atención.
+
+**La técnica multi-turn equivalente:** descomponer la tarea en una secuencia de turnos, donde cada turno entrega UNA pieza y vos la revisás antes de pedir la siguiente.
+
+### Por qué funciona
+
+En un solo prompt, el modelo tiene que satisfacer 5 objetivos al mismo tiempo. La calidad por objetivo cae. En turnos separados, cada turno tiene UN objetivo. el modelo le pone todos los tokens encima. y vos lo revisás antes de que el error se propague al siguiente.
+
+> Es la misma idea que en software: una función que hace 5 cosas es difícil de testear. 5 funciones de 1 cosa cada una son fáciles. Multi-turn es la versión "una función a la vez" de prompt engineering.
+
+### Las 4 reglas para descomponer bien
+
+1. **Una pieza por turno.** Si tu pedido tiene "y" en la mitad, partilo.
+2. **Revisá antes de seguir.** Cada turno es un checkpoint. Si la cronología tiene timestamps mal, **no avances**. corregila ahí.
+3. **El orden importa.** Lo que viene después depende de lo anterior. Cronología → causa → impacto → acciones, no al revés.
+4. **Cerrá con un ensamblaje explícito.** El último turno pide juntar las piezas en un output coherente.
+
+### Cuándo NO descomponer
+
+Para tareas chicas (clasificar un mensaje, extraer una fecha), descomponer es **overkill**. Un prompt sólido alcanza. La descomposición multi-turn paga cuando:
+
+- La tarea tiene 3+ piezas independientes.
+- Los errores tempranos propagan a las piezas siguientes.
+- Vos podés agregar valor revisando entre turnos.
+
+A la derecha tenés un reporte de incidente para el capitán. <Character name="hex" /> te puso los 6 turnos en desorden. Ordenalos.

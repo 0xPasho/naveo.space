@@ -1,0 +1,134 @@
+---
+title: "Quick mission: what a prompt is"
+intro: |
+  Before learning tricks, it helps to know what a prompt is. It is the instruction you give the model. Not magic, not guessing.
+station: vega
+characters:
+  - vega
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Vega hands you five messages someone sent to a model. Sort which
+      ones count as valid prompts and which ones do not give the model
+      enough to act on.
+    slots:
+      - id: valid
+        label: "Valid prompt"
+      - id: invalid
+        label: "Not a prompt"
+    pieces:
+      - id: p1
+        label: "Give me 3 name ideas for my support crew."
+        correctSlot: valid
+      - id: p2
+        label: "hi, all good?"
+        correctSlot: invalid
+      - id: p3
+        label: "(empty message)"
+        correctSlot: invalid
+      - id: p4
+        label: "ideas?"
+        correctSlot: invalid
+      - id: p5
+        label: "Summarize this text in 2 short bullets."
+        correctSlot: valid
+  - kind: prompt-AB
+    question: |
+      These two prompts ask for the same thing. Which one has a better
+      shot at returning something useful?
+    optionA: |
+      ```
+      Give me 3 name ideas for my support crew.
+      ```
+    optionB: |
+      ```
+      ideas?
+      ```
+    correct: A
+    explanation: |
+      The model does not read your mind. If you throw "ideas?" at it
+      without saying ideas about what, it will make something up or ask
+      you to clarify.
+
+      Option A tells it three things: how many ideas (3), about what
+      (naming your crew), and the context (support). That alone is a
+      decent floor.
+
+      Basic rule: if you could not fulfill the request just by reading
+      it, the model cannot either. Make sure the prompt stands on its
+      own.
+  - kind: prompt-anatomy
+    task: |
+      Vega builds a simple prompt piece by piece. Label each line with
+      the category it belongs to.
+    parts:
+      - id: who
+        label: "Who I am"
+        text: "I lead a small customer support crew."
+      - id: what
+        label: "What I want"
+        text: "I need three name ideas for the team's internal channel."
+      - id: how
+        label: "How I want it"
+        text: "Each name on its own line, max two words."
+      - id: context
+        label: "Context"
+        text: "The team is informal and works remotely from Latam."
+  - kind: prompt-AB
+    question: |
+      You need to ask the model for three different things about the
+      same text. Which version makes the model's job easier?
+    optionA: |
+      ```
+      Summarize this text and translate it to English and give me 3
+      title ideas and return it all together.
+      ```
+    optionB: |
+      ```
+      I have a text. I need three things:
+      1) A summary in 2 bullets.
+      2) An English translation.
+      3) Three title ideas.
+      ```
+    correct: B
+    explanation: |
+      Models do not read your mind, but they do read structure. When
+      you write "1, 2, 3" the model sees three deliverables and keeps
+      them separate.
+
+      In A everything is glued with "and". The model can easily skip
+      one of the asks or smash them into a single block that is hard to
+      use afterwards.
+
+      Rule: if your prompt asks for more than one thing, number it. If
+      it is a single thing, one line is enough.
+  - kind: slot-fill-dnd
+    task: |
+      Which things help the model understand what you want, and which
+      ones confuse it? Sort each piece.
+    slots:
+      - id: helps
+        label: "Helps the model"
+      - id: confuses
+        label: "Confuses the model"
+    pieces:
+      - id: q1
+        label: "Telling it which role to play (\"You are a technical editor\")."
+        correctSlot: helps
+      - id: q2
+        label: "Giving it an example of the output you want."
+        correctSlot: helps
+      - id: q3
+        label: "Writing \"do whatever you want\"."
+        correctSlot: confuses
+      - id: q4
+        label: "A vague question with no context."
+        correctSlot: confuses
+      - id: q5
+        label: "Asking for a concrete format (bullets, JSON, table)."
+        correctSlot: helps
+---
+
+A prompt is an instruction. If you could not understand it read cold,
+the model cannot either. Tell it who you are, what you want, and how
+you want it.

@@ -1,0 +1,151 @@
+---
+title: "Misión exprés: el modelo miente con seguridad"
+intro: |
+  Cuando el modelo no sabe, no siempre dice "no sé". A veces inventa con tono de experto. Reconocer eso es media batalla.
+station: vega
+teaches:
+  - hallucination-mitigation
+  - hallucination-mechanics
+characters:
+  - echo
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Echo le pidió al modelo "dame el changelog de la version 3.2 de
+      mi-libreria interna". El modelo nunca vio esa libreria, pero
+      respondió con un changelog detallado y plausible. ¿Cuál es el
+      problema de raíz?
+    optionA: |
+      ```
+      El modelo no tiene acceso a internet. Habria que activarle
+      browsing o conectar un retrieval para que pueda leer el repo
+      real.
+      ```
+    optionB: |
+      ```
+      El prompt no le dio al modelo permiso para decir "no se". Sin
+      esa salida, el modelo elige siempre la opcion mas probable, y
+      esa opcion suele ser un changelog plausible aunque sea ficcion.
+      ```
+    correct: B
+    explanation: |
+      La A apunta a una solución (retrieval), no a la causa. La
+      libreria interna del usuario no está en internet, browsing no
+      la encuentra. El problema es anterior.
+
+      La B nombra la causa real: cuando el modelo no tiene
+      información, su default no es callarse, es completar con la
+      respuesta más probable estadísticamente. "Changelog v3.2" tiene
+      una forma muy estable en sus datos de entrenamiento (versiones,
+      bullets, "Added/Fixed/Changed"), entonces produce algo que
+      matchea esa forma, aunque el contenido sea inventado.
+
+      Mitigación: explícitamente decir en el prompt "si no tenes esta
+      info, responde 'no la tengo, necesito el README o el changelog
+      real'". Le das una salida, y el modelo la prefiere a inventar.
+  - kind: slot-fill-dnd
+    task: |
+      Clasificá cada tipo de pedido: ¿es de alto riesgo de
+      alucinación o de bajo riesgo?
+    slots:
+      - id: high
+        label: "Alto riesgo (probable alucinacion)"
+      - id: low
+        label: "Bajo riesgo"
+    pieces:
+      - id: p1
+        label: "'¿Cuál es la capital de Francia?' (información común y estable)."
+        correctSlot: low
+      - id: p2
+        label: "'Dame el numero de telefono de soporte de Acme S.A.' (dato puntual, especifico, raro)."
+        correctSlot: high
+      - id: p3
+        label: "'Resumime este parrafo que te paso.' (input concreto, tarea cerrada)."
+        correctSlot: low
+      - id: p4
+        label: "'¿Cuándo salió la versión 4.7 de la libreria foobar?' (fecha precisa, libreria poco famosa)."
+        correctSlot: high
+      - id: p5
+        label: "'Traduci este texto del ingles al espanol.' (transformacion, no requiere hechos externos)."
+        correctSlot: low
+      - id: p6
+        label: "'¿Qué cita exacta dijo Einstein sobre la creatividad?' (cita textual, alto sesgo a inventar)."
+        correctSlot: high
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de un prompt diseñado para minimizar
+      alucinaciones. Las cuatro piezas: scoping de fuentes, salida
+      explícita para "no sé", pedido de citas, y verificación final.
+    parts:
+      - id: scope
+        label: "Scope de fuentes (de dónde sí puede sacar info)"
+        text: "Responde usando SOLO el contenido del documento adjunto. No uses conocimiento general ni inferencias fuera del documento."
+      - id: idk
+        label: "Salida para 'no se' (le das permiso explicito)"
+        text: "Si la respuesta no esta en el documento, responde literalmente 'no esta en el documento adjunto'. No inventes ni rellenes."
+      - id: cite
+        label: "Pedido de citas (anchor verificable)"
+        text: "Cada afirmacion incluye entre parentesis la cita textual del documento donde sale. Si no podes citar, no afirmas."
+      - id: verify
+        label: "Verificacion final"
+        text: "Al final, lista los fragmentos del documento que usaste. Vamos a chequearlos antes de usar la respuesta."
+  - kind: step-order-dnd
+    task: |
+      Tenés una afirmación del modelo que no tiene fuente y suena
+      sospechosa ("Acme tiene 12.000 empleados en LATAM"). Ordená
+      los pasos para verificarla, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Marcá la afirmación como no verificada. No la uses hasta confirmarla."
+        detail: "El default es 'falsa hasta que se demuestre lo contrario', no al revés."
+      - id: s2
+        label: "Preguntá al modelo cuál es la fuente exacta de ese número."
+        detail: "Si responde 'es información general' o 'estimación', no es fuente."
+      - id: s3
+        label: "Buscá la fuente primaria por afuera (el sitio de la empresa, un reporte público, un dato real)."
+        detail: "El modelo puede confirmar contigo lo que ya inventó. No es validación."
+      - id: s4
+        label: "Si la fuente confirma, anotá la cita exacta y el link al lado de la afirmación."
+        detail: "Sin cita, la afirmación queda fuera del output que vas a usar."
+      - id: s5
+        label: "Si la fuente no existe o el número difiere, descartá la afirmación y ajustá el prompt para que no la repita."
+        detail: "Una alucinación confirmada cambia tu prompt, no solo tu respuesta."
+  - kind: prompt-AB
+    question: |
+      Vega arma un prompt que va a consumir datos potencialmente
+      desconocidos para el modelo. Tiene dos formas de pedir citas.
+      ¿Cuál minimiza más la chance de alucinación?
+    optionA: |
+      ```
+      Después de cada respuesta, agregá las fuentes que usaste.
+      Idealmente con links.
+      ```
+    optionB: |
+      ```
+      Antes de afirmar cada hecho, citá entre comillas la fuente
+      exacta de donde sale (linea del documento o link). Si no
+      podes citar, no podes afirmar: responde "no tengo fuente para
+      esto". El check de citas es PARTE de la respuesta, no un
+      agregado al final.
+      ```
+    correct: B
+    explanation: |
+      El A pide la cita despues, como apéndice. El problema: el
+      modelo ya completó la afirmación, ya está la oración inventada
+      arriba. Después rellena el campo "fuentes" con algo que suene
+      bien, y vos terminás con texto plausible + citas inventadas.
+
+      El B reordena el flujo: la cita es prerequisito de la
+      afirmación. Si el modelo no puede citar, no puede afirmar. Eso
+      cambia el behavior porque la salida "no tengo fuente" queda
+      explícitamente disponible y autorizada. El modelo prefiere
+      decir "no sé" cuando esa salida es legítima.
+
+      Regla: pedir citas como add-on es decorativo. Pedirlas como
+      condición de la afirmación es la mitigación real.
+---
+
+Misión del día: el modelo alucina cuando le pedís lo que no sabe y no le
+das salida. Decile "podés decir no sé", pedí fuentes antes de
+afirmaciones, y verificá lo crítico afuera.

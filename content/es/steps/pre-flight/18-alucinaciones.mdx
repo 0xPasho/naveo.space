@@ -1,0 +1,112 @@
+---
+title: "Alucinaciones: cuándo y por qué"
+order: 18
+estimatedMinutes: 6
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Le preguntás al modelo: *"¿Cuál fue el código de identificación del
+    comandante de Apollo 11?"*
+
+    Te responde con confianza: *"El comandante Neil Armstrong tenía el
+    código de identificación NASA-A1-001."*
+
+    Verificás: Armstrong existió y comandó Apollo 11. Pero "código de
+    identificación NASA-A1-001" no aparece en ningún registro real. NASA
+    no usaba ese sistema. ¿Qué pasó?
+  optionA: |
+    **El modelo tuvo datos contaminados durante el entrenamiento.** Hay
+    que confiar pero verificar siempre, porque a veces "se equivoca".
+  optionB: |
+    **El modelo predijo la continuación más probable**, no la respuesta
+    verdadera. *"El comandante Neil Armstrong tenía el código de
+    identificación NASA-..."* es una frase que **suena** verdadera porque
+    sigue el patrón de cómo se habla de NASA. El modelo no consultó
+    ninguna base. Fabricó algo plausible.
+  correct: B
+  explanation: |
+    La alucinación no es un error del modelo. Es exactamente lo que el
+    modelo está diseñado para hacer: predecir la continuación más
+    probable. Cuando le preguntás algo cuya respuesta específica no está
+    bien establecida en sus datos, el modelo no dice "no sé". Completa con
+    lo que **sonaría** correcto.
+
+    Suena tan natural porque usa patrones reales (la estructura de cómo se
+    citan códigos de NASA), solo que con valores inventados. La forma es
+    perfecta. El contenido es ficción.
+
+    Tres factores la disparan:
+
+    1. La pregunta pide algo **específico** (un código, una cita, un número).
+    2. El tema parece **conocido** (el modelo sabe mucho sobre Apollo 11 en general).
+    3. No tiene **incentivo para decir "no sé"**, así que completa.
+
+    Para mitigar: decile explícitamente que puede decir "no sé", dale
+    fuentes reales (RAG, tools), y verificá lo crítico aparte.
+hints:
+  - "El modelo no busca en una base ni verifica. Predice tokens probables, nada más."
+  - "Si la respuesta es específica y suena técnica pero no la podés encontrar en ningún registro, sospechá."
+  - "Pensá en la lección 14: el modelo elige el token más probable dado lo previo. Si lo previo es *'el código de NASA fue ...'*, completa con algo que **parezca** un código de NASA."
+teaches:
+  - hallucination-mechanics
+requires:
+  - llm-mental-model
+  - temperature-sampling
+---
+
+## El modelo miente con confianza
+
+En la lección 14 lo mencionamos de pasada. Ahora vamos a fondo: **alucinación** es cuando el modelo te dice algo falso con la misma confianza que algo verdadero.
+
+### Por qué pasa: la mecánica
+
+El modelo predice la continuación más probable. Si le preguntás algo cuya respuesta no está bien establecida en sus datos, no devuelve *"no sé"*. Devuelve **lo que sonaría correcto**.
+
+Ejemplo:
+
+```
+Pregunta: ¿Cuál fue el número de serie del primer cohete tripulado a la Luna?
+Respuesta: El Saturn V de Apollo 11 tenía el número de serie SA-506.
+```
+
+`SA-506` *suena* a número de serie de NASA. Es plausible. Es específico. Y en este caso es **correcto**.
+
+```
+Pregunta: ¿Cuál fue el código de identificación del comandante de Apollo 11?
+Respuesta: El comandante Neil Armstrong tenía el código de identificación NASA-A1-001.
+```
+
+`NASA-A1-001` también *suena* a código de NASA. Es plausible. Es específico. Y es **completamente inventado**. NASA no asignaba "códigos de identificación" así.
+
+El modelo no sabe la diferencia entre las dos respuestas. Para él, ambas son completaciones plausibles que siguen el patrón de "cómo se hablaría de NASA".
+
+### Tres factores que la disparan
+
+1. **La pregunta pide algo específico** (número, fecha, nombre propio, código). El modelo tiene que producir algo concreto, y completa con lo que parezca apropiado.
+2. **El tema parece "conocido"**. Si el modelo sabe mucho sobre el área general, gana confianza para completar incluso lo que no sabe específicamente.
+3. **No tiene incentivo para decir "no sé"**. Su entrenamiento privilegia completar bien, no la honestidad sobre la incertidumbre.
+
+### Cómo se ve en producción
+
+Casos clásicos:
+
+- Citas a papers académicos que no existen, con autores y títulos plausibles.
+- Funciones de librerías que parecen existir pero no.
+- Productos de empresas reales que nunca fueron lanzados.
+- Citas a leyes o regulaciones inventadas pero con el formato correcto.
+
+Todos comparten algo: **la forma es perfecta, el contenido es ficción**.
+
+### Mitigaciones
+
+No hay solución mágica, pero hay tácticas que reducen la frecuencia:
+
+1. **Decile explícitamente que puede decir "no sé".** En el prompt: *"Si no estás seguro, decí 'no tengo esa información' en vez de inventar."* Funciona sorprendentemente bien.
+2. **Para hechos verificables, agregale fuentes (RAG) o tools.** Dale al modelo acceso a documentos reales o a búsquedas. Que recupere antes de generar.
+3. **Verificá lo crítico aparte.** Para todo lo que importa (legal, médico, financiero), no aceptes la salida del modelo sin chequearla contra una fuente autoritativa.
+
+> Esta es exactamente la trampa del capstone (lección 20). El tercer test case te pide resumir un log sin nombrar al tripulante (porque el log no lo nombra). Si tu prompt no es explícito, el modelo va a "completar" con un nombre plausible. **Esa es alucinación.** Acordate de lo que aprendiste acá cuando llegues.
+
+A la derecha, dos descripciones de lo que pasó. ¿Cuál captura realmente el mecanismo?

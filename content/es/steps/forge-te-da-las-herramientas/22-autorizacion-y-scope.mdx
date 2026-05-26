@@ -1,0 +1,155 @@
+---
+title: "Autorización: el agente NO es admin"
+order: 22
+estimatedMinutes: 10
+exercise:
+  kind: tool-handler-implement
+  toolName: delete_booking
+  toolSchema: |
+    {
+      "name": "delete_booking",
+      "description": "Cancela un booking de una sala. Solo el creador del booking o un crewmate con rol 'shift_lead' pueden cancelarlo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "booking_id": { "type": "string" }
+        },
+        "required": ["booking_id"]
+      }
+    }
+  starter: |
+    // Handler para delete_booking.
+    // Disponible:
+    //   currentUser() → {alias, roles: ["crewmate" | "shift_lead" | "admin", ...]}
+    //   db.bookings.get(booking_id) → {booking_id, room_id, crewmate_alias, starts_at, ends_at} | null
+    //   db.bookings.delete(booking_id) → {ok: true}
+    //   logger.warn(event, payload)
+    //
+    // Tu trabajo: implementar el handler chequeando autorización ANTES de
+    // borrar. El agente solo puede borrar si el usuario actual:
+    //   (a) es el dueño del booking (alias == crewmate_alias del booking), O
+    //   (b) tiene el rol 'shift_lead'.
+    // En cualquier otro caso, denegá.
+
+    async function handle({ booking_id }) {
+      const booking = await db.bookings.get(booking_id);
+      if (!booking) {
+        return { ok: false, error: { code: "not_found", message: `Booking ${booking_id} not found.` } };
+      }
+      // TODO: chequeo de autorización.
+      await db.bookings.delete(booking_id);
+      return { ok: true };
+    }
+  language: javascript
+  scenarios:
+    - description: "Em (crewmate) borra un booking propio. Debería pasar."
+      expected: "ok: true. Booking borrado."
+    - description: "Em (crewmate) intenta borrar el booking de Bru. Debería denegar."
+      expected: "ok: false, error.code='permission_denied'. Booking sigue existiendo en DB. Log de warn con el intento."
+    - description: "Bru (shift_lead) borra el booking de Em. Debería pasar."
+      expected: "ok: true. Booking borrado. (rol shift_lead lo permite incluso sin ser dueño)"
+    - description: "Booking inexistente. Mismo handling para cualquier usuario."
+      expected: "ok: false, error.code='not_found'. NO leaks de info (no decir 'no podés borrar esto')."
+  rubric:
+    - id: auth-check-before-write
+      kind: llm-judge
+      criterion: "El chequeo de autorización ocurre ANTES del db.bookings.delete. Si la autorización falla, NO se llama a delete. El orden de operaciones es: load booking → check auth → delete."
+    - id: owner-check
+      kind: llm-judge
+      criterion: "El handler permite borrar si `currentUser().alias === booking.crewmate_alias`. El dueño siempre puede borrar su propio booking."
+    - id: role-check
+      kind: llm-judge
+      criterion: "El handler permite borrar si `currentUser().roles` incluye 'shift_lead'. Un shift_lead puede borrar bookings de otros."
+    - id: denial-on-others
+      kind: llm-judge
+      criterion: "Si el usuario no es dueño NI tiene shift_lead, retorna { ok: false, error: { code: 'permission_denied', message: ... } }. NO borra. NO crashea."
+    - id: logs-denial
+      kind: llm-judge
+      criterion: "Cuando deniega, loguea con logger.warn un evento (ej: 'auth.denied') con al menos: tool name, alias del usuario, booking_id, y razón. Audit trail."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Patrón clásico: `const user = currentUser(); const isOwner = user.alias === booking.crewmate_alias; const isLead = user.roles.includes('shift_lead'); if (!isOwner && !isLead) return { ok: false, error: ... };`."
+  - "Loguear los denials es CRÍTICO para auditoría. Sin log, no podés saber si alguien (o el agente) intentó usar el tool fuera de sus permisos. Eso es un agujero de compliance."
+  - "Para el caso `not_found`, está OK retornar el mismo mensaje sin distinguir entre 'no existe' y 'no tenés permiso'. Eso evita leaks de info (atacante no aprende qué bookings existen probando IDs)."
+teaches:
+  - tool-authorization
+requires:
+  - mcp-error-handling
+---
+
+## El agente actúa, pero alguien lo autorizó
+
+Un error común al diseñar tools para agentes: pensarlas como si el agente fuera "root". Si la tool se invoca, se ejecuta. Sin checks.
+
+En producción eso es un agujero gigante. El agente lo invoca en nombre de un usuario, y **ese usuario tiene permisos limitados**. Que el agente decida llamar `delete_user` no significa que el usuario que está hablando con el agente pueda borrar usuarios.
+
+Regla de oro:
+
+> Las tools chequean autorización por su cuenta. NUNCA confíes en que "el agente solo va a invocar lo que tiene permiso de invocar". El agente NO sabe los permisos. Vos sí.
+
+### Tres formas de pensar la autorización
+
+1. **Por rol del usuario.** El usuario tiene un set de roles (`crewmate`, `shift_lead`, `admin`), y la tool requiere uno o más para correr. Ejemplo: `delete_user` requiere `admin`.
+
+2. **Por ownership.** El usuario puede operar sobre los recursos que le pertenecen. `delete_booking` permite borrar bookings propios. Esto es **scope por recurso**.
+
+3. **Combinado.** Permitís si es dueño O si tiene un rol que lo autoriza. La forma más usada: "el dueño Y los managers pueden borrar".
+
+### El patrón
+
+```js
+async function handle({ booking_id }) {
+  const booking = await db.bookings.get(booking_id);
+  if (!booking) {
+    return { ok: false, error: { code: "not_found", message: "..." } };
+  }
+
+  const user = currentUser();
+  const isOwner = user.alias === booking.crewmate_alias;
+  const isLead = user.roles.includes("shift_lead");
+
+  if (!isOwner && !isLead) {
+    logger.warn("auth.denied", {
+      tool: "delete_booking",
+      user: user.alias,
+      booking_id,
+      reason: "not_owner_not_lead",
+    });
+    return {
+      ok: false,
+      error: {
+        code: "permission_denied",
+        message: "You don't have permission to delete this booking.",
+      },
+    };
+  }
+
+  await db.bookings.delete(booking_id);
+  return { ok: true };
+}
+```
+
+### Cosas que se rompen si no chequeás
+
+- **Escalación accidental.** El agente, intentando "ayudar", invoca tools que el usuario no podía. El sistema confía. paso.
+- **Cross-tenant leaks.** Usuario A pide algo, el agente lee/modifica datos del usuario B. Si no chequeás ownership, no te enterás.
+- **Compliance fail.** En audit, te piden "¿quién hizo qué?". Sin auth checks ni logs de denial, no podés contestar.
+
+### El log del denial: tu única traza
+
+Cuando deniegas, **logueá el intento**. Sin ese log no sabés:
+
+- Si alguien (incluído el agente) está probando tools fuera de scope.
+- Si hay un patrón de pedidos rechazados que sugieren un bug en el system prompt.
+- Quién pidió qué en un audit.
+
+```js
+logger.warn("auth.denied", { tool, user, resource_id, reason });
+```
+
+### Tu tarea
+
+A la derecha tenés `delete_booking`. El starter borra sin chequear. Implementá la autorización combinada (owner OR shift_lead), retornás un error estructurado en denegación, y logueás cada denial.
+
+> Toda tool que escribe estado debe chequear autorización. **Sin excepciones, incluso si parece "interno".** En seis meses esa "tool interna" se va a exponer a un endpoint público y vas a agradecer haberla protegido.

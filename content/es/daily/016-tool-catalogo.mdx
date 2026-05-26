@@ -1,0 +1,160 @@
+---
+title: "Misión exprés: el tamaño del catálogo de tools"
+intro: |
+  Más tools no es mejor agente. Después de cierto número, el modelo se confunde y elige mal.
+station: forge
+teaches:
+  - tool-catalog-size
+  - tool-naming-discoverability
+characters:
+  - hex
+  - forge
+scenes:
+  - kind: prompt-AB
+    question: |
+      Hex te muestra el catálogo de un MCP. Tiene 20 tools, pero seis
+      son variantes casi iguales: `get_user`, `fetch_user`,
+      `read_user_profile`, `lookup_user`, `user_by_id`, `find_user`.
+      El modelo a veces invoca la equivocada. ¿Qué hacés primero?
+    optionA: |
+      ```
+      Sumar al system prompt un parrafo que explique cuando usar cada
+      una. "fetch_user es para X, get_user es para Y..." asi el modelo
+      tiene contexto.
+      ```
+    optionB: |
+      ```
+      Quedarse con UNA tool `get_user` que acepte un parametro `mode`
+      (basic / full / by-email). Borrar las otras cinco del catalogo.
+      ```
+    correct: B
+    explanation: |
+      La A trata el síntoma. Sumar un párrafo de "cuándo usar cuál"
+      mete más texto al system prompt, infla el context, y obliga al
+      modelo a razonar entre seis nombres parecidos cada vez. Algunas
+      veces va a acertar, otras no.
+
+      La B trata la causa. El problema no es que el modelo no entienda
+      las descriptions: el problema es que seis tools cubren el mismo
+      espacio. Plegarlas en una sola con un argumento que diga el modo
+      elimina la decisión.
+
+      Regla: cuando dos tools se confunden en la práctica, casi nunca
+      la respuesta es "explicarlas mejor". Es plegarlas en una, o
+      borrar la que sobra. Curaduria > documentacion extra.
+  - kind: slot-fill-dnd
+    task: |
+      Estás revisando un catálogo con 14 tools. Clasificá cada una:
+      ¿se queda como está, se pliega dentro de otra, o se borra
+      directamente?
+    slots:
+      - id: keep
+        label: "Mantener"
+      - id: fold
+        label: "Plegar en otra tool"
+      - id: drop
+        label: "Borrar"
+    pieces:
+      - id: p1
+        label: "`create_invoice` (única para crear facturas, bien definida, usada todos los días)."
+        correctSlot: keep
+      - id: p2
+        label: "`get_user_by_id` Y `get_user_by_email`, ambas con descriptions casi iguales."
+        correctSlot: fold
+      - id: p3
+        label: "`legacy_export` que ningún usuario invoco en los últimos 6 meses."
+        correctSlot: drop
+      - id: p4
+        label: "`send_alert` (tool central del flow de incidentes, claro y único)."
+        correctSlot: keep
+      - id: p5
+        label: "`update_user` y `patch_user` (mismo efecto, una usa PATCH, otra PUT)."
+        correctSlot: fold
+      - id: p6
+        label: "`debug_ping_v2` que dejaron los devs y nadie nunca llama desde el agente."
+        correctSlot: drop
+  - kind: step-order-dnd
+    task: |
+      Tu catálogo creció a 25 tools y el modelo elige mal seguido.
+      Ordená los pasos para curarlo, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Lista las tools y marcá cuándo se invocó cada una en los últimos 30 días."
+        detail: "Sin datos de uso, no sabés cuáles sobran."
+      - id: s2
+        label: "Borrá las que no se usaron nunca. Si nadie las llama, no aportan."
+        detail: "Catalogo + 0 uso = solo distrae al modelo."
+      - id: s3
+        label: "Identificá grupos de tools que cubren el mismo espacio (nombres parecidos, descriptions casi iguales)."
+        detail: "Suelen venir de equipos distintos que duplicaron sin saber."
+      - id: s4
+        label: "Plegá cada grupo en una sola tool con un parámetro de modo o tipo."
+        detail: "Una tool con `mode` claro le da al modelo una decisión, no seis."
+      - id: s5
+        label: "Renombrá las que queden para que el nombre solo diga cuándo elegirla."
+        detail: "Si el nombre necesita una description larga para distinguirla, el nombre está mal."
+      - id: s6
+        label: "Volve a medir: ¿el modelo elige mejor con el catalogo recortado?"
+        detail: "Si si, listo. Si no, mira las descriptions de las que quedan."
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de un buen nombre de tool dentro de un
+      catálogo grande. La intuición: el nombre tiene que ser
+      auto-explicativo, namespaced, y guiar al modelo solo.
+    parts:
+      - id: namespace
+        label: "Namespace (de qué dominio es)"
+        text: "`billing.` prefija todas las tools del area de billing. Separa visualmente del resto del catalogo."
+      - id: verb
+        label: "Verbo (qué hace)"
+        text: "`create_` indica que la tool produce un recurso nuevo. No `do_`, no `manage_`, no `handle_`."
+      - id: resource
+        label: "Recurso (sobre qué actúa)"
+        text: "`invoice` nombra el objeto concreto. No `record`, no `entity`, no `thing`."
+      - id: modifier
+        label: "Modificador opcional (caso especial si lo amerita)"
+        text: "`_draft` sufijo, solo si hace falta distinguir variantes del mismo verbo+recurso."
+  - kind: wiring-dnd
+    task: |
+      Llega un pedido al agente. Conectalo con la tool que el modelo
+      debería elegir de un catálogo con varias parecidas. Pensá en
+      qué pista lleva a cada una.
+    sources:
+      - id: src-new
+        label: "Pedido: 'Hace una factura nueva para el cliente Pasho.'"
+        detail: "Crear algo que no existe."
+      - id: src-find
+        label: "Pedido: 'Buscame la factura 0042.'"
+        detail: "Recuperar algo existente."
+      - id: src-list
+        label: "Pedido: 'Mostrame las facturas del mes.'"
+        detail: "Listado con filtro temporal."
+      - id: src-update
+        label: "Pedido: 'Cambia el estado de la 0042 a pagada.'"
+        detail: "Modificar un campo de algo que ya existe."
+    targets:
+      - id: tgt-create
+        label: "`billing.create_invoice`"
+        detail: "Verbo create, recurso invoice."
+      - id: tgt-get
+        label: "`billing.get_invoice`"
+        detail: "Verbo get, recurso invoice por id."
+      - id: tgt-list
+        label: "`billing.list_invoices`"
+        detail: "Verbo list, recurso plural."
+      - id: tgt-update
+        label: "`billing.update_invoice`"
+        detail: "Verbo update, recurso invoice."
+    correctConnections:
+      - from: src-new
+        to: tgt-create
+      - from: src-find
+        to: tgt-get
+      - from: src-list
+        to: tgt-list
+      - from: src-update
+        to: tgt-update
+---
+
+Misión del día: el catálogo es interfaz. Cinco tools bien nombradas le
+ganan a veinte que el modelo no sabe distinguir.

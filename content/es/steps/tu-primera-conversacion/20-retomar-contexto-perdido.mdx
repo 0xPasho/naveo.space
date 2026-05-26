@@ -1,0 +1,72 @@
+---
+title: "Reconstruir el contexto perdido"
+order: 20
+estimatedMinutes: 6
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Cambio de turno en el puente. <Character name="vega" /> estuvo en tres
+    incidentes más y perdió el hilo de tu conversación. Necesitás
+    **reconstruirle el contexto** en un solo mensaje antes de hacerle la
+    próxima pregunta.
+
+    Arrastrá cada hecho al slot correcto del recap. Slots vacíos = Vega
+    sigue sin saber lo suficiente para ayudarte.
+  slots:
+    - id: who-i-am
+      label: "Quién soy"
+    - id: what-i-need
+      label: "Qué estoy intentando hacer"
+    - id: what-decided
+      label: "Qué ya decidimos"
+    - id: where-stuck
+      label: "Dónde estoy trabado"
+    - id: what-i-need-from-her
+      label: "Qué necesito de vos"
+  pieces:
+    - id: alias
+      label: "Soy Bruno, tripulante nuevo, segundo día."
+      correctSlot: who-i-am
+    - id: goal
+      label: "Estoy llenando mi primer parte de turno."
+      correctSlot: what-i-need
+    - id: prior
+      label: "Ya me explicaste los pasos 1 al 3."
+      correctSlot: what-decided
+    - id: blocker
+      label: "El paso 4 (firmar con alias) falla. el sistema rechaza mi alias."
+      correctSlot: where-stuck
+    - id: ask
+      label: "Decime si el alias tiene que coincidir con mi documento, o solo con mi apodo en la crew."
+      correctSlot: what-i-need-from-her
+hints:
+  - "Leé cada etiqueta con atención. 'Dónde estoy trabado' es sobre el bloqueador, no sobre el objetivo."
+  - "La pieza *'Ya me explicaste los pasos 1 al 3'* va con lo que ya cubrieron. el estado previo."
+  - "Sin el slot **qué necesito** lleno, Vega igual no va a saber qué hacer por vos. El recap es inútil sin la pregunta al final."
+teaches:
+  - multi-turn-context-recovery
+requires:
+  - multi-turn-followup
+---
+
+## El modelo no tiene memoria a menos que vos se la des
+
+Fuera del buffer activo de conversación, el modelo no recuerda nada. <Character name="vega" /> no puede traer "lo que veníamos hablando ayer". no hay ayer para ella, solo los tokens que están actualmente en contexto.
+
+Cuando volvés a una conversación, **vos** sos la memoria. Re-establecer contexto toma 60 segundos de esfuerzo arriba y te ahorra cinco turnos de confusión. La forma siempre es la misma:
+
+1. **Quién soy.** Una oración, identificándote.
+2. **Qué estoy intentando hacer.** El objetivo, en una oración.
+3. **Qué ya decidimos.** El estado en el que la conversación previa dejó las cosas.
+4. **Dónde estoy trabado.** El bloqueador específico.
+5. **Qué necesito de vos.** La próxima pregunta exacta.
+
+Saltate alguno y el modelo tiene que adivinar. Adivinar es donde empieza la alucinación.
+
+> Esta también es la forma correcta de hacerle handoff a un compañero humano, a un agente de soporte, o a un colega después de un fin de semana largo. No estás formateando para el modelo. estás formateando para *cualquiera que perdió el hilo*.
+
+### Tu ejercicio
+
+A la derecha: cinco slots etiquetados, cinco hechos en el banco. Arrastrá cada hecho al slot que le corresponde. Cuando aprietes **Comprobar**, <Character name="vega" /> verifica que el recap sea suficiente para actuar.

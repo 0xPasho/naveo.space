@@ -1,0 +1,130 @@
+---
+title: "Descomponer una tarea grande"
+order: 15
+estimatedMinutes: 7
+characters:
+  - atlas
+exercise:
+  kind: prompt-task
+  task: |
+    Atlas necesita procesar tickets de mantenimiento. Cada output debe
+    tener TRES secciones etiquetadas, en este orden y formato:
+
+    ```
+    SUMMARY: <una oración con el problema>
+    SEVERITY: <high, medium o low>
+    ACTION: <recomendación concreta de una oración>
+    ```
+
+    Escribí un prompt que reciba un ticket en `{{input}}` y genere los
+    tres campos consistentemente.
+  starter: |
+    <task>
+      Procesa el siguiente ticket de mantenimiento.
+      Devuelve TRES secciones etiquetadas, en este orden:
+
+      1. SUMMARY: una oración con el problema.
+      2. SEVERITY: una de [high, medium, low].
+      3. ACTION: recomendación concreta en una oración.
+    </task>
+
+    <output_format>
+      SUMMARY: ...
+      SEVERITY: high|medium|low
+      ACTION: ...
+    </output_format>
+
+    <ticket>
+      {{input}}
+    </ticket>
+  testCases:
+    - input: "Bay 7 reciclador de agua perdiendo 5L/h desde anoche. Sin contaminación detectada. Equipo todavía operativo pero descenso constante."
+    - input: "Pantalla del puente parpadea cuando se usa el comunicador. Reportado por 3 oficiales de turno. Sin pérdida de información hasta ahora."
+    - input: "Generador auxiliar #2 no arranca después del mantenimiento programado. Bypass actual al generador #1 funciona pero sin redundancia."
+  rubric:
+    - id: has-summary-line
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "(?m)^SUMMARY:\\s+\\S"
+      criterion: "Contiene una línea que empieza con `SUMMARY: ` seguida de contenido."
+    - id: has-severity-line
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "(?mi)^SEVERITY:\\s+(high|medium|low)\\s*$"
+      criterion: "Contiene una línea `SEVERITY: ` con uno de los tres valores válidos."
+    - id: has-action-line
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "(?m)^ACTION:\\s+\\S"
+      criterion: "Contiene una línea que empieza con `ACTION: ` seguida de contenido."
+    - id: coherent-content
+      kind: llm-judge
+      criterion: "El SUMMARY describe correctamente el problema del ticket. SEVERITY es razonable para el problema (no clasifica una fuga crítica como 'low' ni un parpadeo cosmético como 'high'). ACTION es concreta y aplicable al problema."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Las etiquetas (SUMMARY:, SEVERITY:, ACTION:) son **compromisos visuales** que ayudan al modelo a no mezclar las tres tareas en un solo párrafo."
+  - "Restringí severity a 'high', 'medium', 'low' explícitamente. Sin esa lista cerrada el modelo va a usar 'critical', 'urgent', 'minor', etc."
+  - "Si una sección sale floja, agregá una sub-regla específica: 'ACTION debe ser una oración con verbo, no un sustantivo solo'."
+teaches:
+  - task-decomposition
+requires:
+  - prompt-task-basics
+  - structured-output
+---
+
+## Tarea grande, problemas grandes
+
+Cuando le pides al modelo *"resumí, clasificá, y recomendá acción"* en una sola frase, va a:
+
+1. Mezclar las tres cosas en un párrafo.
+2. Olvidar una (típicamente la última).
+3. Generarlas en distinto orden o formato cada vez.
+
+La solución: **descomponer la tarea en sub-pasos explícitos dentro del prompt**.
+
+### CoT vs descomposición: parecidos pero distintos
+
+| | CoT (lección 14) | Descomposición |
+| --- | --- | --- |
+| Cuándo | Una tarea que requiere razonamiento profundo | Múltiples tareas en paralelo |
+| Estructura | Pasos de pensamiento → conclusión | N outputs etiquetados |
+| Ejemplo | "Análisis: ... / Causa: ..." | "SUMMARY: ... / SEVERITY: ... / ACTION: ..." |
+
+CoT es **vertical** (pensar profundo sobre una cosa). Descomposición es **horizontal** (hacer N cosas separadas).
+
+### Cómo descomponer en 3 pasos
+
+**1. Listá las sub-tareas explícitamente** en la instrucción:
+
+```
+Esta tarea tiene 3 partes:
+1. Resumir el issue (una oración).
+2. Clasificar severidad (high, medium, low).
+3. Recomendar acción concreta.
+```
+
+**2. Mostrá el formato exacto** del output con etiquetas:
+
+```
+SUMMARY: ...
+SEVERITY: high|medium|low
+ACTION: ...
+```
+
+**3. Hacé cada parte parseable** desde código.
+
+Si SUMMARY siempre está en su propia línea, podés extraerlo con un regex de una línea. Si está embebido en un párrafo, necesitás otro LLM solo para parsearlo. Eso multiplica costo y errores.
+
+### Por qué funciona
+
+Cada etiqueta es un "compromiso" del modelo. Cuando escribe `SEVERITY:`, las probabilidades del siguiente token colapsan sobre `high|medium|low`. No hay espacio para divagar.
+
+Sin etiquetas, el modelo genera un párrafo donde "severidad" podría aparecer al inicio, al medio, al final, o no aparecer. Con etiquetas, está donde debe estar, en el formato que necesitas.
+
+> El bonus oculto: descomponer también te facilita el **debugging**. Si solo la severidad falla, sabés exactamente dónde mirar. Sin descomposición, "el prompt anda mal" es todo lo que tenés.
+
+A la derecha, tres tickets de mantenimiento. Escribí un prompt que genere los tres campos etiquetados consistentemente.

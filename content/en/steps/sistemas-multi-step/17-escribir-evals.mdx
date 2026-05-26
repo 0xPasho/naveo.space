@@ -1,0 +1,109 @@
+---
+title: "Writing evals: the cases your system MUST pass"
+order: 17
+estimatedMinutes: 12
+exercise:
+  kind: prompt-task
+  task: |
+    Echo asks you to write an **eval set** for the incident classifier
+    you built in step 02 (the first step of the chain, `classify_report`
+    with 4 categories: safety, maintenance, social, other).
+
+    An eval is a test case with (a) an input, (b) the expected correct
+    category, and (c) optionally a comment explaining WHY it's the
+    correct category or what makes this case interesting (edge case,
+    trap, control, etc.).
+
+    Your job: write a set of **at least 10 evals** in JSON format,
+    covering:
+
+    - The 4 categories (min 1 case per category).
+    - At least 2 AMBIGUOUS cases where a bad classifier would get
+      confused.
+    - At least 2 ADVERSARIAL cases (typical of real corpora: jargon,
+      typos, injected instructions, messages that SOUND like one route
+      but are another).
+    - Each case with a `comment` field explaining what it evaluates.
+
+    Expected format (where `{{input}}` doesn't apply. you write the
+    full JSON directly):
+  starter: |
+    [
+      {
+        "input": "Bay 4 lost coolant pressure. escalating",
+        "expected_category": "safety",
+        "comment": "Obvious safety case. Control to make sure the classifier isn't broken at the basics."
+      }
+    ]
+  testCases:
+    - input: "meta-evaluation"
+  rubric:
+    - id: at-least-10-cases
+      kind: llm-judge
+      criterion: "The student wrote at least 10 cases. Each one with input, expected_category, and comment."
+    - id: covers-all-categories
+      kind: llm-judge
+      criterion: "The set covers the 4 categories (safety, maintenance, social, other). at least 1 case for each."
+    - id: includes-ambiguous
+      kind: llm-judge
+      criterion: "At least 2 cases are marked or clearly ambiguous: cases where a mediocre classifier would get confused between two categories (e.g. 'Bay 3 is weird'. is it safety? maintenance?. the comment should explain why the chosen category is correct)."
+    - id: includes-adversarial
+      kind: llm-judge
+      criterion: "At least 2 cases are adversarial: internal jargon, typos, messages that SOUND like one category but are another, or injection attempts. The comment explains what adversity it evaluates."
+    - id: comments-explain
+      kind: llm-judge
+      criterion: "Each case has a NON-trivial comment. Not 'good case', but 'control for X' or 'edge case because Y' or 'adversarial: uses safety jargon but is actually maintenance'. The comment justifies why this case is in the set."
+    - id: not-just-easy-cases
+      kind: llm-judge
+      criterion: "The set is NOT just 10 obvious cases. If every input is crisp and obvious for any human reader, it's not evaluating anything useful. It must have friction."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "A good eval set isn't 'random inputs'. it's **intentional inputs**. Each case should exist because it breaks a mediocre classifier."
+  - "For the adversarials, think: what happens if the user uses 'incident' in a chitchat message (should be social, NOT incident_report)? Or reports a problem without mentioning the keyword?"
+  - "Each `comment` is for you (future you). When a case fails 6 months from now, you'll want to know why it was there. 'Adversarial: uses urgent in a promo message' is better than 'hard case'."
+teaches:
+  - evals-author
+requires:
+  - prompt-router
+---
+
+## The eval set is your contract with your own system.
+
+Once your system grows. a 3-step chain, a router with 4 routes, RAG with honest generate. **you can't test it mentally anymore**. You need a set of test cases that demonstrates the system does what you promise.
+
+That set is the **eval set**. And the skill of writing a good one is what separates the LLM engineer from the demo-builder.
+
+### What makes an eval set good
+
+An eval set isn't a handful of random cases. It's a **curated selection** of inputs covering:
+
+1. **Control cases.** Obvious cases any decent system should pass. If they fail, the system is broken at the basics.
+2. **Edge cases.** Cases on the boundaries. empty inputs, very long inputs, inputs in another language, inputs ambiguous between two categories.
+3. **Adversarial cases.** Cases that try to break the system: typos, jargon, injected instructions, messages that SOUND like one category but are another.
+
+Each case carries a **comment**: what it's there for. Without comments, when a case fails 6 months from now, you won't know if it was a control or an edge case you consciously decided not to support.
+
+### The task
+
+Echo asks for an eval set for the step 02 classifier (4 categories: safety, maintenance, social, other).
+
+At least **10 cases**, distributed:
+
+- 4+ with each category represented.
+- 2+ ambiguous (where a mediocre classifier would get confused).
+- 2+ adversarial (jargon, typos, injection, false positives).
+- All with `comment` explaining what each case evaluates.
+
+### How it's evaluated
+
+6 LLM-judge criteria on the set's quality:
+
+1. At least 10 cases with the correct shape.
+2. Covers the 4 categories.
+3. Has labeled ambiguous cases.
+4. Has labeled adversarial cases.
+5. Non-trivial comments that justify each case.
+6. Not just easy cases.
+
+> The mental test: if I, reading only your eval set, could reconstruct what the classifier does and where it struggles. you passed. If it looks like "10 random inputs with labels", you didn't.

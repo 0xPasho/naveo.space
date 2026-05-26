@@ -1,0 +1,92 @@
+---
+title: "Why it answers differently each time"
+order: 17
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    You send the same prompt to the model twice in a row, exactly identical.
+
+    First response: *"The launch protocol has six steps."*
+    Second response: *"A standard launch requires six steps."*
+
+    Same meaning, different wording. Why?
+  optionA: |
+    **The model has a bug that makes it answer differently.** For
+    consistency you have to pray or explicitly ask it to repeat.
+  optionB: |
+    **The model doesn't always pick the most probable token. It samples**
+    from the probability distribution. If the top candidate is at 60% and
+    the second is at 35%, the first doesn't always win. A parameter
+    called **temperature** controls how much it explores.
+  correct: B
+  explanation: |
+    The model is a **sampler, not a maximizer**. In lesson 14 you saw that
+    it computes a probability distribution over the next token. What I
+    didn't tell you: it doesn't always pick the highest-probability one.
+
+    The `temperature` parameter controls how "exploratory" the sampling
+    is. With `temperature = 0` it's (almost) deterministic, picking the
+    most probable one. With `temperature = 1.0` or higher, it explores
+    alternatives often, returning more varied responses.
+
+    By default, most APIs sit between 0.7 and 1.0 (so responses feel
+    natural). If you need consistency (data extraction, classification,
+    code), turn it down.
+hints:
+  - "The model is not deterministic by default. It has controlled randomness in the sampling."
+  - "Higher temperature means more exploration. Lower temperature means more consistency."
+  - "The question isn't 'why is it broken', it's 'why did the sampling do what it did on each run'."
+teaches:
+  - temperature-sampling
+requires:
+  - llm-mental-model
+---
+
+## Same input, different output
+
+You send the same prompt to the model twice and it gives you two different responses. Bug? No: **design**.
+
+### The model doesn't pick the "best" token
+
+In lesson 14 you saw that the model computes a **probability distribution** over the next token. Something like:
+
+```
+The capital of France is ___
+  Paris      93%
+  Lyon        2%
+  Marseille   1%
+  Berlin      1%
+  ...
+```
+
+What I didn't tell you: **it doesn't always pick the most probable one**. By default, the model **samples** from that distribution. It's like rolling a weighted die: 93% of the time Paris comes up, but sometimes it's Lyon or Marseille.
+
+### The control: temperature
+
+The `temperature` parameter controls how "wild" the sampling is:
+
+| Temperature | Behavior | When to use |
+| --- | --- | --- |
+| `0.0` | (Almost) deterministic. Always the most probable. | Classification, data extraction, code |
+| `0.3` | Conservative. Almost always the most probable. | Summaries, factual answers |
+| `0.7` | Default. Balance between consistency and variety. | General conversation |
+| `1.0+` | Creative. Explores less obvious answers. | Brainstorming, creative writing |
+
+### Why it matters: consistency vs creativity
+
+If you're doing data extraction (*"pull the email out of this bio"*), you want the same input to give the same output. **Low temperature.**
+
+If you're generating ideas (*"give me 5 names for this ship"*), you want variety. **High temperature.**
+
+If "the model is inconsistent" keeps showing up in production and it's all extraction work, the temperature is probably too high. Lower it.
+
+### What it does NOT solve
+
+Lowering temperature gives you consistency, but **it doesn't guarantee the answer is correct**. The model can be very consistent at saying something wrong (that's hallucination, the next lesson). Consistency is a property **orthogonal** to correctness.
+
+> When you start using APIs for real, you'll see `temperature` as one of the first parameters on every call. Remember this lesson: the default in most SDKs (0.7-1.0) is for conversation. For structured tasks, turn it down.
+
+On the right, two different answers to the same question. What actually explains what happened?

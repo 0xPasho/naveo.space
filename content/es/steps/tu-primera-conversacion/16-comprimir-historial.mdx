@@ -1,0 +1,92 @@
+---
+title: "Comprimí el historial sin perder lo importante"
+order: 16
+estimatedMinutes: 6
+characters:
+  - echo
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Llevás 14 turnos con <Character name="echo" /> coordinando la
+    carga del próximo salto. La conversación ya está pesada y el
+    modelo empieza a derivar. En vez de seguir agregando turnos
+    (más tokens, más deriva), querés **resumir el estado actual** en
+    un solo mensaje y seguir desde ese resumen.
+
+    Arrastrá cada hecho al slot del recap donde tiene que ir. Si te
+    saltás un slot, el resumen pierde una decisión y la conversación
+    siguiente se va a confundir.
+  slots:
+    - id: decisions-locked
+      label: "Decisiones ya firmadas"
+    - id: open-questions
+      label: "Preguntas todavía abiertas"
+    - id: constraints
+      label: "Restricciones que no cambian"
+    - id: last-action
+      label: "Última acción acordada"
+    - id: next-step
+      label: "Próximo paso"
+  pieces:
+    - id: mass
+      label: "Masa total de carga: 4.2 toneladas. confirmado en turno 6."
+      correctSlot: decisions-locked
+    - id: deck
+      label: "Caja prioritaria: cubierta 3, clase A. confirmado en turno 8."
+      correctSlot: decisions-locked
+    - id: pending-route
+      label: "Todavía no decidimos la ruta de carga: ¿pasillo A o B?"
+      correctSlot: open-questions
+    - id: limit
+      label: "Ventana de carga: cierra a las 22:00 UTC. no se puede mover."
+      correctSlot: constraints
+    - id: ack
+      label: "Echo me confirmó que el equipo de carga arranca en 15 minutos."
+      correctSlot: last-action
+    - id: next
+      label: "Yo voy a confirmar la ruta de carga antes que el equipo arranque."
+      correctSlot: next-step
+hints:
+  - "Decisiones firmadas son las que ya no querés discutir. masa y cubierta van ahí."
+  - "Preguntas abiertas son lo que todavía no resolvieron. el resumen tiene que dejar visible qué falta."
+  - "Sin el slot de **próximo paso**, el modelo no sabe qué hacer después del recap. el resumen sin acción siguiente es solo un recordatorio."
+teaches:
+  - context-compression
+requires:
+  - multi-turn-followup
+  - context-drift-detection
+---
+
+## Cada turno extra es un impuesto. el resumen lo paga de una
+
+A medida que una conversación crece, pasan dos cosas en simultáneo:
+
+1. **Costo de tokens.** Cada turno lleva todo el historial previo. Turno 20 cuesta ~20x más que turno 1.
+2. **Deriva.** Más historial = más espacio para que el modelo se "olvide", contradiga o invente. Lo viste en lecciones anteriores.
+
+La solución es el **resumen de compactación**: en algún punto entre el turno 10 y el 15, pausás la conversación, escribís UN mensaje que captura el estado actual completo, y seguís desde ahí (idealmente en una conversación nueva, o como referencia explícita).
+
+### Los 5 slots del resumen útil
+
+Un resumen útil no es "un párrafo sobre lo que hablamos". Tiene estructura:
+
+1. **Decisiones ya firmadas.** Lo que está cerrado y no se discute más.
+2. **Preguntas todavía abiertas.** Lo que falta resolver.
+3. **Restricciones que no cambian.** Datos duros: fechas, límites, requerimientos.
+4. **Última acción acordada.** Qué fue lo último que pasó.
+5. **Próximo paso.** Qué hay que hacer ahora.
+
+Si te falta cualquiera de los 5, el resumen pierde valor. Sin decisiones firmadas, el modelo te las vuelve a cuestionar. Sin preguntas abiertas, perdés track de lo que falta. Sin próximo paso, el resumen es solo una postal.
+
+### Cuándo comprimir
+
+| Señal | Acción |
+|---|---|
+| El modelo repite cosas que ya dijiste | Es hora de resumir. |
+| Empezás a no acordarte del turno 3 | Es hora de resumir. |
+| La conversación pasa 12-15 turnos | Resumí preventivamente. |
+| Los próximos 3 turnos van a ser de otro tema | Compactá lo actual antes de cambiar. |
+
+> Truco avanzado: pedile al modelo que te ARME él el resumen estructurado en 5 slots. *"Resumime esta conversación en estos 5 cajones: decisiones firmadas, preguntas abiertas, restricciones, última acción, próximo paso."* Vos revisás que esté bien, lo guardás, lo usás como apertura del próximo turno (o de la próxima conversación).
+
+A la derecha, una conversación de 14 turnos en versión comprimida. Arrastrá cada hecho al slot que le corresponde.

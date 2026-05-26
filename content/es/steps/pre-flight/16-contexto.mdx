@@ -1,0 +1,95 @@
+---
+title: "Contexto: qué puede 'ver' el modelo"
+order: 16
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Tenés una conversación muy larga con el modelo. En el mensaje 1 le
+    decís: *"Mi nombre es Bru y soy técnico de la nave."* Cien mensajes
+    después, le preguntás: *"¿Cómo me llamo?"* y responde *"No lo sé."*
+
+    ¿Qué pasó realmente?
+  optionA: |
+    **El modelo tiene memoria a corto plazo y se le borró**, como una
+    persona cansada después de una conversación larga. Eventualmente se le
+    "borra" lo viejo.
+  optionB: |
+    **El modelo no tiene memoria entre mensajes.** Cada llamada le manda
+    todo el historial como una sola entrada. Si el historial excede su
+    **ventana de contexto**, los mensajes más viejos se recortan antes de
+    llegarle. Lo que se recortó, para el modelo nunca existió.
+  correct: B
+  explanation: |
+    El modelo es **stateless**: no tiene ningún recuerdo persistente entre
+    llamadas. Cada vez que le hablás, le pasamos otra vez **todo el
+    historial** como input.
+
+    Si la conversación se hace muy larga y supera la ventana de contexto
+    (por ejemplo, 200.000 tokens), el cliente o el wrapper recorta los
+    mensajes más viejos para que entren los más nuevos. Cuando preguntás
+    *"¿cómo me llamo?"*, el mensaje original donde dijiste tu nombre ya no
+    está en la entrada que le llega, así que para el modelo nunca existió.
+
+    No es olvido, es recorte. Y entenderlo es la diferencia entre culpar
+    al modelo y arreglar tu sistema.
+hints:
+  - "El modelo es **stateless**. No mantiene ningún estado entre llamadas. La memoria que vos ves es una ilusión que arma el cliente."
+  - "Cada llamada le pasamos todo el historial como input. Si el historial es muy largo, no entra entero."
+  - "La pregunta clave: ¿el mensaje original con tu nombre todavía está en la entrada que le llega al modelo en la llamada 100?"
+teaches:
+  - context-window
+requires:
+  - llm-mental-model
+  - tokens-basics
+---
+
+## Qué puede "ver" el modelo
+
+El modelo no tiene memoria entre llamadas. **Cero.** No te recuerda de turnos anteriores. No sabe que la sesión sigue. Cada llamada empieza desde nada.
+
+### El truco: pasamos todo el historial cada vez
+
+Entonces, ¿cómo es que las conversaciones "funcionan"? Truco: cuando vos ves un chat con varios mensajes, lo que pasa por debajo es esto:
+
+```
+LLAMADA 1
+  input:  [mensaje_usuario_1]
+  output: respuesta_1
+
+LLAMADA 2
+  input:  [mensaje_usuario_1, respuesta_1, mensaje_usuario_2]
+  output: respuesta_2
+
+LLAMADA 3
+  input:  [mensaje_usuario_1, respuesta_1, mensaje_usuario_2, respuesta_2, mensaje_usuario_3]
+  output: respuesta_3
+```
+
+Cada vez que abrís la boca, le mandamos **todo el historial** otra vez al modelo, como una sola entrada gigante. El modelo no "se acuerda": está leyendo todo de cero cada vez.
+
+### La ventana de contexto
+
+El input tiene un límite duro. Para los modelos actuales:
+
+- Claude, GPT modernos: ~200.000 tokens (un libro corto)
+- Modelos más viejos: 8.000 a 32.000 tokens
+- Modelos baratos: menos
+
+Eso es la **ventana de contexto**: cuánto texto puede "ver" el modelo en una sola llamada. Si el historial excede el límite, hay que recortarlo. Lo común es **tirar lo más viejo** y mantener lo reciente.
+
+### Por qué se "olvida"
+
+Resultado: en una conversación muy larga, el modelo aparenta "olvidarse" de cosas que dijiste al principio. Pero no se olvidó: **nunca le llegaron**. Quedaron afuera del recorte que entró por la ventana.
+
+### Implicaciones prácticas
+
+1. **Si querés que algo importante se mantenga, repetilo periódicamente** o metelo en el system prompt (que casi nunca se recorta).
+2. **En procesos batch, no asumas que el modelo "recuerda" el ítem anterior.** Mandale el contexto que necesita en cada llamada.
+3. **Documentos largos** que no entran en la ventana necesitan ser partidos en pedazos (*chunking*) y procesados de a uno.
+
+> Esto es central para entender RAG, conversaciones multi-turn, y por qué los modelos a veces parecen contradecirse: distinta llamada, distinta porción del historial visible.
+
+A la derecha, una conversación de 100 mensajes. La pregunta final no encuentra respuesta. ¿Por qué?

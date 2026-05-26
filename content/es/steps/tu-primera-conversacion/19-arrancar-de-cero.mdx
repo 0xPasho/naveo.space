@@ -1,0 +1,109 @@
+---
+title: "Arrancar de cero vs seguir tirando"
+order: 19
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Llevás 10 turnos con el modelo intentando que entienda tu
+    intención. Le aclaraste 3 veces. Sigue derivando: usa términos
+    que vos descartaste, asume cosas que negaste, propone soluciones
+    que ya rechazaste. ¿Qué hacés?
+  optionA: |
+    ```
+    Seguí en la misma conversación. Hacé el follow-up número 4 con
+    más contexto, más aclaraciones, más detalle de lo que NO querés.
+    Eventualmente va a entender.
+    ```
+  optionB: |
+    ```
+    Pará. Abrí una conversación nueva. Escribí UN solo prompt que
+    contiene: el objetivo, las 3 cosas que ya descartaste explícitas
+    al principio, y la pregunta concreta. El contexto sucio de la
+    conversación anterior está envenenando cada turno nuevo.
+    Empezás limpio.
+    ```
+  correct: B
+  explanation: |
+    El instinto del principiante: cuanto más se desvíe el modelo, más
+    aclaraciones agregar. Lo intuitivo es que más información =
+    mejor. En multi-turn, después de un cierto umbral, **es al revés**.
+
+    El modelo lee TODO el historial cada turno. Si los primeros 5
+    turnos están llenos de malentendidos, asunciones incorrectas y
+    correcciones contradictorias, vos podés agregar 10 aclaraciones
+    más. el peso estadístico de "esta conversación va para este
+    lado" ya ganó. El modelo va a seguir derivando porque la mayoría
+    del contexto le dice que tiene que derivar.
+
+    El fix es contraintuitivo: **arrancar de cero**. Una conversación
+    nueva no tiene los 10 turnos sucios. Si capturás lo aprendido en
+    UN prompt limpio (objetivo + descartes explícitos + pregunta), el
+    modelo arranca alineado.
+
+    Cuándo aplicar la regla del reset:
+
+    - **Después de 3+ correcciones de la misma cosa.** Si tuviste que
+      decir 3 veces "no, no quiero JSON, quiero YAML", la conversación
+      ya está envenenada.
+    - **Cuando el modelo asume cosas que negaste.** Señal de que el
+      contexto contradictorio le pesa más que tu última corrección.
+    - **Cuando vos perdiste el track de qué quedó decidido.** Si vos
+      no podés resumir el estado, el modelo tampoco.
+
+    La regla de oro: **seguir tirando es más caro que arrancar de
+    cero**. 3 turnos extras de follow-up = $0.05 + 10 minutos de
+    frustración. 1 prompt nuevo bien armado = $0.001 + 30 segundos.
+
+    Esto NO contradice las lecciones anteriores sobre insistir con
+    follow-ups específicos. Aquellas aplican cuando el modelo todavía
+    está dispuesto a corregir. Esta aplica cuando ya pasaste el punto
+    de no retorno.
+teaches:
+  - reset-vs-continue
+requires:
+  - context-compression
+---
+
+## A veces el botón correcto es "nueva conversación"
+
+Toda la primera mitad del track te enseñó a **sostener** una conversación: insistir, corregir, reafirmar. Eso funciona hasta cierto punto. Pasado ese punto, la conversación está contaminada y la mejor jugada es **tirarla**.
+
+El criterio para detectar el momento del reset es práctico, no filosófico.
+
+### Las 3 señales del reset
+
+1. **Repetiste la misma corrección 3+ veces.** Si tuviste que decir tres veces "no quiero JSON, quiero YAML", el modelo no va a empezar a entenderlo en el cuarto intento. el contexto previo le está pesando más que vos.
+
+2. **El modelo asume cosas que negaste explícitamente.** Señal de que el peso de "el usuario probablemente quiere X" supera al peso de "el usuario dijo NO X".
+
+3. **Vos perdiste el track del estado.** Si no podés resumir en 3 líneas qué quedó acordado, el modelo tampoco puede.
+
+### Cómo arrancar de cero bien
+
+No es tirar todo. Es **destilar lo aprendido** en un prompt limpio:
+
+```
+Quiero <objetivo final>.
+NO quiero: <descarte 1>, <descarte 2>, <descarte 3>.
+Necesito: <especificación concreta>.
+Pregunta: <una pregunta clara>.
+```
+
+Esa receta carga el contexto útil de los 10 turnos viejos en 4 líneas, sin arrastrar los malentendidos.
+
+### El error opuesto: arrancar de cero demasiado rápido
+
+Si reiniciás cada vez que el modelo se desvía un turno, perdés el aprendizaje incremental. La regla no es "ante la primera duda, reset". Es:
+
+| Situación | Acción |
+|---|---|
+| Primer desvío | Follow-up específico (lecciones 1-9). |
+| Segundo desvío de lo mismo | Reafirmar con énfasis (lección 11-12). |
+| Tercer desvío de lo mismo | Resumir y reiniciar conversación. |
+
+> Esto es lo opuesto al instinto del principiante, que es "ya invertí 10 turnos, sería pena tirarlos". Es la falacia del costo hundido. los 10 turnos ya están gastados. Lo único que decide el costo futuro es qué tan limpio arrancás el próximo turno.
+
+A la derecha, el momento de decisión: ¿seguir o reiniciar?

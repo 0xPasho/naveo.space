@@ -1,0 +1,141 @@
+---
+title: "Encadenar tools: cuando uno solo no alcanza"
+order: 18
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: list_crewmates_on_shift + notify_crewmate
+  toolPurpose: |
+    Diseñar DOS tools que un agente pueda usar en secuencia para resolver
+    pedidos como "notifica a todos los del turno de la noche que hay un
+    cambio de plan".
+
+    Tool 1: `list_crewmates_on_shift(shift_id)`. devuelve un array de
+    aliases de crewmates asignados a un turno.
+
+    Tool 2: `notify_crewmate(alias, message, channel)`. envía un mensaje
+    a un crewmate por un canal específico (sms, comms, email).
+
+    Las dos tools tienen que estar diseñadas de manera que el output de
+    una sea input válido de la otra (composición natural).
+  exampleInvocations:
+    - 'list_crewmates_on_shift(shift_id: "shift-2026-05-14-N1") → {crewmates: ["Em", "Ly", "Bru"]}'
+    - 'notify_crewmate(alias: "Em", message: "Cambio de plan: rendezvous 23:00", channel: "comms") → {ok: true}'
+  starter: |
+    {
+      "tools": [
+        {
+          "name": "list_crewmates_on_shift",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "notify_crewmate",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        }
+      ]
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "El schema es JSON válido"
+    - id: list-tool-defined
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"list_crewmates_on_shift\""
+      criterion: "Define list_crewmates_on_shift"
+    - id: notify-tool-defined
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"notify_crewmate\""
+      criterion: "Define notify_crewmate"
+    - id: list-has-shift-id
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "list_crewmates_on_shift[\\s\\S]{0,500}\"shift_id\""
+      criterion: "list_crewmates_on_shift tiene parámetro shift_id"
+    - id: notify-has-all-params
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "notify_crewmate[\\s\\S]{0,800}\"alias\"[\\s\\S]{0,800}\"message\"[\\s\\S]{0,800}\"channel\""
+      criterion: "notify_crewmate tiene los 3 parámetros: alias, message, channel"
+    - id: channel-is-enum
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"channel\"[\\s\\S]{0,200}\"enum\""
+      criterion: "channel usa enum (sms, comms, email)"
+    - id: composable-shapes
+      kind: llm-judge
+      criterion: "Los dos tools están diseñados para componerse: el output de list_crewmates_on_shift (un array de aliases bajo una key como `crewmates`) puede ser iterado y cada elemento usado como `alias` en notify_crewmate. El agente no necesita transformar el output entre llamadas."
+    - id: descriptions-clear
+      kind: llm-judge
+      criterion: "Las dos descripciones explican qué hace cada tool, cuándo usarlo, y mencionan el patrón de uso en cadena (ej: 'usar después de list_crewmates_on_shift para notificar a los de un turno'). Las descripciones no son genéricas."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Para que dos tools se compongan bien, **alineá los nombres del output con los inputs**. Si list devuelve `crewmates: [\"Em\", ...]`, notify acepta `alias: \"Em\"`. El agente conecta los puntos automáticamente si los tipos coinciden."
+  - "Para `channel`, usá enum con los tres valores. Y mencioná en su description cuándo usar cada uno (sms para emergencias, comms para uso normal, email para registros formales)."
+  - "En la description de cada tool, mencioná el OTRO tool. Ej: en notify_crewmate: 'Usar después de list_crewmates_on_shift cuando querés notificar a todos los de un turno.'"
+teaches:
+  - mcp-multi-tool-design
+requires:
+  - tool-schema-author-basics
+  - tool-description-craft
+---
+
+## Dos tools que se hablan entre sí
+
+La mayoría de los problemas reales no se resuelven con un solo tool. se resuelven con **una cadena**. El agente decide invocar un tool, lee su output, decide el siguiente, y así.
+
+Tu trabajo: diseñar dos tools que **compongan naturalmente**.
+
+### El escenario
+
+Un usuario le dice a la crew: _"notificá a todos los del turno de la noche que el rendezvous se movió a las 23:00"_.
+
+Para resolverlo, el agente tiene que:
+
+1. **Listar quiénes están** en el turno de la noche → `list_crewmates_on_shift(shift_id)`.
+2. **Notificarle a cada uno** → `notify_crewmate(alias, message, channel)`.
+
+Si los dos tools están bien diseñados, el agente compone la solución solo. Si están mal diseñados (output de uno no encaja en input del otro, descripciones que no mencionan el patrón), el agente se queda corto o inventa pasos intermedios que rompen.
+
+### La regla de composición
+
+Para que dos tools encadenen sin fricción:
+
+1. **Los tipos del output coinciden con los inputs del siguiente.** Si list devuelve `crewmates: ["Em", "Ly"]` y notify acepta `alias: string`, el agente itera con cero transformación.
+2. **Las descripciones se referencian mutuamente.** En la description de `notify_crewmate`, mencionás que se usa después de `list_crewmates_on_shift` cuando hay múltiples destinatarios.
+3. **Los nombres son consistentes.** Si una tool usa `shift_id`, la otra que devuelve turnos usa el mismo nombre, no `id_de_turno`.
+
+### Cómo se evalúa
+
+7 criterios deterministas + 2 llm-judge:
+
+- JSON válido.
+- Los dos tools definidos correctamente con todos los parámetros.
+- `channel` con enum.
+- Las shapes son **composables** (output de list encaja en input de notify).
+- Las descripciones son específicas y se referencian.
+
+> El test mental: si yo, leyendo solo tu schema (sin haber leído este texto), entendería cómo componer estas dos tools para resolver el caso del rendezvous, pasaste.

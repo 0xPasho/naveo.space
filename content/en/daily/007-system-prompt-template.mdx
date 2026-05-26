@@ -1,0 +1,131 @@
+---
+title: "Quick mission: build a system prompt from a template"
+intro: |
+  A well-built system prompt gets reused. What changes between tasks are the variables, not the structure.
+station: vega
+teaches:
+  - system-prompt-design
+  - prompt-anatomy-basics
+characters:
+  - atlas
+  - vega
+scenes:
+  - kind: prompt-tag-fill
+    template: |
+      <role>
+        You are {{rol}}, speaking with {{audiencia}}.
+      </role>
+
+      <tone>
+        Keep a {{tono}} tone throughout the conversation.
+      </tone>
+
+      <format>
+        Return the response as {{formato}}.
+      </format>
+    requiredTags:
+      - rol
+      - audiencia
+      - tono
+      - formato
+  - kind: prompt-AB
+    question: |
+      Atlas has to coordinate three new assistants this week: one for
+      support, one for reports, one for onboarding. What should they
+      build?
+    optionA: |
+      ```
+      One single long system prompt that says "you can help with support,
+      reports, onboarding, and other tasks. Adapt to the context."
+      ```
+    optionB: |
+      ```
+      A template with variables ({{rol}}, {{tono}}, {{formato}}) and three
+      value sets, one per assistant. Same skeleton, different values.
+      ```
+    correct: B
+    explanation: |
+      Option A tries to cover three cases with a single prompt and ends
+      up vague in all three. The model receives "adapt to context" and
+      has to guess on every turn which mode it is in. Performance drops
+      across the board.
+
+      Option B fixes the structure (role, tone, format) and leaves the
+      variables to the input. Each assistant receives concrete values:
+      role = "support agent", audience = "end customer", tone =
+      "empathetic", format = "short bullets". No ambiguity.
+
+      Bonus: if you discover an improvement in the template structure,
+      all three assistants inherit it. With three separate prompts, you
+      would have to change three places.
+  - kind: prompt-anatomy
+    task: |
+      Label the sections of this system prompt template. Think of it as
+      the four pieces that repeat in almost every reusable template.
+    parts:
+      - id: identity
+        label: "Identity (who the assistant is)"
+        text: "You are {{rol}} with {{years_experience}} years of experience in {{domain}}. You speak with {{audiencia}}."
+      - id: context
+        label: "Context (stable information it needs to know)"
+        text: "The system processes operational events from the ship. Incidents are tracked with ids like INC-XXXX and have severities low/med/high/critical."
+      - id: constraints
+        label: "Constraints (rules that always apply)"
+        text: "Never mention personal data of the crew. If asked for information you do not have, say 'I do not know' before inventing. Do not make decisions that require human approval."
+      - id: style
+        label: "Style (how it writes)"
+        text: "Tone {{tono}}, short sentences, no metaphors, no emojis. Return the response as {{formato}}."
+  - kind: slot-fill-dnd
+    task: |
+      You are migrating an old system prompt to a parameterized template.
+      Sort each line: is it stable (goes in the template) or variable
+      (goes in the input of the day)?
+    slots:
+      - id: stable
+        label: "Stable (part of the template)"
+      - id: variable
+        label: "Variable (input of the day)"
+    pieces:
+      - id: p1
+        label: "You are a shift analyst on the bridge."
+        correctSlot: stable
+      - id: p2
+        label: "Today's shift runs from 2:00 PM to 10:00 PM."
+        correctSlot: variable
+      - id: p3
+        label: "Always respond in bullets of fewer than 15 words."
+        correctSlot: stable
+      - id: p4
+        label: "Event report from May 24 between 2:00 PM and 10:00 PM: ..."
+        correctSlot: variable
+      - id: p5
+        label: "Never mention patient names. Use initials."
+        correctSlot: stable
+      - id: p6
+        label: "The on-call crewmate is Hex; any escalation goes to Vega."
+        correctSlot: variable
+  - kind: step-order-dnd
+    task: |
+      Order the steps to build a system prompt template from scratch,
+      without starting from an old one.
+    steps:
+      - id: s1
+        label: "Write 3 concrete examples of how you would want to use the assistant."
+        detail: "Without real examples, the template comes out theoretical and never gets used."
+      - id: s2
+        label: "Compare the 3 examples and extract what repeats (the structure)."
+        detail: "What repeats lives in the template; what changes becomes variables."
+      - id: s3
+        label: "Mark the variables with {{name}} tags in the template."
+        detail: "Explicit tags prevent confusion when the team reuses it."
+      - id: s4
+        label: "Test the template with a concrete value set and read the output."
+        detail: "If the output is vague, the template structure is still loose."
+      - id: s5
+        label: "Iterate: tweak the template, test with another value set, repeat."
+        detail: "A good template gets forged against at least two distinct cases."
+---
+
+Mission of the day: the structure gets reused, the values change. If
+your system prompt is loose text, you cannot reuse it; if it is a
+template, you can.

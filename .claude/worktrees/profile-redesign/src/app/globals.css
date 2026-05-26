@@ -1,0 +1,411 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-cyan: var(--brand-cyan);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Dark mode is the only mode. The Crew theme — see CLAUDE.md and
+   docs/plan/cast.md. Dark surfaces have a slight blue tint (chroma 0.025
+   at hue 240) to evoke "deep space cabin" without leaving grayscale-feel.
+
+   IMPORTANT: this block must live inside `@layer base`. Tailwind v4 silently
+   prunes unlayered `:root` declarations of custom properties that aren't
+   referenced by `@theme inline` — without the @layer wrapper, only
+   `--background`, `--foreground`, `--brand-gold`, `--brand-cyan` survive and
+   the entire design-token palette below (xp-gold, signal-cyan, card-raised,
+   fg-muted, border-strong, …) gets dropped, leaving `.btn-cta` etc. with no
+   background. */
+@layer base {
+:root {
+  --background: oklch(0.13 0.025 240);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.18 0.025 240);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.18 0.025 240);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.92 0 0);
+  --primary-foreground: oklch(0.18 0.025 240);
+  --secondary: oklch(0.24 0.02 240);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.22 0.02 240);
+  --muted-foreground: oklch(0.68 0.01 240);
+  --accent: oklch(0.24 0.02 240);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.65 0.20 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.55 0.04 240);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.16 0.025 240);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.92 0 0);
+  --sidebar-primary-foreground: oklch(0.18 0.025 240);
+  --sidebar-accent: oklch(0.24 0.02 240);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.55 0.04 240);
+
+  /* Brand accents. Used sparingly — these are punctuation, not fills. */
+
+  /* Gold — warm, "humano". Logo mark, character names, passed highlights. */
+  --brand-gold: oklch(0.78 0.13 80);
+  --brand-gold-soft: oklch(0.78 0.13 80 / 18%);
+
+  /* Cyan — cool, "máquina". System UI: status badges, mono labels in
+     checklists, terminal-style headers, code accents. Pairs with gold to
+     signal warm-vs-cold (crew vs. systems) without explanation. */
+  --brand-cyan: oklch(0.78 0.10 200);
+  --brand-cyan-soft: oklch(0.78 0.10 200 / 18%);
+
+  /* Game accents (gamification layer) — see design tokens.css */
+  --xp-gold: oklch(0.82 0.17 85);
+  --xp-gold-deep: oklch(0.62 0.16 70);
+  --signal-cyan: oklch(0.74 0.13 205);
+  --signal-cyan-deep: oklch(0.52 0.12 215);
+  --mission-magenta: oklch(0.66 0.22 340);
+  --mission-magenta-deep: oklch(0.46 0.20 340);
+  --hazard-red: oklch(0.65 0.22 25);
+  --hazard-red-deep: oklch(0.45 0.18 25);
+  --crew-green: oklch(0.72 0.16 145);
+  --crew-green-deep: oklch(0.50 0.14 150);
+  --forge-orange: oklch(0.74 0.17 50);
+  --plasma-violet: oklch(0.66 0.18 290);
+
+  /* Character ribbons (each crew member's signature accent) */
+  --char-vega: var(--brand-gold);
+  --char-atlas: oklch(0.66 0.10 50);
+  --char-echo: var(--signal-cyan);
+  --char-forge: var(--forge-orange);
+
+  /* Surface variants (deeper / raised tiers used in cards-on-cards) */
+  --card-raised: oklch(0.22 0.022 240);
+  --card-sunk: oklch(0.10 0.025 240);
+
+  /* Foreground tiers — used by mono labels, captions, dividers */
+  --fg-muted: oklch(0.78 0.01 240);
+  --fg-dim: oklch(0.62 0.01 240);
+  --fg-faint: oklch(0.46 0.01 240);
+
+  /* Borders */
+  --border-strong: oklch(1 0 0 / 22%);
+
+  /* Short-name aliases used by ported design CSS (Catalog/Lesson modules). */
+  --bg: var(--background);
+  --fg: var(--foreground);
+  --bg-soft: oklch(0.16 0.025 240);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.5, 1.5, 0.5, 1);
+  --dur-instant: 100ms;
+  --dur-fast: 150ms;
+  --dur-base: 250ms;
+  --dur-slow: 400ms;
+
+  /* Shadows (depth, not strokes) */
+  --shadow-deck:
+    0 1px 0 rgb(255 255 255 / 0.04),
+    0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-lift:
+    0 1px 0 rgb(255 255 255 / 0.06),
+    0 24px 60px rgb(0 0 0 / 0.55);
+  --inset-highlight: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+}
+
+/* Attempt feedback — short, single-shot. Apply via `animate-attempt-shake`
+   or `animate-attempt-pass`; re-trigger by changing the element's `key`.
+   Honors prefers-reduced-motion: no animation. */
+@keyframes attempt-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes attempt-pass {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(1); }
+  30% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.30); transform: scale(1.005); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(1); }
+}
+
+.animate-attempt-shake {
+  animation: attempt-shake 0.4s ease-in-out 1;
+}
+
+.animate-attempt-pass {
+  animation: attempt-pass 0.7s ease-out 1;
+  border-radius: var(--radius-lg);
+}
+
+/* XP gain pill — celebratory rise + fade. Applied via `animate-xp-gain`;
+   the element should be removed from the DOM once the animation ends. */
+@keyframes xp-gain {
+  0% { opacity: 0; transform: translateY(8px) scale(0.85); }
+  20% { opacity: 1; transform: translateY(-2px) scale(1.05); }
+  35% { transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-22px) scale(0.95); }
+}
+
+.animate-xp-gain {
+  animation: xp-gain 1.6s ease-out 1 forwards;
+}
+
+@keyframes starfield-drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 0 160px, 0 112px, 0 72px, 0 0, 0 0; }
+}
+
+@keyframes nav-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 56px 56px, 56px 56px; }
+}
+
+@keyframes space-lane-drift {
+  from { transform: translate3d(0, -2rem, 0); }
+  to { transform: translate3d(0, 2rem, 0); }
+}
+
+@keyframes cockpit-scan {
+  from { background-position: 0 0, 0 0, 0 0, 0 0; }
+  to { background-position: 0 0, 48px 0, 0 0, 0 0; }
+}
+
+@keyframes ship-tunnel-flight {
+  from {
+    background-position: 50% 48%, 50% 48%;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  to {
+    background-position: 50% 48%, 50% 48%;
+    transform: translate3d(0, -4%, 0) rotate(12deg);
+  }
+}
+
+.game-shell {
+  isolation: isolate;
+}
+
+.game-starfield {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 8% 12%, rgb(255 255 255 / 0.62), transparent 55%),
+    radial-gradient(1px 1px at 17% 78%, rgb(255 255 255 / 0.36), transparent 55%),
+    radial-gradient(1px 1px at 24% 28%, rgb(127 229 232 / 0.58), transparent 55%),
+    radial-gradient(1px 1px at 56% 66%, rgb(224 185 89 / 0.52), transparent 55%),
+    linear-gradient(180deg, rgb(1 4 10 / 0.78), rgb(1 5 13 / 0.96));
+  background-size:
+    420px 360px,
+    680px 520px,
+    920px 760px,
+    780px 620px,
+    100% 100%;
+  animation: starfield-drift 52s linear infinite;
+}
+
+.game-starfield::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(127 229 232 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(127 229 232 / 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(180deg, transparent, black 12%, black 72%, transparent);
+  opacity: 0.65;
+  animation: nav-grid-drift 34s linear infinite;
+}
+
+.game-starfield::after {
+  content: "";
+  position: absolute;
+  inset: 5.5rem 0 0;
+  background-image:
+    linear-gradient(115deg, transparent 0 35%, rgb(127 229 232 / 0.16) 35.1% 35.35%, transparent 35.45%),
+    linear-gradient(65deg, transparent 0 39%, rgb(127 229 232 / 0.10) 39.1% 39.35%, transparent 39.45%),
+    linear-gradient(180deg, transparent 0 28%, rgb(127 229 232 / 0.10) 28.1% 28.35%, transparent 28.45%);
+  opacity: 0.72;
+  animation: space-lane-drift 18s linear infinite alternate;
+}
+
+.game-cockpit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, rgb(0 0 0 / 0.78) 0 1.7rem, transparent 1.7rem calc(100% - 1.7rem), rgb(0 0 0 / 0.78) calc(100% - 1.7rem)),
+    linear-gradient(180deg, transparent 0 calc(100% - 7rem), rgb(0 0 0 / 0.50) calc(100% - 7rem)),
+    linear-gradient(112deg, transparent 0 17%, rgb(127 229 232 / 0.16) 17.1% 17.25%, transparent 17.35%),
+    linear-gradient(68deg, transparent 0 82%, rgb(224 185 89 / 0.13) 82.1% 82.25%, transparent 82.35%);
+}
+
+.game-cockpit::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 5.5rem;
+  width: min(120rem, 126vw);
+  height: min(58rem, 84vh);
+  border: 1px solid rgb(127 229 232 / 0.11);
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0 / 38% 38% 0 0;
+  transform: translateX(-50%);
+  box-shadow:
+    inset 0 1px 0 rgb(127 229 232 / 0.10),
+    0 -1px 0 rgb(127 229 232 / 0.08);
+}
+
+.game-cockpit::after {
+  content: "";
+  position: absolute;
+  inset: auto 1.7rem 0;
+  height: 7rem;
+  background-image:
+    linear-gradient(180deg, rgb(127 229 232 / 0.16), transparent 1px),
+    linear-gradient(90deg, transparent 0 12%, rgb(127 229 232 / 0.22) 12.1% 12.3%, transparent 12.4% 31%, rgb(127 229 232 / 0.15) 31.1% 31.25%, transparent 31.35% 68%, rgb(224 185 89 / 0.16) 68.1% 68.25%, transparent 68.35% 88%, rgb(127 229 232 / 0.20) 88.1% 88.3%, transparent 88.4%),
+    repeating-linear-gradient(90deg, rgb(127 229 232 / 0.08) 0 1px, transparent 1px 22px),
+    linear-gradient(180deg, rgb(0 0 0 / 0.20), rgb(0 0 0 / 0.74));
+  border-top: 1px solid rgb(127 229 232 / 0.20);
+  box-shadow: 0 -20px 70px rgb(0 0 0 / 0.36);
+  animation: cockpit-scan 16s linear infinite;
+}
+
+.mission-briefing-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(127 229 232 / 0.18), transparent 18%, transparent 82%, rgb(224 185 89 / 0.13)),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 26%);
+  opacity: 0.7;
+}
+
+.ship-hero-tunnel {
+  background-image:
+    repeating-radial-gradient(
+      circle at 50% 48%,
+      transparent 0 18px,
+      rgb(255 255 255 / 0.16) 19px 20px,
+      transparent 21px 42px
+    ),
+    conic-gradient(
+      from 10deg at 50% 48%,
+      transparent 0deg,
+      rgb(255 255 255 / 0.34) 1deg,
+      transparent 3deg,
+      transparent 14deg,
+      rgb(127 229 232 / 0.32) 15deg,
+      transparent 18deg,
+      transparent 31deg,
+      rgb(224 185 89 / 0.25) 32deg,
+      transparent 35deg,
+      transparent 360deg
+    );
+  filter: blur(0.3px);
+  transform-origin: 50% 48%;
+  animation: ship-tunnel-flight 18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-attempt-shake,
+  .animate-attempt-pass,
+  .animate-xp-gain,
+  .game-starfield,
+  .game-starfield::before,
+  .game-starfield::after,
+  .game-cockpit::after,
+  .ship-hero-tunnel {
+    animation: none;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    color-scheme: dark;
+    background-color: var(--background);
+    /* Starfield — multi-layer radial-gradient. Fixed attachment so stars
+       feel like they're "outside the window" rather than scrolling with
+       content. ~14 dots, mostly white, 2 colored accents (gold + cyan).
+       Pseudo-random positions to avoid visible tile repeat. */
+    background-image:
+      radial-gradient(1px 1px at 7% 11%, rgb(255 255 255 / 0.45), transparent 50%),
+      radial-gradient(1px 1px at 19% 83%, rgb(255 255 255 / 0.35), transparent 50%),
+      radial-gradient(1.5px 1.5px at 23% 29%, rgb(255 255 255 / 0.40), transparent 50%),
+      radial-gradient(1px 1px at 31% 51%, rgb(255 255 255 / 0.30), transparent 50%),
+      radial-gradient(1px 1px at 41% 17%, rgb(255 255 255 / 0.45), transparent 50%),
+      radial-gradient(1.5px 1.5px at 47% 67%, rgb(255 255 255 / 0.35), transparent 50%),
+      radial-gradient(1px 1px at 53% 89%, rgb(255 255 255 / 0.40), transparent 50%),
+      radial-gradient(2px 2px at 59% 37%, var(--brand-cyan), transparent 50%),
+      radial-gradient(1px 1px at 67% 3%, rgb(255 255 255 / 0.45), transparent 50%),
+      radial-gradient(1.5px 1.5px at 73% 73%, rgb(255 255 255 / 0.30), transparent 50%),
+      radial-gradient(1px 1px at 79% 53%, rgb(255 255 255 / 0.40), transparent 50%),
+      radial-gradient(2px 2px at 83% 19%, var(--brand-gold), transparent 50%),
+      radial-gradient(1px 1px at 91% 89%, rgb(255 255 255 / 0.35), transparent 50%),
+      radial-gradient(1.5px 1.5px at 97% 41%, rgb(255 255 255 / 0.40), transparent 50%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  html {
+    @apply font-sans;
+    background-color: var(--background);
+  }
+}

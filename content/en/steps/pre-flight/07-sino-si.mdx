@@ -1,0 +1,112 @@
+---
+title: "More than two paths: else-if"
+order: 7
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    The oxygen protocol has four response levels:
+
+    <DecisionChain branches="oxygen < 10% => critical alarm; oxygen < 25% => warning alarm; oxygen < 50% => informational notification" fallback="silence" ifLabel="IF" elseIfLabel="ELSE IF" elseLabel="ELSE" />
+
+    Six sensor readings come in. Drag each one to the branch that fires.
+  slots:
+    - id: critical
+      label: "Critical alarm"
+    - id: warning
+      label: "Warning alarm"
+    - id: info
+      label: "Informational notification"
+    - id: silent
+      label: "Silence"
+  pieces:
+    - id: read_8
+      label: "8%"
+      correctSlot: critical
+    - id: read_17
+      label: "17%"
+      correctSlot: warning
+    - id: read_24
+      label: "24%"
+      correctSlot: warning
+    - id: read_35
+      label: "35%"
+      correctSlot: info
+    - id: read_50
+      label: "50%"
+      correctSlot: silent
+    - id: read_72
+      label: "72%"
+      correctSlot: silent
+hints:
+  - "The ship evaluates top to bottom and stops at the first condition that holds."
+  - "Watch the boundaries: `< 25%` holds for 24%, but NOT for 25%. `< 50%` does NOT hold for 50%."
+  - "If a reading doesn't satisfy any of the three conditions, it falls through to the final `ELSE` (silence)."
+teaches:
+  - else-if-chains
+requires:
+  - conditionals-basics
+  - comparison-operators
+---
+
+## When there are more than two options
+
+So far the decisions have been binary: `IF` this, `ELSE` that. Two branches, one decision.
+
+But most real decisions have **more than two possible outcomes**. Think about oxygen:
+
+- 8% → crisis, run every emergency protocol
+- 22% → serious warning, prepare
+- 40% → low but manageable, notify
+- 70% → normal, silence
+
+To express this you chain several `IF`s. It's called **else-if** (in some languages: `else if`, `elif`).
+
+### How to write it
+
+<DecisionChain branches="oxygen < 10% => critical alarm; oxygen < 25% => warning alarm; oxygen < 50% => informational notification" fallback="silence" ifLabel="IF" elseIfLabel="ELSE IF" elseLabel="ELSE" />
+
+The ship evaluates **top to bottom** and stops at the **first one that holds**. Then it jumps straight to the end.
+
+### The key rule: first match wins
+
+Look at what happens with `oxygen = 8%`:
+
+1. Is 8 < 10? **yes** → run `critical alarm` and end. **The rest isn't even evaluated.**
+
+What about `oxygen = 22%`:
+
+1. Is 22 < 10? no, continue.
+2. Is 22 < 25? **yes** → run `warning alarm` and end.
+
+And with `oxygen = 72%`:
+
+1. Is 72 < 10? no.
+2. Is 72 < 25? no.
+3. Is 72 < 50? no.
+4. `ELSE` → run `silence`.
+
+The final `ELSE` (with no condition) is the **catch-all**: it runs only when none of the previous conditions held. It acts as a safety net.
+
+### The classic bug: reversed order
+
+If you flip the order of the branches, everything breaks without throwing an error.
+
+```
+IF oxygen < 50%:
+  informational notification
+ELSE IF oxygen < 25%:
+  warning alarm
+ELSE IF oxygen < 10%:
+  critical alarm
+```
+
+With `oxygen = 8%`, the first condition (`8 < 50`) is **already true**. The ship runs *informational notification* and bails. The critical alarm never fires.
+
+> Practical rule: in `ELSE IF` chains ordered by threshold, the **most restrictive case** goes first (the smallest range) and you relax from there down.
+
+You'll see this same chain in complex prompts: *"If the bio has email **and** phone, return both. Otherwise, if it has only email, return the email. Otherwise, if it has only phone, return the phone. Otherwise, return null."* Same pattern.
+
+On the right, six sensor readings. Each one falls into one branch. Drag them.

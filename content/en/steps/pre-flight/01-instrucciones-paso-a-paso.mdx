@@ -1,0 +1,64 @@
+---
+title: "Step by step: order matters"
+order: 1
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: step-order-dnd
+  task: |
+    The pre-launch protocol. Drag the steps into the order the crew runs
+    them. If you launch with the airlock open, **everyone dies**. If you
+    ignite before authorization, the captain's hand still hasn't pressed
+    the button. the ship won't move.
+  steps:
+    - id: hull
+      label: "1. Hull integrity"
+      detail: "Confirm no breaches before anything else."
+    - id: diagnostics
+      label: "2. Pre-flight diagnostics"
+      detail: "Run the systems check. Catch faults on the ground."
+    - id: crew
+      label: "3. Confirm crew on board"
+      detail: "Count noses. Nobody flies if someone's left at the dock."
+    - id: airlock
+      label: "4. Close airlock"
+      detail: "Seal the ship before you light anything."
+    - id: authorize
+      label: "5. Captain authorizes ignition"
+      detail: "Atlas presses the key. No key, no fire."
+    - id: thrusters
+      label: "6. Engage thrusters"
+      detail: "Now you go."
+hints:
+  - "Think about which step **enables** the next. Diagnostics before launch. not after."
+  - "The dangerous ones are *Close airlock* and *Engage thrusters*. Get those out of order and you're venting atmosphere into space."
+  - "Authority comes from the captain. Ignition doesn't fire without authorization above it."
+teaches:
+  - sequencing-basics
+---
+
+## A program is a list of steps, in order
+
+You've heard the word "code". Strip the mystique and code is **a list of steps the computer runs from top to bottom**. Same for the ship. Same for the crew.
+
+The trick is that **order isn't decorative**. If you swap two steps that look harmless, you can lose the ship.
+
+> The crew calls this a **protocol**. You can call it a *recipe*, a *checklist*, a *playbook*. Same idea.
+
+### Two swaps, two ways to lose the ship
+
+**Engage thrusters before Close airlock.** Engines fire, the airlock is still open, the ship's atmosphere vents into vacuum in seconds. Everyone suffocates before they can react. One step out of place.
+
+**Diagnostics after launch.** You take off. At 8,000 km/h you find out a sensor is broken. On the ground it was a two-minute swap. In flight it's an emergency you can't fix anymore.
+
+Steps aren't items on a list. They're a **chain of cause and effect**. each one enables or protects the next. When you assemble a prompt you'll see the exact same property. *"context first, then instruction, then format"* isn't aesthetics, it's the chain that makes the answer come out right.
+
+On the right, you've got the six steps of a launch protocol. shuffled. Drag them into the order the crew runs them.
+
+When you click **Check**, <Character name="vega" /> will:
+
+- Confirm every step is in the list (no skipping).
+- Confirm the order is correct.
+
+This is the rule you'll use the rest of your career: **same words, different order, different outcome**. It applies to a launch protocol. It applies to a prompt. It applies to a tool. Internalize it here.

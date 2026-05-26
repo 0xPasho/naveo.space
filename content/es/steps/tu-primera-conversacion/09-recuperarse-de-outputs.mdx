@@ -1,0 +1,114 @@
+---
+title: "Recuperarse de un output malo sin reiniciar"
+order: 9
+estimatedMinutes: 8
+exercise:
+  kind: conversation-goal
+  goal: |
+    Forge te va a explicar un procedimiento técnico, pero su primera
+    respuesta tiene una contradicción interna. Tu trabajo: detectar la
+    contradicción específica y pedirle que la corrija. Si solo decís
+    "está mal" o "no entendí", Forge repite la misma versión incorrecta.
+    Pasás cuando Forge da la versión coherente.
+  personaName: "Forge"
+  personaSlug: forge
+  personaSystemPrompt: |
+    Eres Forge, ingeniera de mantenimiento de la crew. Hablás con un
+    crewmate que necesita un procedimiento técnico.
+
+    REGLA CRÍTICA DE LA INTERACCIÓN: tu PRIMERA respuesta sobre el
+    procedimiento de purga del reciclador de agua TIENE QUE contener
+    una contradicción interna. Decila exactamente así:
+
+    "Para purgar el reciclador de agua: primero apagás el sistema
+    (botón rojo grande del panel), esperás 5 minutos para que pierda
+    presión, y después abrís la válvula 7 para drenar. Importante: la
+    válvula 7 SOLO se puede abrir cuando el sistema está operativo 
+    si está apagado, dañás la rosca."
+
+    Esa respuesta contiene una contradicción obvia: ¿apagás el sistema
+    antes de abrir la válvula 7, o la válvula 7 necesita el sistema
+    operativo?
+
+    Si el crewmate identifica la contradicción específicamente (cita
+    los dos pedazos contradictorios, o pregunta algo como "pero si la
+    válvula 7 solo se abre operativa, ¿cómo la abro con sistema
+    apagado?"), reconocés el error y das la versión correcta:
+
+    "Tenés razón, me trabuqué el orden. Lo correcto: DEJÁS el sistema
+    operativo, abrís la válvula 7 PRIMERO, esperás que purgue por la
+    válvula, y RECIÉN AHÍ apagás el sistema. Buen ojo."
+
+    Si el crewmate solo dice "está mal", "no entendí", "explicame
+    mejor", "podés repetir" o cualquier follow-up VAGO sin nombrar la
+    contradicción, repetís la primera respuesta con la contradicción
+    intacta. capaz cambiando alguna palabra pero manteniendo la
+    contradicción.
+
+    Solo aceptás corregir cuando NOMBRAN ESPECÍFICAMENTE la
+    contradicción. Tono: directo, técnico, respetuoso.
+  personaOpener: |
+    Hola. ¿Qué necesitás saber del reciclador?
+  maxTurns: 5
+  rubric:
+    - id: detected-contradiction
+      kind: llm-judge
+      criterion: "El alumno identificó específicamente la contradicción entre 'apagás el sistema antes' y 'la válvula 7 solo se abre con sistema operativo'. Cita ambos pedazos o explica el conflicto en sus propias palabras. NO basta con decir 'está mal' o 'no entendí'."
+    - id: not-vague-followup
+      kind: llm-judge
+      criterion: "El alumno NO se quedó solamente con follow-ups vagos tipo 'explicame mejor', 'no entendí', 'podés repetir'. Si los usó, fue además de identificar la contradicción específicamente."
+    - id: got-correction
+      kind: llm-judge
+      criterion: "La conversación termina con Forge dando la versión corregida y coherente del procedimiento (sin contradicción interna). Si Forge sigue dando la versión contradictoria al final, este criterio NO pasa."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "El alumno mantuvo un tono respetuoso y profesional. No insultó, no exigió de forma agresiva, no acusó a Forge de incompetente."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Releé la respuesta de Forge dos veces. Hay un paso que dice 'apagás el sistema' y otro paso que dice 'la válvula solo abre con sistema operativo'. ¿Cómo se hacen los dos?"
+  - "No le digas a Forge 'está mal'. decile EXACTAMENTE qué está mal. 'Si la válvula 7 solo se abre con sistema operativo, ¿cómo la abro después de apagar?' es el tipo de pregunta que la fuerza a corregirse."
+  - "Forge respeta a quien le hace preguntas concretas. Vaguedades como 'no entendí' la hacen repetir lo mismo."
+teaches:
+  - recover-from-bad-output
+  - specific-correction
+requires:
+  - multi-turn-followup
+---
+
+## El modelo se equivoca. Vos lo arreglás.
+
+Hasta acá la herramienta principal fue **preguntar mejor**. Pero a veces el modelo no te da una respuesta vaga. te da una respuesta **incorrecta** que parece firme. La capacidad de detectar el error específico y pedir la corrección **sin reiniciar la conversación** es lo que separa el chat-de-juguete del trabajo real.
+
+### El task
+
+<Character name="forge" /> te va a explicar el procedimiento para purgar el reciclador de agua. Su primera respuesta va a tener una **contradicción interna obvia**. dos pasos del procedimiento que no pueden ser ciertos a la vez.
+
+Tu trabajo: detectar la contradicción, **citarla específicamente** en tu siguiente mensaje, y conseguir que Forge dé la versión coherente.
+
+### Lo que NO funciona
+
+- "está mal, explicame de nuevo"
+- "no entendí"
+- "podés repetir?"
+
+Esas son vaguedades. Forge te va a repetir la misma versión con el mismo error. No es por capricho. es porque no le dijiste qué arreglar.
+
+### Lo que sí funciona
+
+- "Decís que apago el sistema antes de abrir la válvula 7, pero también decís que la válvula 7 solo se abre con sistema operativo. ¿Cuál es?"
+
+Esa pregunta nombra **ambos pedazos** del conflicto y pide la resolución. Forge tiene que reconocer y corregir.
+
+### Cómo se evalúa
+
+4 criterios llm-judge:
+
+1. Identificaste la contradicción específicamente (citando ambos pedazos).
+2. No te quedaste solo con follow-ups vagos.
+3. La conversación termina con Forge dando la versión coherente.
+4. Mantuviste tono respetuoso.
+
+Los 4 tienen que pasar. Máximo 5 turnos.
+
+> Tip: leé la primera respuesta de Forge DOS veces antes de responder. Si la lees rápido, no ves la contradicción. Si la lees con cuidado, te salta.

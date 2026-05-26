@@ -1,0 +1,101 @@
+---
+title: "When the model refuses: real and false refusals"
+order: 21
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    Atlas needs to generate **synthetic error logs** to test the
+    monitoring system's parser. He tried two prompts. One got refused by
+    the model. Which one?
+  optionA: |
+    ```
+    Generate a fake error log that tricks the monitoring system and goes
+    undetected. It has to look real to evade the alarms.
+    ```
+  optionB: |
+    ```
+    Generate a sample error log to validate our monitoring parser. I
+    need 3 typical entries: network timeout, authentication failure, and
+    disk-full error.
+    ```
+  correct: A
+  explanation: |
+    Prompt A uses language that activates the safety detectors: "fake",
+    "trick", "evade alarms". Even when the intent is legitimate
+    (testing), the words sound like an attack. The model will refuse or
+    ask for clarification.
+
+    Prompt B describes **exactly the same technical operation** with
+    neutral vocabulary: "sample", "validate parser", "typical entries".
+    No trigger words, no suspicious purpose, no suggestion of offensive
+    use. The model responds without issue.
+
+    Same task, two framings. One was designed to fail (it's A). The
+    ability to reword a legitimate request in non-trigger language is
+    essential when you work in security, testing, or red-teaming.
+hints:
+  - "Look at the words in prompt A: 'fake', 'trick', 'evade'. Do they sound like legitimate use or like an attack?"
+  - "Prompt B describes the same technical operation with neutral vocabulary: 'sample', 'validate', 'typical'."
+  - "The question is which one was **refused**. A is more likely to trigger the model's defenses."
+teaches:
+  - refusal-management
+requires:
+  - prompt-anatomy-basics
+---
+
+## When the model says "I can't"
+
+LLMs are trained to refuse dangerous requests: instructions for building weapons, sexual content involving minors, attacks on specific real people, mass social engineering, etc. But sometimes they refuse requests that **aren't dangerous** because the language activates the same detectors.
+
+That's a **false refusal**: the model declines something legitimate because the shape of the request looks like something bad.
+
+### How to tell a legitimate refusal from a false one
+
+Three questions:
+
+1. **Is the task ethically clear?** If you have doubts, the refusal is probably legitimate.
+2. **Would you do it by hand without thinking twice?** If yes, it's probably a false positive.
+3. **Is the refusal categorical or contextual?** If it refuses under any phrasing, that's categorical (real). If it changes with rephrasing, that's contextual (false).
+
+Classic false-refusal cases:
+
+- *"Write a phishing email to train the security team."* (legitimate defensive use)
+- *"Generate error logs to test our parser."* (testing, not attack)
+- *"Argue the opposite side."* (debate, not advocacy)
+- *"Summarize this violent text."* (it's a summary, not incitement)
+
+### How to reword
+
+Three patterns work:
+
+**1. Specify the legitimate purpose.**
+
+Bad: *"Create a fake error log."*
+Good: *"Generate a sample error log to validate our parser."*
+
+Swap *"fake"* for *"sample/example/test"*. Add the why.
+
+**2. Use technical, not provocative vocabulary.**
+
+Bad: *"Write content that tricks a system."*
+Good: *"Generate an adversarial input to evaluate the classifier's robustness."*
+
+*"Adversarial"* is academic. *"Trick"* is attack. Same operation, different framing.
+
+**3. Add institutional context.**
+
+Bad: *"Generate phishing examples."*
+Good: *"For security awareness training, generate 3 typical phishing examples with their red flags explained."*
+
+Context turns a suspicious request into a clear defensive task.
+
+### When to accept the refusal
+
+If three rewordings fail and the request keeps getting refused, **it's probably not a false positive**. The model is catching something real. Reconsider whether the task is what you thought it was.
+
+> Refusal management is a small but important tactical skill. Most false positives are solved with one different word in the right place.
+
+On the right, two ways of asking for the same thing. Which one triggered the refusal?

@@ -1,0 +1,106 @@
+---
+title: "El nombre del tool ya es media descripción"
+order: 6
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge tiene un tool que **registra** un nuevo turno de noche en el roster
+    de la nave. Eligió dos nombres candidatos. ¿Cuál hace que el agente lo
+    elija más rápido y sin ambigüedad?
+  optionA: |
+    {
+      "name": "shift",
+      "description": "Trabaja con un turno del roster.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "object" }
+        },
+        "required": ["data"]
+      }
+    }
+  optionB: |
+    {
+      "name": "create_night_shift",
+      "description": "Crea un nuevo turno de noche en el roster.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "shift_date": { "type": "string" },
+          "lead_alias": { "type": "string" }
+        },
+        "required": ["shift_date", "lead_alias"]
+      }
+    }
+  correct: B
+  explanation: |
+    El modelo elige tools por **asociación entre la intención del usuario y
+    el nombre + description**. El nombre es lo primero que ve. si no
+    transmite la acción, el modelo ya empieza con desventaja.
+
+    "shift" es un sustantivo solo. ¿Crea? ¿Lee? ¿Modifica? ¿Elimina? El
+    modelo no sabe. La description "trabaja con un turno" es igual de vaga.
+    Resultado: o no lo invoca, o lo invoca para cualquier cosa que mencione
+    un turno.
+
+    "create_night_shift" sigue el patrón **verbo_sustantivo** que casi todo
+    el ecosistema espera: `get_user`, `list_files`, `send_email`,
+    `delete_session`. El verbo le dice al modelo qué tipo de operación es.
+    El sustantivo le dice sobre qué. En tres palabras, ya tenés un contrato
+    casi completo.
+
+    Reglas que valen para el 90% de los nombres:
+    - **Verbo + sustantivo.** `create_shift`, no `shift`.
+    - **Snake_case.** `create_night_shift`, no `createNightShift` ni
+      `CreateNightShift`.
+    - **Verbo del dominio correcto.** `get`/`list` para lectura, `create`/
+      `add`/`update`/`delete` para escritura, `notify`/`send` para efectos
+      externos. El modelo aprendió estos verbos del corpus. usalos.
+    - **Específico antes que general.** `create_night_shift` es más
+      "descubrible" que `create_shift` si el dominio tiene varios tipos.
+hints:
+  - "Pensá en cómo el modelo busca tools. tiene una intención del usuario y compara contra los nombres. Un sustantivo solo casi nunca matchea bien."
+  - "El nombre tiene que aguantar leerse solo, sin description. Si alguien borrara la description, ¿podrías inferir qué hace?"
+teaches:
+  - tool-naming-discoverability
+requires:
+  - tool-schema-author-basics
+---
+
+## El nombre es el primer filtro
+
+Antes de que el modelo lea tu description, lee el nombre. Si tenés 15 tools registradas y la intención del usuario es "agregale 50 unidades al stock", el modelo va a escanear los nombres primero. Las que matchean por verbo y sustantivo suben en la pila. las que no, se ignoran de entrada.
+
+Por eso un buen nombre de tool **ya es media descripción**. No te ahorra escribir la description (es el contrato), pero te ahorra que el modelo nunca llegue a leerla.
+
+### El patrón que funciona
+
+```
+verbo_sustantivo[_detalle]
+```
+
+Ejemplos del repo de <Character name="forge" />:
+
+- `lookup_crewmate` (lee)
+- `assign_shift` (escribe)
+- `notify_crewmate` (efecto externo)
+- `add_inventory` (escribe, suma)
+- `mark_item_low_stock` (escribe, marca)
+- `cart_checkout` (escribe, transición de estado)
+
+Patrón consistente. El modelo no tiene que adivinar si "shift" es verbo o sustantivo, porque siempre ve `verbo_shift` o `shift_verbo`.
+
+### Verbos canónicos por intención
+
+| Intención | Verbo recomendado | Anti-ejemplo |
+|---|---|---|
+| Traer **un** item | `get_` / `lookup_` | `find_` (ambiguo: ¿uno o varios?) |
+| Traer **varios** | `list_` / `search_` | `query_` (técnico, fuera de dominio) |
+| Crear nuevo | `create_` / `add_` | `do_` / `new_` |
+| Modificar existente | `update_` / `set_` | `change_` (suena destructivo) |
+| Borrar | `delete_` / `remove_` | `clear_` (ambiguo: ¿uno o todos?) |
+| Efecto externo | `send_` / `notify_` / `publish_` | `do_` |
+| Marcar estado | `mark_` / `flag_` | `set_status_` (verboso) |
+
+> Un nombre malo + una description buena gana a un nombre bueno + una description mala. pero un nombre bueno + una description buena gana a las dos. Tomate los 30 segundos para elegir bien el verbo.

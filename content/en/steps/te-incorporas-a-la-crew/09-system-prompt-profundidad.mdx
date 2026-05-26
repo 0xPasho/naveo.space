@@ -1,0 +1,96 @@
+---
+title: "The system prompt in depth"
+order: 9
+estimatedMinutes: 6
+characters:
+  - echo
+exercise:
+  kind: prompt-tag-fill
+  template: |
+    <!-- Echo handed you this prompt a teammate wrote. It's all in one
+         block. Rewrite it in two channels:
+         - <system>: what's CONSTANT across calls (role, rules, format).
+         - <user>: what CHANGES each call (the specific report).
+
+         Reference monolithic prompt:
+
+         "You are Echo, quartermaster of the crew. Your job is to process
+         shift reports. Always respond in JSON with fields timestamp,
+         location, status. Never invent data that doesn't appear in the
+         report.
+
+         Shift report:
+         {{input}}"
+    -->
+
+    <SPLIT_HERE/>
+  requiredTags:
+    - system
+    - user
+hints:
+  - "The role, the rules and the format apply to EVERY conversation, regardless of the report. That goes in <system>."
+  - "The specific report changes every call. That goes in <user>, with `{{input}}`."
+  - "Minimum hint: <system> holds the identity and rules; <user> holds 'Shift report:' and `{{input}}`."
+teaches:
+  - system-prompt-design
+requires:
+  - system-vs-user
+---
+
+## What really goes in the system prompt
+
+In lesson 4 you saw that `system` and `user` are two distinct channels. Now the more practical question: what belongs in each?
+
+### The axis rule: constant vs changing
+
+The most useful dividing line:
+
+- **System:** what's **constant** across calls. Doesn't change between message 1 and message 50.
+- **User:** what's **specific** to the current turn. Changes every time.
+
+| Thing | Where | Why |
+| --- | --- | --- |
+| Model identity ("You are Echo") | system | Constant across the whole conversation |
+| Format rules ("always JSON") | system | Applies to ALL responses |
+| Safety constraints ("never invent") | system | Applies always |
+| Persistent tone ("formal, concise") | system | Applies always |
+| Few-shot examples | system | Reusable on every turn |
+| The current question | user | Changes each turn |
+| Data to process (`{{input}}`) | user | Changes each call |
+| Context about the current user | user | Specific to the session |
+
+### What does NOT go in system
+
+Three common mistakes:
+
+**1. Variable data.** If you put the crewmate's bio in system, you're re-sending it identically every call, but the bio changes between calls. It goes in user.
+
+**2. Sensitive or personal information.** The system prompt gets cached and sent on every call. Don't put PII there if the conversation might be long.
+
+**3. One-off instructions.** *"Just this once, answer short."* That goes in user, not system. If you put it in system, the model will apply it to ALL future responses.
+
+### Useful template
+
+To get started, this shape works 80% of the time:
+
+```xml
+<system>
+You are [identity].
+Your job is [persistent task].
+
+Rules:
+- [persistent format]
+- [persistent constraint]
+- [tone]
+
+If [common edge case], [expected behavior].
+</system>
+
+<user>
+[Turn's question or data to process]
+</user>
+```
+
+> Mental refactor: when you assemble a prompt, read it and underline what will **always** be true. That's system. The rest is user.
+
+On the right, a monolithic prompt mixing the two. Rewrite it into `<system>` and `<user>`.

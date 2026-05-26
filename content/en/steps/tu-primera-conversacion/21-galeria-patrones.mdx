@@ -1,0 +1,107 @@
+---
+title: "Conversation patterns gallery"
+order: 21
+estimatedMinutes: 5
+demo:
+  id: output-gallery
+  props:
+    presenter: vega
+    intent: "5 proven patterns for conversations that get somewhere"
+    cases:
+      - title: "Pattern 1. Drafter-Reviewer"
+        prompt: |
+          Turn 1: "Write me the executive summary."
+          Turn 2: "Now you're a skeptical auditor. List 3 weaknesses.
+                   Don't rewrite."
+          Turn 3: "Fix points 1 and 3."
+        output: |
+          Output 1: Model's draft (mediocre, plausible).
+          Output 2: "1. The key metric is missing. 2. Dates context
+                     is missing. 3. The conclusion assumes without
+                     evidence."
+          Output 3: Summary corrected specifically on points 1 and
+                    3. Overall structure remains intact.
+        why: |
+          The drafter-reviewer loop (lesson 7) in action. Same model, two roles. Critique with a fixed number gives you control over what to attack. Useful when: outputs that need rigor (reports, copy, critical code).
+      - title: "Pattern 2. Expert-asks-back"
+        prompt: |
+          "I'm going to ask you for a migration plan. Before proposing
+          anything, ask me 3 concrete questions you need. Number them."
+        output: |
+          1. What's the current system and the target version?
+          2. Do you have a downtime window or does it have to be
+             zero-downtime?
+          3. Is there production data, or is it a clean migration?
+        why: |
+          The model inverts the flow (lesson 3): asks before inventing. Useful when: you start something where you know the model will have to assume things. Saves you 3 turns of "no, actually...".
+      - title: "Pattern 3. Devil's advocate"
+        prompt: |
+          "You're a skeptical senior engineer. Here's my plan: <plan>.
+          List 3 concrete risks and one test to rule each one out."
+        output: |
+          Risk 1: rollback isn't tested. Test: run rollback in
+          staging before deploy.
+          Risk 2: migration assumes indices that don't exist. Test:
+          verify with \\d in production.
+          Risk 3: timeouts in the migration script. Test: measure
+          script time on a test dataset 10x smaller.
+        why: |
+          The model adopts an adversarial stance (lesson 10) and returns actionable critique. Useful when: decisions where the cost of being wrong is high.
+      - title: "Pattern 4. Recap-then-ask"
+        prompt: |
+          "Before I ask the next step, let me summarize where we are:
+          - Locked decisions: A, B, C.
+          - Open questions: X.
+          - Next step: decide between Y or Z.
+
+          Given this, what data do you need from me to help me decide
+          Y vs Z?"
+        output: |
+          I need 2 things to help you decide:
+          1. What's the main priority: speed or stability?
+          2. Do you have operational capacity to maintain Y, or do
+             you need something more automated like Z?
+        why: |
+          Recap-then-ask combines compaction (lesson 16) with expert-asks-back. Useful when: a long conversation reached a decision point and you need to align context before the next critical turn.
+      - title: "Pattern 5. Ping-pong refine"
+        prompt: |
+          Turn 1: "Write a paragraph on X."
+          Turn 2: (model's output)
+          Turn 3: "Drop sentence 2 and replace it with something
+                   mentioning Y."
+          Turn 4: (corrected output)
+          Turn 5: "Now change the closing to something more concrete:
+                   a metric or an example. Don't touch the rest."
+        output: |
+          Each turn changes ONE specific thing in the previous output.
+          The paragraph evolves incrementally, keeping what's already
+          working.
+        why: |
+          Ping-pong refine is the surgical correction prompt (lesson 4) applied in series. Useful when: you're polishing an output close to the end. Each turn changes one thing, doesn't rewrite all. If you say "make it better" instead of pointed changes, you lose the good output you already had.
+---
+
+## Your pattern kit for real conversations
+
+Up to now you learned individual techniques: insist with specific questions, correct surgically, reaffirm, restart. This lesson **brings them together as 5 patterns** that you'll apply combined in production.
+
+These aren't the only patterns. they're the most practical to start with. Once you have them in your head, you can combine them as the situation needs.
+
+### When to use each
+
+| Pattern | When |
+|---|---|
+| **Drafter-Reviewer** | Output that needs rigor. any deliverable going to a final user. |
+| **Expert-asks-back** | Start of a task where the model needs inputs it doesn't have. |
+| **Devil's advocate** | Important decisions before executing. |
+| **Recap-then-ask** | Long conversation at a decision point. |
+| **Ping-pong refine** | Polish an output close to the end, without losing what's good. |
+
+### Useful combinations
+
+- **Expert-asks-back → Drafter-Reviewer → Ping-pong refine.** To deliver something high-quality from scratch.
+- **Drafter → Devil's advocate → Drafter.** To make technical decisions with confidence.
+- **Recap-then-ask + reset.** When the conversation got dirty: summarize state, open new conversation with the summary.
+
+On the right you have the 5 patterns side by side. Before closing the track, internalize them as **separate tools**: each one solves a different problem. If you use them all for everything, that's overengineering. If you use them per case, you're an expert multi-turn operator.
+
+> These same patterns replicate in human work. Drafter-reviewer is what a PM does before sending a doc to the team. Expert-asks-back is what a consultant does in the first meeting. Devil's advocate is what separates a good decision from a quickly-made one.

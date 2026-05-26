@@ -1,0 +1,96 @@
+---
+title: "El loop drafter-reviewer"
+order: 7
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    Tenés que entregarle al capitán un resumen ejecutivo de incidente.
+    Ya conseguiste el draft del modelo en el turno anterior. ¿Cuál
+    follow-up te trae un draft realmente mejor en el siguiente turno?
+  optionA: |
+    ```
+    Mejoralo.
+    ```
+  optionB: |
+    ```
+    Ahora cambiá de rol. Sos Atlas, capitán, leyendo este draft a las
+    6 AM en el medio de otro incidente. Hacéme una lista numerada de
+    3 cosas que están débiles o confusas en este draft, desde tu
+    punto de vista. No reescribas todavía.
+    ```
+  correct: B
+  explanation: |
+    "Mejoralo" es el follow-up favorito del principiante. El modelo
+    elige qué "mejorar" y rara vez coincide con lo que vos necesitás.
+    Te devuelve un párrafo reescrito con cambios cosméticos y la
+    misma debilidad estructural.
+
+    El prompt B activa el **loop drafter-reviewer**: pedirle al modelo
+    que cambie de rol y critique su propio output desde una
+    perspectiva nueva, ANTES de pedirle que reescriba. Cuando un
+    "Atlas-revisor" detecta tres debilidades concretas, vos podés
+    elegir cuáles atacar y pedir reescrituras quirúrgicas (lección
+    anterior). El draft mejora por construcción, no por golpe de
+    suerte.
+
+    El truco clave del loop:
+
+    1. **Drafter** produce. Es lo que ya tenés.
+    2. **Reviewer** (mismo modelo, otro rol) critica con criterios
+       concretos. Lista numerada, sin reescritura.
+    3. **Drafter** vuelve y corrige solo los puntos elegidos.
+
+    Funciona porque el modelo es bueno detectando problemas cuando le
+    pedís que SEA un detector. No tan bueno detectando los suyos
+    propios mientras escribe.
+
+    Esta es la receta para outputs de alto rigor en producción.
+    informes ejecutivos, copy de marketing, código de algo crítico.
+    Donde "mejoralo" pierde, el loop drafter-reviewer gana.
+teaches:
+  - drafter-reviewer-loop
+requires:
+  - multi-turn-followup
+  - surgical-correction-prompt
+---
+
+## Dos roles, una conversación
+
+El modelo es mejor **criticando** un draft que **escribiendo el draft perfecto**. Esa asimetría se aprovecha con un patrón clásico: el loop drafter-reviewer.
+
+### El patrón
+
+```
+Turno N:   "Escribime X."                       → DRAFTER produce
+Turno N+1: "Ahora sos <revisor>. Listame 3
+            cosas débiles. No reescribas."      → REVIEWER critica
+Turno N+2: "Atacá los puntos 1 y 3 con
+            estas correcciones..."              → DRAFTER corrige
+```
+
+Mismo modelo. Misma conversación. El cambio de rol entre turnos es lo único que cambia. Y eso solo ya levanta la calidad del output significativamente.
+
+### Por qué funciona
+
+Cuando el modelo escribe, está optimizando "produce algo plausible". Cuando le pedís que cambie de rol y critique, está optimizando "encontrá fallas". Son dos modos cognitivos distintos. ningún humano puede correr los dos al mismo tiempo, el modelo tampoco.
+
+> Variante útil: el revisor puede ser una **persona específica**. *"Sos Atlas leyendo esto a las 6 AM."*. *"Sos un cliente escéptico evaluando esta propuesta."*. *"Sos un linter de seguridad."* Cuanto más concreto el rol, más concretos los hallazgos.
+
+### Lo que NO funciona
+
+- **"Mejoralo."** Cero criterio. Cambios cosméticos.
+- **"Reescribilo y arreglá lo que esté mal."** El modelo elige y rara vez acertás.
+- **"Hacelo más profesional."** Adjetivo vago = pintada de barniz.
+
+### Lo que sí
+
+- **"Sos <rol concreto>. Listá 3 cosas débiles. No reescribas todavía."**
+
+El "no reescribas todavía" es importante: si dejás que reescriba en el mismo turno, vuelve a entrar en modo drafter y la crítica queda diluida en una versión nueva.
+
+> Tip: cuando le pedís críticas, pedile un NÚMERO ("3 cosas"). Si decís "listá las debilidades", el modelo te trae 1 o 12, sin compromiso. Con número fijo, te obliga a elegir las más importantes.
+
+A la derecha, dos follow-ups después de un draft. ¿Cuál realmente lo levanta?

@@ -1,0 +1,138 @@
+---
+title: "A/B testing: compare two versions of the chain"
+order: 19
+estimatedMinutes: 8
+characters:
+  - echo
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Your ticket-processing chain is running in production. <Character
+    name="orbit" /> proposed a change in step 2 (extract) that in theory
+    reduces hallucinations. Two strategies to evaluate whether it's
+    worth deploying to all traffic. Which one do you pick?
+  optionA: |
+    DIRECT DEPLOY + POST-HOC COMPARISON:
+
+    You change step 2 to the new version. You deploy it to 100% of
+    traffic. You wait 7 days. You look at metrics (tickets classified
+    correctly, user complaints, eval set accuracy) comparing them with
+    the previous 7 days.
+
+    If metrics are better, you keep it. If worse, you roll back.
+  optionB: |
+    SIMULTANEOUS A/B TEST:
+
+    Deterministic hash of trace_id → 50% of traffic runs the old chain
+    (control), 50% runs the new one (variant). Same conditions, same
+    time window, same eval set running over both.
+
+    After 7 days or N tickets, you compare metrics between the two
+    groups. If variant is significantly better than control, you promote.
+  correct: B
+  explanation: |
+    The simultaneous A/B test is the only **honest** method to compare
+    two versions of an LLM system. The post-hoc comparison (option A)
+    is plagued with confounders:
+
+    1. **The input distribution changes.** Monday's tickets are
+       different from Wednesday's. Comparing different weeks is
+       comparing different inputs, not different versions.
+    2. **External changes confuse you.** Another team changed another
+       system in parallel. Is the improvement from your change or
+       theirs? You can't tell.
+    3. **Prompt drift.** Providers silently update models from time to
+       time. The "same model" from Monday may not be identical to
+       Wednesday's.
+    4. **Without a control group, there's no real baseline.** You're
+       comparing against memories of how it used to be, not real data
+       from the same moment.
+
+    The A/B test eliminates those confounders by **keeping everything
+    equal between the two groups except the variable you want to
+    measure**. Same traffic, same moment, same provider. the only
+    difference is your chain's version.
+
+    Three rules for the A/B to be valid:
+
+    1. **Deterministic assignment by hash.** Same user or same request
+       always goes to the same arm. Without this, a user could see
+       inconsistent responses and that dirties the metrics.
+    2. **Sufficient sample size.** To detect a 5% accuracy improvement
+       with statistical confidence, you need thousands of events, not
+       dozens.
+    3. **Pre-agreed metrics.** Define BEFORE what you're going to
+       measure (success rate, latency, cost, satisfaction). If you pick
+       them after seeing results, you'll find numbers that confirm
+       what you already wanted to believe.
+hints:
+  - "A/B testing is the only way to know if a change in an LLM chain actually improves anything. 'Before/after' comparisons are contaminated by everything else that changed around it."
+  - "For deterministic hashing: `arm = hash(user_id) % 2 == 0 ? 'control' : 'variant'`. Same user, same arm, always."
+  - "Watch out for metrics with 'network effects'. If your chain B generates longer answers and users write fewer follow-ups, your 'messages per session' metric drops for a good reason, not bad."
+teaches:
+  - ab-testing-chains
+requires:
+  - evals-author
+  - eval-judge-author
+---
+
+## The only honest method to compare two versions
+
+When you change something in an LLM chain (new prompt, different model, reordered step), how do you know if the change is good? The natural answer is "I deploy and watch the metrics". The problem: **comparing "before" to "after" measures much more than your change**.
+
+### What happens between week and week
+
+- Traffic changes (seasonality, events, day of week).
+- Other teams change other systems.
+- Providers silently update models.
+- User composition changes (new onboardings, churn).
+- Your own interpretation of metrics changes (confirmation bias).
+
+Any of those can explain the "improvement" or "worsening" you see, without your change having done anything.
+
+### The A/B test eliminates those confounders
+
+You split traffic into two simultaneous groups:
+
+- **Control (A)**: the old version. 50% of traffic.
+- **Variant (B)**: the new version. 50% of traffic.
+
+Both run at the same time, with the same users distributed by deterministic hash. The only difference between the two groups is your chain's version. Any difference in metrics is due to your change, not the world's noise.
+
+### The three rules that make A/B valid
+
+#### 1. Deterministic assignment by hash
+```
+arm = hash(user_id || trace_id) % 2 == 0 ? 'control' : 'variant'
+```
+
+Without determinism, a user could see inconsistent responses (sometimes control, sometimes variant), which degrades the experience and contaminates metrics with unexplained variance.
+
+#### 2. Sufficient sample size
+To detect a 5% accuracy improvement with statistical confidence, you typically need **thousands of events per arm**. To detect a 1% improvement, tens of thousands. An A/B with 30 events tells you nothing useful.
+
+#### 3. Pre-agreed metrics
+Define **before** seeing results what you're going to measure and what threshold counts as "winner". If you decide after, you'll find the metric that confirms what you already want to believe. This is called p-hacking and ruins serious A/Bs.
+
+### Typical metrics for LLM chain A/Bs
+
+| Metric | How to measure |
+|---|---|
+| Eval pass rate | Eval set running over each arm, % passing |
+| Latency p50/p95 | Trace duration_ms, percentile 50 and 95 |
+| Average cost per request | Sum cost_usd of spans, average |
+| Degradation rate | % of traces with status `partial` |
+| Satisfaction (proxy) | User thumbs up/down, follow-up rate |
+
+### When NOT to use A/B
+
+- **Security changes.** If you patched a vulnerability, don't leave it in control 50% of the time. Full deploy + monitoring.
+- **Obviously better changes.** Fixing a bug? Just deploy.
+- **Small traffic.** If your system processes 100 requests per week, an A/B won't reach significance. Use offline eval.
+
+> Offline eval measures the **ceiling** of quality (could the change be better?). A/B measures the **real behavior** (is the change actually better with real users?). Both are necessary; neither replaces the other.
+
+### Your exercise
+
+On the right, two strategies to evaluate the same change to a chain. Pick the one you'll use in production.

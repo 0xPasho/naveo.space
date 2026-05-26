@@ -1,0 +1,169 @@
+---
+title: "Capstone: un MCP de inventario que el agente realmente usa"
+order: 25
+estimatedMinutes: 18
+exercise:
+  kind: tool-schema-author
+  toolName: inventory_mcp
+  toolPurpose: |
+    Diseñar un MCP completo de 3 tools para que un agente pueda gestionar
+    el inventario de repuestos críticos de la nave. El agente lo usará
+    en pedidos como:
+
+    - "¿cuántos reguladores de bay quedan en stock?"
+    - "marcá el cargador del bay 3 como low-stock"
+    - "agregá 12 filtros de aire de tipo H7 al inventario"
+
+    Tres tools mínimos para cubrir el caso:
+
+    1. `list_inventory_items(category?)`. lectura. Lista items con sus stocks.
+       category es opcional para filtrar (ej: "regulator", "filter", "charger").
+    2. `add_inventory(item_id, quantity, location)`. escritura. Suma unidades
+       a un item existente. Devuelve el nuevo total.
+    3. `mark_item_low_stock(item_id, reason)`. escritura. Marca un item como
+       requiring re-supply. reason es texto libre (motivo del aviso).
+
+    Tu trabajo: el JSON completo con las 3 definiciones. Las descripciones
+    tienen que ser tan buenas que un agente las elija correctamente sin
+    que vos tengas que orientar la conversación.
+  exampleInvocations:
+    - 'list_inventory_items(category: "regulator") → {items: [{item_id: "reg-bay-001", name: "...", stock: 4, location: "vault-A"}, ...]}'
+    - 'add_inventory(item_id: "filter-H7", quantity: 12, location: "vault-A") → {ok: true, new_stock: 28}'
+    - 'mark_item_low_stock(item_id: "charger-bay-3", reason: "Falla intermitente, conviene reponer antes del próximo ciclo") → {ok: true}'
+  starter: |
+    {
+      "tools": [
+        {
+          "name": "list_inventory_items",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "add_inventory",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "mark_item_low_stock",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        }
+      ]
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "JSON válido"
+    - id: three-tools
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "list_inventory_items[\\s\\S]+add_inventory[\\s\\S]+mark_item_low_stock"
+      criterion: "Define los tres tools en orden"
+    - id: list-category-optional
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "list_inventory_items[\\s\\S]{0,800}\"required\"\\s*:\\s*\\[\\s*\\]"
+      criterion: "list_inventory_items: category está definido pero NO en required (es opcional)"
+    - id: add-three-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "add_inventory[\\s\\S]{0,1000}\"required\"\\s*:\\s*\\[[^\\]]*\"item_id\"[^\\]]*\"quantity\"[^\\]]*\"location\""
+      criterion: "add_inventory: los 3 parámetros (item_id, quantity, location) están en required"
+    - id: low-stock-two-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "mark_item_low_stock[\\s\\S]{0,800}\"required\"\\s*:\\s*\\[[^\\]]*\"item_id\"[^\\]]*\"reason\""
+      criterion: "mark_item_low_stock: item_id y reason están en required"
+    - id: descriptions-distinguish-read-write
+      kind: llm-judge
+      criterion: "Las descripciones distinguen claramente operaciones de LECTURA (list) y de ESCRITURA (add, mark). El modelo, leyendo las 3 descripciones, sabe que solo `list` es seguro de usar para consultas exploratorias; las otras dos modifican estado."
+    - id: descriptions-have-when-not-to-use
+      kind: llm-judge
+      criterion: "Al menos UNA de las descripciones explícitamente menciona cuándo NO usar el tool. Ejemplo: en `add_inventory`, mencionar que NO es para crear items nuevos (solo suma a existentes). O en `mark_item_low_stock`, que no es para reposición. solo para marcar."
+    - id: descriptions-mention-composition
+      kind: llm-judge
+      criterion: "Las descripciones mencionan o sugieren el patrón de uso encadenado. Ejemplo: la de `mark_item_low_stock` puede sugerir que se usa después de `list_inventory_items` para identificar items con poco stock. NO es obligatorio para cada tool, pero al menos uno tiene que orientarlo."
+    - id: parameters-documented
+      kind: llm-judge
+      criterion: "Cada parámetro tiene su propia `description`. Para `item_id`, idealmente un formato/ejemplo. Para `quantity`, idealmente menciona unidades. Para `reason`, idealmente menciona el largo esperado. No quedan parámetros sin descripción."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Para `list_inventory_items`, definí `category` pero dejá `required` vacío. Eso le dice al modelo: 'podés filtrar si querés, pero no es obligatorio'."
+  - "En `add_inventory`, aclará en la description que SUMA a un stock existente. Si el item no existe, devuelve error. Eso evita que el agente lo invoque para crear items."
+  - "En `mark_item_low_stock`, mencioná el patrón típico: 'Usar cuando se detecta que un item necesita reposición, generalmente después de `list_inventory_items` para confirmar el stock actual.' Eso enseña la cadena."
+teaches:
+  - capstone-track-3
+requires:
+  - tool-schema-author-basics
+  - tool-schema-multi-param
+  - tool-description-craft
+  - mcp-multi-tool-design
+---
+
+## Tu primer MCP completo
+
+Hasta ahora cada tool fue un caso aislado. El capstone es **el MCP entero**: 3 tools que cubren un dominio (inventario de repuestos críticos), diseñadas para que un agente las elija solas, sin instrucciones extras del usuario.
+
+### El escenario
+
+<Character name="forge" /> tiene un registro de repuestos críticos. Quiere que un agente pueda:
+
+- **Consultar el stock**. "cuántos reguladores quedan?"
+- **Reponer items**. "agregá 12 filtros H7 al vault-A"
+- **Marcar items para reposición**. "el cargador del bay 3 está fallando, marcalo low-stock"
+
+Tres tools cubren todo el dominio. Tu trabajo: diseñar el JSON Schema completo del MCP, con las descripciones tan precisas que el agente sepa cuál usar para cada pedido, **sin que vos tengas que orientar la conversación**.
+
+### Lo que tiene que estar bien
+
+8 criterios. los 5 primeros deterministas (estructura, required correctos), los últimos 3 con LLM-judge sobre la **calidad de las descripciones**:
+
+1. JSON válido.
+2. Los 3 tools definidos.
+3. `list_inventory_items.category` es opcional (NO en required).
+4. `add_inventory` tiene 3 required.
+5. `mark_item_low_stock` tiene 2 required.
+6. Las descripciones distinguen lectura vs escritura.
+7. Al menos una description dice cuándo NO usar el tool.
+8. Al menos una description menciona el patrón de uso encadenado.
+9. Todos los parámetros tienen description.
+
+### Cómo se aplica todo lo del track
+
+| Unidad | Habilidad | Cómo aparece acá |
+|---|---|---|
+| 1 · Qué es un tool | Las 3 tools tienen name + description + parameters |
+| 2 · Schema craft | Nombres claros, required correctos, enums donde aplique, outputs documentados |
+| 3 · Descripciones que el LLM lee | Criterios 6, 7 y 8: lectura vs escritura, cuándo NO usar, sugerencia de composición |
+| 4 · Handlers de producción | Aplica al handler real (no a este schema). Pensá idempotencia: `add_inventory` llamado 2× debe sumar 2×, no 1×. Y mensajes de error accionables. |
+| 5 · Composición y catálogo | Criterio 8: el patrón `list_inventory_items` → `mark_item_low_stock` tiene que estar sugerido |
+| 6 · Estado, scope, debugging | Pensá: ¿qué scope necesita cada tool? `list` es read-only, las otras dos modifican estado. ¿El agente tiene autorización para escribir? |
+
+Si tu MCP pasa los 9 criterios deterministas y judge, podés confiar que un agente lo va a usar bien sin que tengas que babysittear cada conversación.
+
+> Cuando pase, Forge firma tu primer MCP. Quedás habilitado para diseñar tools de verdad. los que se usan en producción, no en demos.

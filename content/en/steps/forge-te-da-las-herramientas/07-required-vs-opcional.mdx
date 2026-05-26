@@ -1,0 +1,84 @@
+---
+title: "Required vs optional: what blocks and what leaves room"
+order: 7
+estimatedMinutes: 5
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Forge is finishing the schema for `list_inventory_items` and has to
+    decide each parameter: required or optional? Drag each parameter to
+    the correct slot. Hint: if the operation makes sense without that
+    data, it's optional. If without it the operation is ambiguous or
+    impossible, it's required.
+  slots:
+    - id: required
+      label: "Required (the tool can't run without it)"
+    - id: opcional
+      label: "Optional (filters, refinements, sane defaults)"
+  pieces:
+    - id: item_id
+      label: "item_id (for get_inventory_item: fetch one item by id)"
+      correctSlot: required
+    - id: category
+      label: "category (for list_inventory_items: filter by type)"
+      correctSlot: opcional
+    - id: location
+      label: "location (for list_inventory_items: filter by bay)"
+      correctSlot: opcional
+    - id: quantity
+      label: "quantity (for add_inventory: how many units to add)"
+      correctSlot: required
+    - id: include_archived
+      label: "include_archived (for list_inventory_items: show retired items)"
+      correctSlot: opcional
+    - id: reason
+      label: "reason (for mark_item_low_stock: why it's being flagged)"
+      correctSlot: required
+hints:
+  - "Mental test: if you call the tool without that parameter, can the handler do anything reasonable? If yes, it's optional. If no, it's required."
+  - "`category` and `location` are **filters**: list with no filter returns everything. That's reasonable. So, optional."
+  - "`reason` in `mark_item_low_stock` looks optional, but the use case is auditing later why it was marked. Without a reason the record is useless. Required by product, not by tech."
+teaches:
+  - required-vs-optional-tradeoff
+requires:
+  - tool-schema-author-basics
+---
+
+## Every `required` is a block. every optional is a default.
+
+When you mark a parameter as `required`, you're telling the model: "without this, don't call the tool". The model respects that **strictly**. If it doesn't have the data, it'll ask the user, look in another tool, or give up. it won't invent the field (usually).
+
+That sounds great until you required everything. Then:
+
+- The model has to **gather more data before invoking**. more turns.
+- Any minor ambiguity blocks the entire call.
+- Users have to provide context the system could have assumed by default.
+
+That's why required isn't the "safe" choice. it's a product decision.
+
+### When to mark required
+
+Mark it required only if:
+
+1. **Without that data the handler can't run.** Example: `transfer_credits(from, to, amount)`. all three required. Without `amount`, what are we transferring?
+2. **No safe default exists.** If you can't invent a default value without risk, neither can the model. Move it to required.
+3. **It's ambiguous to not have it.** `mark_item_low_stock` without `reason` leaves a useless record for auditing. Required by product.
+
+### When to leave it optional
+
+Leave it optional when:
+
+1. **It's a filter or refinement.** `list_inventory_items()` with no filters returns everything. That's valid and useful.
+2. **There's a sane default.** If the system can assume "all active", "last 30 days", "the current user", those don't belong in required.
+3. **It's metadata that helps but doesn't block.** `notes`, `tags`, `priority` when there's a reasonable default.
+
+### The cost on each side
+
+| Side | Cost |
+|---|---|
+| Required when it could be optional | The model asks the user for extra data. friction. Sometimes doesn't invoke for fear of being wrong. |
+| Optional when it should be required | The model invokes with empty fields. the handler crashes or returns garbage. worse than not invoking. |
+
+> Practical rule: **the bare minimum in required, the rest optional with explicit defaults**. If in doubt, write it in the description: "If `category` is not specified, returns all active items." The model reads. and respects.
+
+On the right you have six parameters from tools you've already seen. Drag them to the correct slot.

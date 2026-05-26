@@ -1,0 +1,12 @@
+slug: forge-te-da-las-herramientas
+title: "Forge te da las herramientas"
+order: 1
+narrativeHook: |
+  El modelo pasó de "te entiende" a "te ayuda con palabras". Forge te va a
+  enseñar a darle algo distinto: manos. Veintisiete pasos, siete unidades:
+  qué es un tool y cómo decide invocarlo el modelo, schema craft con enums
+  y formatos, descripciones que el LLM realmente lee, handlers que no
+  rompen el agente (errores ricos, idempotencia, logging), composición y
+  tamaño del catálogo, estado y autorización, debugging de MCPs ignorados.
+  Al final del curso, Forge te firma el primer MCP que un agente usa solo.
+estimatedMinutes: 195

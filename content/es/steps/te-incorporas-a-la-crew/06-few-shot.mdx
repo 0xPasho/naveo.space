@@ -1,0 +1,135 @@
+---
+title: "Aprende por ejemplo: few-shot prompting"
+order: 6
+estimatedMinutes: 8
+exercise:
+  kind: prompt-task
+  task: |
+    Atlas necesita clasificar mensajes entrantes en tres categorías:
+    `urgent`, `normal`, `spam`. Las reglas son difíciles de describir, pero
+    fáciles de mostrar con ejemplos.
+
+    Escribe un prompt **few-shot**: muestra al modelo 2-3 ejemplos de
+    `mensaje → clasificación` y dejá que aprenda el patrón. El modelo debe
+    devolver SOLO una palabra: `urgent`, `normal` o `spam`. Sin explicaciones.
+
+    Donde vaya el mensaje a clasificar, usá `{{input}}`.
+  starter: |
+    <task>
+      Clasifica el mensaje en una de tres categorías: urgent, normal, spam.
+      Responde con UNA SOLA palabra.
+    </task>
+
+    <examples>
+      Mensaje: "Reactor at 102%. venting now"
+      Clasificación: urgent
+
+      Mensaje: "Crew picnic Saturday at hangar 3"
+      Clasificación: normal
+
+      Mensaje: "FREE crew tokens. claim before midnight!!!"
+      Clasificación: spam
+    </examples>
+
+    <input>
+      {{input}}
+    </input>
+
+    Clasificación:
+  testCases:
+    - input: "Coolant pressure dropping fast in bay 7. need maintenance NOW"
+    - input: "Reminder: monthly diagnostics scheduled for Thursday 09:00"
+    - input: "CONGRATS! You've been selected for our exclusive crew loan offer. reply YES"
+    - input: "Bru: oye, el panel del comunicador en bay 2 sigue rebotando entre canales. ¿Lo vemos hoy o esperamos al turno de mañana?"
+  rubric:
+    - id: valid-label
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^\\s*(urgent|normal|spam)\\s*$"
+        flags: "i"
+      criterion: "Devuelve exactamente UNA palabra (urgent, normal o spam) sin preamble, comillas, puntuación, ni markdown"
+    - id: correct-classification
+      kind: llm-judge
+      criterion: "La clasificación es coherente con la prioridad real del mensaje (urgent para emergencias de seguridad o reportes que requieren acción inmediata; normal para info rutinaria, recordatorios, preguntas de turno; spam para promociones, ofertas, mensajes engañosos)."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Few-shot = mostrar ejemplos. 2-3 son suficientes; más confunden."
+  - "Cada ejemplo es un par `mensaje → clasificación`. Cubrí las 3 categorías."
+  - "El modelo tiende a ser charlatán. Decile explícitamente: **una sola palabra**."
+teaches:
+  - few-shot-basics
+requires:
+  - prompt-task-basics
+---
+
+## A veces es mejor mostrar que describir
+
+Hay reglas fáciles de explicar:
+
+> _"Devuelve el texto en JSON con campos name, age, email."_
+
+Y hay reglas que **se entienden mejor con ejemplos**:
+
+> _"Marca este mensaje como urgent, normal o spam según... eh... la sensación."_
+
+Few-shot prompting es la técnica de **mostrar al modelo 2-3 ejemplos** de input-output antes de pedirle el caso real. El modelo aprende el patrón por imitación.
+
+### Por qué funciona
+
+En el pre-vuelo viste que el modelo predice el siguiente token más probable dado todo lo previo. Few-shot explota eso directamente:
+
+```
+Mensaje: "Reactor at 102%"
+Clasificación: urgent
+
+Mensaje: "Free tokens! Claim now!!"
+Clasificación: spam
+
+Mensaje: "Crew picnic Saturday"
+Clasificación: ___
+```
+
+Cuando el modelo llega al hueco, **el patrón "Mensaje: ... Clasificación: ..." ya está establecido en el contexto**. La continuación más probable es una de las etiquetas que vio antes, no una explicación o un saludo. Las probabilidades se acumulan detrás de `urgent`, `spam` o `normal` porque eso es lo que el patrón predice.
+
+No es que el modelo "aprenda" en el momento. Es que la forma del prompt **fuerza la salida a parecerse a los ejemplos**. Por eso few-shot es tan robusto: no depende de que el modelo entienda tu regla, depende de que complete un patrón visible.
+
+### El task
+
+<Character name="atlas" /> recibe cientos de mensajes al día y necesita filtrarlos rápido. Tu prompt va a clasificar cada uno en `urgent`, `normal` o `spam`.
+
+El validador es estricto:
+
+1. La salida debe ser **exactamente** una de las tres etiquetas (sin explicación, sin puntuación extra).
+2. La clasificación debe ser coherente con la prioridad real del mensaje.
+
+### Estructura recomendada
+
+El `<starter>` te da el patrón:
+
+```xml
+<examples>
+  Mensaje: "..."
+  Clasificación: urgent
+
+  Mensaje: "..."
+  Clasificación: normal
+
+  ...
+</examples>
+
+<input>
+  {{input}}
+</input>
+
+Clasificación:
+```
+
+> Tip: terminar con `Clasificación:` (sin valor) le da al modelo el "andamio" para completar. suele responder con la etiqueta limpia, sin charlar.
+
+### Cuándo few-shot vs cuándo describir
+
+- **Describí** cuando la regla es clara y corta (extracción de datos, conversión de formato).
+- **Mostrá ejemplos** cuando hay matices, jerga, tono, o categorías borrosas.
+- A veces ambos: 1-2 oraciones describiendo + 2 ejemplos.

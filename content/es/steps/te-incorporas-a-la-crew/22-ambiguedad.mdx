@@ -1,0 +1,112 @@
+---
+title: "Ambigüedad: cuando hay dos interpretaciones"
+order: 22
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    Atlas necesita procesar logs de turno. Cada vez que corre el mismo
+    prompt sobre el mismo log obtiene resultados distintos. ¿Cuál de los
+    dos prompts está causando esa inconsistencia?
+  optionA: |
+    ```
+    Resume los reportes más recientes del log de turno.
+
+    Log:
+    {{input}}
+    ```
+  optionB: |
+    ```
+    Del log de turno, identifica los 3 reportes con timestamp más
+    reciente. Resume cada uno en una oración. Devuelve una lista
+    numerada del 1 al 3.
+
+    Log:
+    {{input}}
+    ```
+  correct: A
+  explanation: |
+    El prompt A tiene **al menos tres interpretaciones válidas**:
+
+    - "Más recientes" puede significar **del último día**.
+    - Puede significar **el último de cada bay**.
+    - Puede significar **los N más recientes en total** (¿cuántos?).
+    - "Resume" puede ser una oración por cada uno, o un párrafo combinado.
+
+    El modelo elige una interpretación distinta cada vez (acordate del
+    muestreo con temperature que viste en pre-flight). Por eso obtenés
+    resultados inconsistentes.
+
+    El prompt B cierra las ambigüedades. "Los 3 reportes con timestamp
+    más reciente" es exacto. "Una oración por reporte" es exacto. "Lista
+    numerada del 1 al 3" es exacto. Mismas instrucciones, dos corridas,
+    mismo resultado.
+
+    La ambigüedad es una de las causas más invisibles de outputs
+    inconsistentes. Es invisible porque el prompt **parece** claro, hasta
+    que probás de hacer la tarea tú mismo y te das cuenta de que también
+    tendrías que preguntar.
+hints:
+  - "El prompt A usa palabras como 'más recientes' sin definir cuántos ni desde cuándo."
+  - "Si vos no podrías ejecutar el prompt sin pedir aclaraciones, el modelo tampoco. Va a inventar la respuesta a las aclaraciones que no le diste."
+  - "El prompt B especifica número exacto (3), criterio (timestamp), y formato (lista numerada). Sin huecos."
+teaches:
+  - ambiguity-resolution
+requires:
+  - prompt-specificity
+---
+
+## Cuando el prompt suena claro pero no lo es
+
+Hay una categoría de fallo difícil de detectar porque **parece** que el prompt es claro. Lo lees y entendés qué pedís. El problema es que **otra persona razonable** podría leerlo y entender algo distinto.
+
+Eso es ambigüedad. Y el modelo, al toparse con ella, **elige una interpretación cada vez**, no siempre la misma. Resultado: el mismo prompt sobre el mismo input puede dar respuestas distintas en distintas corridas.
+
+### Las trampas de ambigüedad más comunes
+
+**1. Referencias temporales relativas.**
+
+- *"Los reportes más recientes"*: ¿del último día? ¿los últimos N? ¿desde cuándo es "reciente"?
+- *"Los gastos del último mes"*: ¿último mes calendario? ¿últimos 30 días?
+- *"Lo más nuevo"*: ¿más nuevo que qué?
+
+**Fix:** convertí "reciente/nuevo/último" en un criterio numérico concreto. *"Los 5 con timestamp más alto."*
+
+**2. Pronombres y referencias.**
+
+- *"Resúmilo y devolvélo en JSON."*: ¿el resumen en JSON, o el JSON contiene el resumen?
+- *"Procésalo y guárdalo."*: ¿el original, el resultado, ambos?
+
+**Fix:** repetí el sustantivo. *"Resúmelo. Devolvé el resumen como JSON."*
+
+**3. Cuantificadores vagos.**
+
+- *"Resumí los puntos importantes."*: ¿cuántos? ¿qué hace algo "importante"?
+- *"Mencioná algunos ejemplos."*: ¿2? ¿5? ¿10?
+- *"Sé breve."*: ¿una línea? ¿un párrafo?
+
+**Fix:** convertí "algunos/varios/pocos/breve" en números o estructuras exactas.
+
+**4. Inclusión/exclusión.**
+
+- *"Procesa los reportes urgentes."*: ¿solo urgentes? ¿urgentes + altos? ¿qué hago con los demás?
+- *"Devuelve los emails válidos."*: ¿solo los válidos? ¿ignoro los inválidos? ¿los reporto?
+
+**Fix:** decí qué hacer con cada caso, no solo con el caso principal.
+
+### Cómo detectar ambigüedad antes de que muerda
+
+Antes de mandar tu prompt, leelo y preguntate:
+
+1. ¿Hay una palabra de cantidad sin número? (varios, algunos, pocos, recientes...)
+2. ¿Hay una referencia temporal sin fecha? (último, reciente, nuevo...)
+3. ¿Hay un pronombre que apunte a más de una cosa?
+4. ¿Hay una instrucción que omite qué hacer con los casos no-principales?
+
+Cada "sí" es una puerta abierta a interpretaciones distintas.
+
+> Heurística: si después de leer tu prompt vos podrías escribir 2 outputs igualmente válidos, el modelo también puede. Va a elegir uno al azar. Cerrá la ambigüedad antes.
+
+A la derecha, dos prompts. Uno es la causa de outputs inconsistentes. ¿Cuál?

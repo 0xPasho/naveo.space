@@ -1,0 +1,86 @@
+---
+title: "Tu primer prompt de verdad"
+order: 20
+estimatedMinutes: 8
+characters:
+  - vega
+exercise:
+  kind: prompt-task
+  task: |
+    Vega necesita que escribas un prompt que tome un
+    log corto de evento (donde dice `{{input}}`) y devuelva una sola
+    oración describiendo qué pasó.
+
+    La oración debe estar en español (sin importar el idioma del input) y
+    **no** debe inventar ningún detalle que no esté en el log. Si falta
+    algo, decilo explícitamente ("no se reporta hora", "no se nombra al
+    tripulante").
+  starter: |
+    Sos un resumidor de logs de la nave. Leé el evento de abajo y devolvé
+    una sola oración en español describiendo qué pasó.
+
+    Si al evento le falta información (sin hora, sin tripulante, sin
+    ubicación), decilo explícitamente en la oración en vez de inventarla.
+
+    Evento:
+    {{input}}
+  testCases:
+    - input: "0742h. Forge reportó una fuga de refrigerante en la bahía 2. Sellada en 4 minutos."
+    - input: "Echo registra un handshake fallido con la terminal de carga."
+    - input: "Un tripulante reportó un ruido extraño desde la cubierta 4."
+  rubric:
+    - id: spanish
+      kind: llm-judge
+      criterion: "La respuesta está en español."
+    - id: single-sentence
+      kind: llm-judge
+      criterion: "La respuesta es una sola oración (un solo punto final). No un párrafo, no una lista, no un objeto JSON."
+    - id: no-hallucination
+      kind: llm-judge
+      criterion: "La oración no inventa ningún detalle específico (nombre, hora, ubicación, número de cubierta) que no aparezca en el input. Si un detalle falta en el input, la respuesta lo omite o lo marca explícitamente como faltante."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Decile al modelo qué querés **explícitamente**: una oración, en español, sin detalles inventados."
+  - "Cubrí el caso de datos faltantes en el prompt mismo. El modelo solo sabe lo que vos le ponés enfrente."
+  - "Si tu primera versión aprueba los casos 1 y 2 pero falla el 3, lo que está pasando es **alucinación pura**. el modelo está completando con un nombre que no aparece en el log. Tu cláusula de datos faltantes existe pero está siendo demasiado suave; subile la temperatura del lenguaje (*nunca*, *prohibido*, *jamás inventes*)."
+  - "Si un caso falla, mirá la salida del modelo para ese caso. el bug suele ser que tus instrucciones no cubren esa situación."
+teaches:
+  - prompt-task-basics
+requires:
+  - llm-mental-model
+---
+
+## Puente al Track 1: escribí un prompt que corra
+
+Ya está. Un programa es una lista de pasos. Una condición decide cuál paso corre. Una variable guarda un valor. Un LLM predice el siguiente token.
+
+Junto todo: **un prompt es un programa escrito en español (o inglés).**
+
+A la derecha escribís un prompt real. El sistema va a:
+
+1. Reemplazar `{{input}}` con cada uno de los tres test cases (logs realistas de la nave).
+2. Mandar el texto resultante al modelo.
+3. Chequear la salida del modelo contra tres criterios de rúbrica.
+
+Para aprobar, **cada test case** tiene que cumplir **cada criterio**:
+
+- La salida está en español.
+- La salida es exactamente una oración.
+- La salida no inventa nada que el input no diga.
+
+### Qué te está testeando de verdad
+
+El tercer caso es el que te agarra:
+
+```
+Un tripulante reportó un ruido extraño desde la cubierta 4.
+```
+
+El modelo no sabe **cuál** tripulante. Si tu prompt no le dice explícitamente qué hacer cuando falta un detalle, vas a recibir un nombre alucinado. *"Forge reportó un ruido extraño desde la cubierta 4."* Con toda confianza. Mal.
+
+En la lección 14 aprendiste que el modelo predice la continuación más probable. *"Un tripulante"* es genérico; los datos de entrenamiento tienen mucho *"Forge"* y *"Echo"* en esos huecos. Eso es lo que burbujea. salvo que vos guíes.
+
+> El resto del Track 1 pasa diez lecciones con este mismo problema en cada vez más profundidad. Esta es la entrada en calor. Aprobá y <Character name="vega" /> firma tu pre-vuelo.
+
+Si te trabás, los hints vienen en orden. de suaves a explícitos.

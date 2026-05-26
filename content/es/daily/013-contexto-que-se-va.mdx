@@ -1,0 +1,143 @@
+---
+title: "Misión exprés: cuando el contexto se va"
+intro: |
+  En conversaciones largas el modelo empieza a olvidar lo que dijiste al principio. Detectarlo a tiempo cambia todo.
+station: vega
+teaches:
+  - context-drift-detection
+  - multi-turn-context-recovery
+characters:
+  - orbit
+scenes:
+  - kind: prompt-AB
+    question: |
+      Orbit lleva 15 turnos hablando con el modelo sobre un proyecto.
+      De golpe nota que las respuestas hablan de otra cosa. ¿Qué
+      síntoma indica context drift?
+    optionA: |
+      ```
+      El modelo empieza a tardar más en responder.
+      ```
+    optionB: |
+      ```
+      El modelo deja de respetar reglas que pusiste al principio
+      (ej: "siempre respondé en bullets") o se refiere a tu tarea con
+      términos que vos nunca usaste.
+      ```
+    correct: B
+    explanation: |
+      La latencia es un síntoma de infra, no de contexto. El modelo
+      puede tardar más por carga, no por olvidar.
+
+      El B nombra las dos señales clásicas de drift: reglas viejas
+      que se ignoran (porque las piezas iniciales se diluyen entre
+      tantos turnos) y vocabulario inventado (porque el modelo, sin
+      el ancla original, empieza a "interpretar" el tema).
+
+      Otra señal típica: el modelo te repregunta cosas que ya le
+      respondiste hace 10 turnos. Eso es contexto perdido, no
+      malentendido.
+  - kind: slot-fill-dnd
+    task: |
+      Tenés que clasificar comportamientos del modelo en una sesión
+      larga. ¿Cada uno es señal de context drift o de otra cosa?
+    slots:
+      - id: drift
+        label: "Síntoma de context drift"
+      - id: other
+        label: "Otra cosa"
+    pieces:
+      - id: p1
+        label: "El modelo ignora una regla que pusiste hace 12 turnos ('siempre devolvé bullets')."
+        correctSlot: drift
+      - id: p2
+        label: "El modelo tarda 8 segundos en empezar a responder."
+        correctSlot: other
+      - id: p3
+        label: "El modelo te pregunta de nuevo el nombre del proyecto, que ya le habías dado."
+        correctSlot: drift
+      - id: p4
+        label: "El modelo tira un error de API y corta."
+        correctSlot: other
+      - id: p5
+        label: "Las respuestas son técnicamente correctas pero usan vocabulario que vos nunca usaste."
+        correctSlot: drift
+      - id: p6
+        label: "El modelo invoca la tool incorrecta una vez en 10."
+        correctSlot: other
+  - kind: step-order-dnd
+    task: |
+      Detectaste drift a mitad de una conversación larga. Ordená los
+      pasos para recuperarte sin tener que arrancar de cero.
+    steps:
+      - id: s1
+        label: "Pausá la conversación. No mandes el siguiente pedido todavía."
+        detail: "Si seguís, el drift se acumula. Cortá el ciclo primero."
+      - id: s2
+        label: "Resumí en un mensaje nuevo el estado del proyecto a hoy."
+        detail: "3 a 5 bullets con lo decidido, los archivos clave, y el objetivo actual."
+      - id: s3
+        label: "Volvé a declarar las reglas críticas (formato, restricciones)."
+        detail: "No asumas que el modelo se acuerda. Repetilas explícitas."
+      - id: s4
+        label: "Mandá el siguiente pedido."
+        detail: "Ahora el modelo tiene el contexto fresco al principio del nuevo bloque."
+      - id: s5
+        label: "Si el drift vuelve rápido, considerá abrir una sesión nueva."
+        detail: "A veces la conversación está demasiado contaminada para recuperar."
+  - kind: prompt-AB
+    question: |
+      Llevás 20 turnos con el modelo y notás drift. Tenés que retomar
+      el control de la sesión. ¿Cuál mensaje funciona mejor?
+    optionA: |
+      ```
+      Acordate de todo lo que hablamos y seguí ayudándome.
+      ```
+    optionB: |
+      ```
+      Resumen del estado para retomar:
+      - Proyecto: migrar el cron de reportes a un worker dedicado.
+      - Decidido: usamos BullMQ con Redis.
+      - Próximo paso: armar el worker que consuma de la cola "reports".
+      Reglas que se mantienen:
+      - Respuestas en bullets cortos.
+      - No introduzcas tecnologías nuevas sin que las pida.
+      Ahora: escribime el esqueleto del worker en TypeScript.
+      ```
+    correct: B
+    explanation: |
+      El A le pide al modelo lo que no puede hacer: "acordate de todo".
+      Si el contexto se diluyó, recordarle que se acuerde no lo
+      arregla.
+
+      El B reinyecta el contexto: nombra el proyecto, las decisiones
+      clave, el siguiente paso, y vuelve a declarar las reglas
+      operativas. El modelo arranca el siguiente turno con el contexto
+      como si fuera fresco.
+
+      Bonus: este patrón es portable. Si tenés que abrir una sesión
+      nueva, podés pegar el mismo resumen y seguir donde quedaste sin
+      perder ritmo.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este "mensaje de recuperación de
+      contexto". Son cuatro piezas que cualquier prompt de recovery
+      necesita.
+    parts:
+      - id: state
+        label: "Estado del proyecto (qué se hizo)"
+        text: "Estamos migrando el cron de reportes a un worker BullMQ. Ya elegimos Redis como broker y la cola se llama 'reports'."
+      - id: rules
+        label: "Reglas vigentes (qué se mantiene)"
+        text: "Respondé en bullets cortos. No introduzcas tecnologías nuevas sin que las pida. Mantené el código en TypeScript estricto."
+      - id: next
+        label: "Próximo paso (qué falta)"
+        text: "Falta armar el worker que consuma de la cola y procese cada job invocando al servicio de reportes."
+      - id: ask
+        label: "Pedido concreto del turno actual"
+        text: "Escribime el esqueleto del worker en TypeScript, con el handler vacío y los imports correctos."
+---
+
+Misión del día: el contexto no se mantiene solo en sesiones largas.
+Detectá el drift por las señales, no por la sensación, y recuperá
+con un resumen explícito.

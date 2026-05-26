@@ -1,0 +1,116 @@
+---
+title: "Negativas: cómo decir NO sin reforzar"
+order: 17
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    Atlas necesita resúmenes de reportes para compartir externamente, sin
+    mencionar nombres de tripulantes (privacidad). Tiene dos prompts. ¿Cuál
+    va a fallar menos en mantener la anonimización?
+  optionA: |
+    ```
+    Resume este reporte.
+
+    NO menciones nombres de tripulantes.
+    NUNCA pongas nombres en la respuesta.
+    Sin nombres bajo ningún motivo.
+    Si aparece un nombre, NO lo incluyas.
+
+    Reporte: {{input}}
+    ```
+  optionB: |
+    ```
+    Resume este reporte. Para preservar privacidad, usá referencias
+    genéricas en lugar de nombres propios:
+    - "el tripulante" o "la oficial" en vez de nombres
+    - "el equipo de mantenimiento" en vez de identificar individuos
+    - el rol o función en vez de la persona
+
+    Reporte: {{input}}
+    ```
+  correct: B
+  explanation: |
+    El prompt A menciona la palabra **"nombres" cinco veces** en
+    instrucciones negativas. Esto activa lo que se conoce como **el
+    efecto del elefante rosa**: cuanto más le decís al modelo "NO pienses
+    en X", más probable es que aparezca X en su output. La palabra
+    "nombres" entró al contexto cinco veces y los nombres son ahora
+    tokens más disponibles que antes.
+
+    El prompt B reformula positivamente. En vez de decir "no menciones
+    nombres", dice "usá referencias genéricas como...". El modelo recibe
+    una **alternativa concreta** que reemplaza el comportamiento no
+    deseado. La palabra "nombres" aparece pero como concepto contextual,
+    no como instrucción machacante.
+
+    Regla práctica: cada vez que estés por escribir "NO hagas X", probá
+    primero reformularlo como "SÍ hacé Y" donde Y es lo que el modelo
+    debería hacer en lugar de X.
+hints:
+  - "Contá cuántas veces aparece la palabra 'nombres' en el prompt A. ¿Qué pasa con un token que se repite mucho?"
+  - "El prompt B reformula positivamente: en vez de 'no menciones nombres', dice 'usá referencias genéricas como...'. Le da al modelo qué hacer, no qué no hacer."
+  - "Cuando una restricción negativa no funciona, casi siempre la solución es expresar lo mismo en positivo, con una alternativa concreta."
+teaches:
+  - negative-instruction-trap
+requires:
+  - prompt-anatomy-basics
+---
+
+## El elefante rosa de los LLMs
+
+Si yo te digo *"no pienses en un elefante rosa"*, ¿en qué estás pensando? Exacto. Los LLMs tienen una versión más fuerte del mismo fenómeno.
+
+Cada palabra que metes al prompt entra al contexto y se vuelve un token **más disponible** para la generación. Si repetís "nombres" cinco veces en instrucciones negativas, el modelo de hecho **tiene "nombres" más cargado** que si no lo hubieras mencionado.
+
+### La regla del refuerzo accidental
+
+Cuanto más insistas en *"NO digas X"*:
+
+- X aparece más veces en tu prompt.
+- X entra al contexto del modelo como token disponible.
+- El modelo aprende que X es **relevante** (si no, no insistirías tanto).
+- A veces termina diciendo X **más** que si no hubieras dicho nada.
+
+No siempre pasa. Pero es un riesgo real, sobre todo cuando la restricción aparece 3+ veces.
+
+### Cómo decir NO sin reforzar
+
+**Patrón 1: una sola mención clara.**
+
+```
+NO incluyas nombres propios en el resumen.
+```
+
+Una vez, al inicio, y nunca más. Más menciones aumentan el riesgo sin agregar claridad.
+
+**Patrón 2: reformulación positiva.**
+
+```
+Usá referencias genéricas ('el tripulante', 'la oficial') en lugar de nombres propios.
+```
+
+En vez de prohibir, indicá qué hacer. El modelo recibe una **alternativa concreta** que reemplaza el comportamiento no deseado.
+
+**Patrón 3: restricción estructural.**
+
+```
+El output no debe contener ninguna palabra que empiece con mayúscula
+salvo al inicio de oración.
+```
+
+Convertís la restricción semántica en una sintáctica. Más fácil de respetar para el modelo y de verificar para vos.
+
+### Cuándo las negativas SÍ funcionan
+
+No todo es trampa. Las negativas funcionan bien cuando:
+
+- Son **una sola** mención (no repetidas).
+- El comportamiento prohibido es **muy específico** ("no uses comillas dobles").
+- La negativa **no menciona** el concepto problemático por su nombre exacto ("no agregues contexto extra" en vez de "no menciones X").
+
+> Heurística rápida: si tu prompt tiene 3+ veces la misma negativa, replanteá. Probablemente exista una forma positiva que diga lo mismo en una sola línea.
+
+A la derecha, dos prompts. Mismo objetivo (anonimizar), distinta estrategia. ¿Cuál es más probable que respete la regla?

@@ -1,0 +1,397 @@
+// Prisma schema — see docs/plan/06-architecture.md for the full data model.
+// Phase 0 only includes: User, ContentPiece, PieceEmbedding, PieceRelation, RateLimit.
+// Progress, Attempt, RubricCache, TutorMessage, Xp, BadgeAward are added in later phases.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Content (populated by scripts/build-content.ts in Fase 1+) ----------
+
+model ContentPiece {
+  id          String
+  locale      String
+  type        String
+  slug        String
+  title       String
+  hash        String
+  frontMatter Json
+  body        String
+  parentSlug  String?
+  order       Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  embeddings PieceEmbedding[]
+  outgoing   PieceRelation[]  @relation("from")
+  incoming   PieceRelation[]  @relation("to")
+
+  @@id([id, locale])
+  @@index([type, locale])
+  @@index([parentSlug, locale])
+}
+
+model PieceEmbedding {
+  id          String                      @id @default(cuid())
+  pieceId     String
+  pieceLocale String
+  chunkIdx    Int
+  vector      Unsupported("vector(1024)")
+  createdAt   DateTime                    @default(now())
+
+  piece ContentPiece @relation(fields: [pieceId, pieceLocale], references: [id, locale], onDelete: Cascade)
+
+  @@index([pieceLocale])
+}
+
+model PieceRelation {
+  fromId     String
+  fromLocale String
+  toId       String
+  toLocale   String
+  kind       String
+
+  from ContentPiece @relation("from", fields: [fromId, fromLocale], references: [id, locale], onDelete: Cascade)
+  to   ContentPiece @relation("to", fields: [toId, toLocale], references: [id, locale], onDelete: Cascade)
+
+  @@id([fromId, fromLocale, toId, toLocale, kind])
+  @@index([toId, toLocale, kind])
+}
+
+// ---------- Users (Clerk userId is the PK; lazy-synced via getOrCreateUser) ----------
+
+model User {
+  id        String   @id
+  createdAt DateTime @default(now())
+
+  rateLimits               RateLimit[]
+  progress                 Progress[]
+  attempts                 Attempt[]
+  xp                       Xp?
+  badges                   BadgeAward[]
+  wallet                   Wallet?
+  gemTransactions          GemTransaction[]
+  heartTransactions        HeartTransaction[]
+  streakFreezeTransactions StreakFreezeTransaction[]
+  leaderboardSnapshots     LeaderboardSnapshot[]
+  mastery                  MasteryRecord[]
+  stationMastery           StationMastery[]
+  dailyQuests              DailyQuestAssignment[]
+}
+
+// Per-user gamification stats. One row per user, created lazily on first
+// award/activity. Streak is updated by `gamification/service.ts.recordActivity`.
+model Xp {
+  userId         String    @id
+  total          Int       @default(0)
+  dailyStreak    Int       @default(0)
+  bestStreak     Int       @default(0)
+  // UTC calendar date (day-only via DateTime field, time portion ignored) of
+  // the user's last streak-eligible activity. Null until the first activity.
+  lastActiveDate DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Per-user spendable economy. Gems are the currency; hearts are the LLM-judge
+// evaluation budget. Hearts regenerate one at a time over time (see
+// HEART_REGEN_INTERVAL_MS) rather than refilling all at once. `streakFreezes`
+// is inventory consumed by computeStreakUpdate when a missed-day gap would
+// otherwise break the streak. Created lazily by `economy/service.getWallet`.
+model Wallet {
+  userId        String    @id
+  gems          Int       @default(0)
+  hearts        Int       @default(5)
+  heartsMax     Int       @default(5)
+  // Wall-clock timestamp at which the NEXT heart regen will be eligible. Null
+  // when hearts == heartsMax (no regen pending). Set whenever hearts drops
+  // below heartsMax. Read-side `getWallet` advances this in batches of
+  // HEART_REGEN_INTERVAL_MS each time it runs.
+  nextHeartAt   DateTime?
+  // Legacy daily-refill marker. Kept for rollback; not read by the regen
+  // model. Safe to drop in a follow-up migration.
+  heartsResetAt DateTime?
+  streakFreezes Int       @default(0)
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Append-only log of every heart mutation. Spends carry `delta=-1` and a
+// reason (track-start | exercise-fail | hint-used). Regens carry
+// `delta=+N` where N is how many hearts were credited in a single getWallet
+// tick. Shop refills carry the slug as reason.
+model HeartTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// Append-only log of every streak-shield mutation. Purchases carry
+// `delta=+1` with reason `bought`; auto-consumption carries `delta=-N`
+// where N is how many shields bridged the missed-day gap, with reason
+// `consumed-streak-save`. `meta` carries contextual info (savedStreak,
+// previousStreak) for the consume path. Paired with the +1 / -N change to
+// Wallet.streakFreezes inside the same transaction.
+model StreakFreezeTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  reason    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// Append-only log of every gem mutation. Lets us recalibrate the economy
+// from real data without trusting in-the-moment intuition. `reason` is the
+// rule identifier (`step-first-try`, `streak-freeze-bought`, …); `meta`
+// carries the contextual ids (stepId, sku, …) for that reason.
+model GemTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  reason    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([reason])
+}
+
+// Idempotency log for Stripe webhook deliveries. Stripe guarantees
+// at-least-once delivery, so the same event may arrive multiple times
+// (retries on 5xx, network blips). Before processing, the webhook
+// handler tries to insert the Stripe event id here; the unique PK fails
+// on duplicates, which we treat as "already processed" and ack with
+// 200. Cleared from below by a periodic retention job (not yet wired);
+// 30 days is enough since Stripe stops retrying after ~3 days.
+model StripeWebhookEvent {
+  id          String   @id // Stripe event id (e.g. "evt_1Nx...")
+  type        String
+  processedAt DateTime @default(now())
+
+  @@index([type])
+  @@index([processedAt])
+}
+
+// One-shot badges awarded by gamification rules. `code` is the rule identifier
+// (`7-day-streak`, `first-step`, etc.). Unique per user — re-running a rule
+// that already awarded is a no-op.
+model BadgeAward {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  awardedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, code])
+  @@index([userId])
+}
+
+// Per-step progress; surfaces to footer nav (NEXT enabled if status=completed).
+model Progress {
+  userId      String
+  stepId      String
+  stepLocale  String
+  status      String    @default("not_started")
+  attempts    Int       @default(0)
+  hintsUsed   Int       @default(0)
+  // Set to true at the moment the step first transitions to `completed` IF
+  // it was achieved on attempt #1. Frozen after that — so even if the user
+  // later re-attempts and `attempts` climbs past 1, we still know the
+  // original pass was a first-try and can re-compute the 1.5x XP bonus
+  // correctly for the cleared/debrief screen and analytics.
+  firstTry    Boolean   @default(false)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stepId, stepLocale])
+  @@index([userId, status])
+}
+
+// Append-only log of every Check Answer; used for analytics + future leaderboards.
+model Attempt {
+  id         String   @id @default(cuid())
+  userId     String
+  stepId     String
+  stepLocale String
+  payload    Json
+  outputs    Json?
+  results    Json
+  passed     Boolean
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, stepId, stepLocale])
+  @@index([createdAt])
+}
+
+// Cache of rubric runs keyed by sha256(prompt + exerciseId + rubricVersion +
+// testCases + targetModel). Lets identical attempts skip both the LLM call
+// for outputs and the judge calls. Outputs stored separately so we can
+// re-evaluate without re-prompting the model.
+model RubricCache {
+  hash      String   @id
+  results   Json
+  outputs   Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Per-(user, step, locale) spaced-repetition state. Created lazily on the
+// user's FIRST passing attempt of a step that carries an exercise. Updated
+// on every subsequent attempt for that step (pass updates the interval,
+// fail resets it). Failing a step without an existing record is a no-op —
+// SRS only tracks decay of knowledge the user has demonstrated once.
+//
+// The hot read path is `WHERE userId = ? AND nextReviewAt <= now()` to
+// fetch the user's due review queue, covered by the second index.
+model MasteryRecord {
+  userId         String
+  stepId         String
+  stepLocale     String
+  intervalDays   Int      @default(1)
+  // SM-2 ease factor. Bounds enforced in code: clamp to [1.3, 3.0].
+  ease           Float    @default(2.5)
+  nextReviewAt   DateTime
+  lastReviewedAt DateTime @default(now())
+  lapses         Int      @default(0)
+  // Consecutive successful reviews. Reset to 0 on fail.
+  streak         Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stepId, stepLocale])
+  @@index([userId, nextReviewAt])
+}
+
+// Per-user mastery aggregated by knowledge station. One row per
+// (userId, station) where station is one of vega | echo | forge | orbit | hex.
+// Atlas is intentionally absent — he is the captain who signs capstones, not a
+// learnable domain. See docs/plan/10-estaciones.md.
+//
+// `points` is the raw accumulator; `mastery` is the 0..100 derived percentage
+// against the station's theoretical max (computed at build time from tagged
+// content). `tier` buckets mastery into 0..4 at thresholds 25/50/75/100.
+// `lastActivityAt` drives weekly decay (`gamification/decay.ts`, cron TODO).
+model StationMastery {
+  userId         String
+  station        String
+  points         Int       @default(0)
+  mastery        Int       @default(0)
+  tier           Int       @default(0)
+  lastActivityAt DateTime?
+  totalSteps     Int       @default(0)
+  perfects       Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, station])
+  @@index([userId])
+  @@index([station, mastery])
+}
+
+// Per-user daily counter; used by LLM-backed endpoints starting in Fase 2.
+model RateLimit {
+  userId String
+  day    DateTime @db.Date
+  count  Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+}
+
+// ---------- Blog (SEO marketing surface; populated by scripts/blog/generate.ts) ----------
+
+model BlogPost {
+  id              String    @id @default(cuid())
+  locale          String
+  slug            String
+  title           String
+  excerpt         String
+  content         String
+  category        String
+  tags            String[]
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  translationKey  String?
+  published       Boolean   @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([locale, slug])
+  @@index([locale, published, publishedAt])
+  @@index([category])
+  @@index([translationKey])
+}
+
+// Per-user daily-quest assignment. One row per (user, UTC day). Created
+// lazily by daily-quest/service.getOrAssignDailyQuest on the user's first
+// /practice visit each day. `questId`+`questLocale` reference the
+// ContentPiece (type="daily") that was picked. `passed` flips true and
+// `completedAt` is set when the user finishes the quest; once true,
+// repeat passes keep it true (idempotent).
+model DailyQuestAssignment {
+  userId      String
+  date        DateTime  @db.Date
+  questId     String
+  questLocale String
+  passed      Boolean   @default(false)
+  completedAt DateTime?
+  assignedAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, date])
+  @@index([userId, completedAt])
+}
+
+// Weekly leaderboard snapshot. One row per (weekStart, userId) for every
+// user who earned XP > 0 in that closed ISO week. weekStart is Monday 00:00
+// UTC of the snapshotted week. Populated by snapshotPreviousWeek (cron TODO,
+// see modules/leaderboard/snapshot.ts). Keeping a row per active user (not
+// just top-N) lets the UI answer "what was my rank in week 17" forever.
+model LeaderboardSnapshot {
+  weekStart DateTime
+  userId    String
+  rank      Int
+  weeklyXp  Int
+  streak    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([weekStart, userId])
+  @@index([weekStart, rank])
+  @@index([userId, weekStart])
+}

@@ -1,0 +1,438 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ============================================================
+   NAVEO · "Bridge" Design System
+   Dark-mode chunky-3D for applied-AI learning.
+   Tokens here are the single source of truth.
+   See docs/design-system.md.
+   ============================================================ */
+
+@theme inline {
+  /* shadcn semantic tokens — repointed to Naveo Bridge */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Naveo surface tiers (raw tokens, expose to Tailwind utilities) */
+  --color-bg-deep: var(--bg-deep);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+
+  /* Ink tiers */
+  --color-ink-1: var(--ink-1);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+
+  /* Primary mint companions */
+  --color-primary-shadow: var(--primary-shadow);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-glow: var(--primary-glow);
+
+  /* Tracks — one color per learning track */
+  --color-track-prompting: var(--track-prompting);
+  --color-track-prompting-shadow: var(--track-prompting-shadow);
+  --color-track-prompting-ink: var(--track-prompting-ink);
+  --color-track-mcp: var(--track-mcp);
+  --color-track-mcp-shadow: var(--track-mcp-shadow);
+  --color-track-mcp-ink: var(--track-mcp-ink);
+  --color-track-skills: var(--track-skills);
+  --color-track-skills-shadow: var(--track-skills-shadow);
+  --color-track-skills-ink: var(--track-skills-ink);
+  --color-track-agents: var(--track-agents);
+  --color-track-agents-shadow: var(--track-agents-shadow);
+  --color-track-agents-ink: var(--track-agents-ink);
+  --color-track-tooling: var(--track-tooling);
+  --color-track-tooling-shadow: var(--track-tooling-shadow);
+  --color-track-tooling-ink: var(--track-tooling-ink);
+  --color-track-evals: var(--track-evals);
+  --color-track-evals-shadow: var(--track-evals-shadow);
+  --color-track-evals-ink: var(--track-evals-ink);
+
+  /* Stats (XP, streak, hearts, gems) */
+  --color-stat-xp: var(--stat-xp);
+  --color-stat-xp-shadow: var(--stat-xp-shadow);
+  --color-stat-streak: var(--stat-streak);
+  --color-stat-streak-shadow: var(--stat-streak-shadow);
+  --color-stat-heart: var(--stat-heart);
+  --color-stat-heart-shadow: var(--stat-heart-shadow);
+  --color-stat-gem: var(--stat-gem);
+  --color-stat-gem-shadow: var(--stat-gem-shadow);
+
+  /* Semantic status */
+  --color-success: var(--success);
+  --color-success-shadow: var(--success-shadow);
+  --color-success-soft: var(--success-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-shadow: var(--danger-shadow);
+  --color-danger-soft: var(--danger-soft);
+
+  /* Typography — fonts come from next/font via the html element */
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-display);
+
+  /* Radii — generous, friendly */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 40px;
+  --radius-pill: 999px;
+
+  /* Shadows — chunky solid drops + ambient lift */
+  --shadow-elev-1: var(--elev-1);
+  --shadow-elev-2: var(--elev-2);
+  --shadow-elev-3: var(--elev-3);
+  --shadow-elev-4: var(--elev-4);
+  --shadow-elev-inset: var(--elev-inset);
+
+  /* Motion — exposed as `ease-*` and `duration-*` Tailwind utilities */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.5, 1.5, 0.5, 1);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.8, 0.2, 0.8, 0);
+  --duration-instant: 80ms;
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 400ms;
+  --duration-stage: 600ms;
+}
+
+/* ============================================================
+   Root tokens
+   IMPORTANT: must live inside `@layer base`. Tailwind v4 silently
+   prunes unlayered :root custom properties that aren't pulled in
+   by `@theme inline`.
+   ============================================================ */
+@layer base {
+  :root {
+    /* ---- shadcn semantic mapping ---------------------------- */
+    --background: #0b1018;
+    --foreground: #f3f6fb;
+    --card: #131a26;
+    --card-foreground: #f3f6fb;
+    --popover: #131a26;
+    --popover-foreground: #f3f6fb;
+    --primary: #19d9c4;
+    --primary-foreground: #052420;
+    --secondary: #1a2233;
+    --secondary-foreground: #f3f6fb;
+    --muted: #1a2233;
+    --muted-foreground: #8896ad;
+    --accent: #1a2233;
+    --accent-foreground: #f3f6fb;
+    --destructive: #ff4e73;
+    --border: rgba(255, 255, 255, 0.12);
+    --input: rgba(255, 255, 255, 0.12);
+    --ring: #19d9c4;
+    --radius: 16px;
+
+    --sidebar: #131a26;
+    --sidebar-foreground: #f3f6fb;
+    --sidebar-primary: #19d9c4;
+    --sidebar-primary-foreground: #052420;
+    --sidebar-accent: #1a2233;
+    --sidebar-accent-foreground: #f3f6fb;
+    --sidebar-border: rgba(255, 255, 255, 0.12);
+    --sidebar-ring: #19d9c4;
+
+    /* ---- Naveo Bridge — surface tiers ----------------------- */
+    --bg-deep: #0b1018; /* canvas, app shell */
+    --bg-surface: #131a26; /* raised surface, primary card */
+    --bg-raised: #1a2233; /* chip, secondary card */
+    --bg-sunken: #080c13; /* inset, code well */
+    --line-soft: rgba(255, 255, 255, 0.06);
+    --line-strong: rgba(255, 255, 255, 0.12);
+
+    /* ---- Ink tiers ------------------------------------------ */
+    --ink-1: #f3f6fb; /* primary body text */
+    --ink-2: #c5cee0; /* secondary */
+    --ink-3: #8896ad; /* tertiary, captions */
+    --ink-4: #54607a; /* disabled */
+
+    /* ---- Primary mint companions ---------------------------- */
+    --primary-shadow: #0d9b8a; /* solid drop under chunky primary button */
+    --primary-soft: rgba(25, 217, 196, 0.14);
+    --primary-glow: rgba(25, 217, 196, 0.32);
+
+    /* ---- Tracks --------------------------------------------- */
+    --track-prompting: #4fb7ff;
+    --track-prompting-shadow: #2575c0;
+    --track-prompting-ink: #04223b;
+    --track-mcp: #9d70ff;
+    --track-mcp-shadow: #6a40c4;
+    --track-mcp-ink: #1c0c44;
+    --track-skills: #ffb23e;
+    --track-skills-shadow: #c47a10;
+    --track-skills-ink: #3a1f01;
+    --track-agents: #ff5a8c;
+    --track-agents-shadow: #b8285c;
+    --track-agents-ink: #3d0820;
+    --track-tooling: #b8e63a;
+    --track-tooling-shadow: #7ea21a;
+    --track-tooling-ink: #1a2400;
+    --track-evals: #ff7551;
+    --track-evals-shadow: #c0421e;
+    --track-evals-ink: #3a1004;
+
+    /* ---- Stats ---------------------------------------------- */
+    --stat-xp: #f5c24e; /* gold — XP, level-ups, milestones */
+    --stat-xp-shadow: #b88715;
+    --stat-streak: #ff7551; /* warm — streak flame */
+    --stat-streak-shadow: #c0421e;
+    --stat-heart: #ff4e73; /* magenta — lives */
+    --stat-heart-shadow: #b51e44;
+    --stat-gem: #7cb7ff; /* cool blue — currency */
+    --stat-gem-shadow: #3f7dc9;
+
+    /* ---- Semantic status ------------------------------------ */
+    --success: #19d9c4;
+    --success-shadow: #0d9b8a;
+    --success-soft: rgba(25, 217, 196, 0.16);
+    --warn: #ffb23e;
+    --warn-soft: rgba(255, 178, 62, 0.16);
+    --danger: #ff4e73;
+    --danger-shadow: #b51e44;
+    --danger-soft: rgba(255, 78, 115, 0.16);
+
+    /* ---- Typography scale (raw — use via @apply or var) ----- */
+    --fs-display-1: 64px; --lh-display-1: 1.02;
+    --fs-display-2: 48px; --lh-display-2: 1.05;
+    --fs-title: 32px;     --lh-title: 1.1;
+    --fs-subtitle: 24px;  --lh-subtitle: 1.2;
+    --fs-body-lg: 18px;   --lh-body-lg: 1.5;
+    --fs-body: 16px;      --lh-body: 1.5;
+    --fs-body-sm: 14px;   --lh-body-sm: 1.45;
+    --fs-caption: 12px;   --lh-caption: 1.4;
+    --tracking-tight: -0.02em;
+    --tracking-wide: 0.06em;
+    --tracking-caps: 0.12em;
+
+    /* ---- Spacing (raw — Tailwind's spacing scale still works) */
+    --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+    --s-6: 24px; --s-7: 32px; --s-8: 40px; --s-9: 56px; --s-10: 72px; --s-11: 96px;
+
+    /* ---- Elevation — solid chunky drops + ambient lift ------ */
+    --elev-1: 0 3px 0 0 rgba(0, 0, 0, 0.55);
+    --elev-2: 0 5px 0 0 rgba(0, 0, 0, 0.55);
+    --elev-3: 0 6px 0 0 rgba(0, 0, 0, 0.6), 0 14px 24px -10px rgba(0, 0, 0, 0.55);
+    --elev-4: 0 8px 0 0 rgba(0, 0, 0, 0.65), 0 24px 40px -18px rgba(0, 0, 0, 0.65);
+    --elev-inset: inset 0 2px 0 0 rgba(0, 0, 0, 0.5);
+
+    /* ---- Motion --------------------------------------------- */
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-spring: cubic-bezier(0.5, 1.5, 0.5, 1);
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-in: cubic-bezier(0.8, 0.2, 0.8, 0);
+    --ease-linear: linear;
+    --dur-instant: 80ms;
+    --dur-fast: 160ms;
+    --dur-base: 240ms;
+    --dur-slow: 400ms;
+    --dur-stage: 600ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    background-color: var(--background);
+    color-scheme: dark;
+  }
+
+  body {
+    @apply text-foreground;
+    background-color: var(--background);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Scrollbar — quiet, on-system */
+  *::-webkit-scrollbar { width: 12px; height: 12px; }
+  *::-webkit-scrollbar-thumb {
+    background: var(--bg-raised);
+    border-radius: 999px;
+    border: 3px solid var(--bg-deep);
+  }
+  *::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* ============================================================
+   Attempt + XP feedback animations
+   Used by step-shell (`animate-attempt-shake` / `animate-attempt-pass`)
+   and xp-pill (`animate-xp-gain`). Honors prefers-reduced-motion.
+   ============================================================ */
+@keyframes attempt-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes attempt-pass {
+  0% { box-shadow: 0 0 0 0 rgba(25, 217, 196, 0); transform: scale(1); }
+  30% { box-shadow: 0 0 0 6px rgba(25, 217, 196, 0.32); transform: scale(1.005); }
+  100% { box-shadow: 0 0 0 0 rgba(25, 217, 196, 0); transform: scale(1); }
+}
+
+@keyframes xp-gain {
+  0% { opacity: 0; transform: translateY(8px) scale(0.85); }
+  20% { opacity: 1; transform: translateY(-2px) scale(1.05); }
+  35% { transform: translateY(-4px) scale(1); }
+  100% { opacity: 0; transform: translateY(-22px) scale(0.95); }
+}
+
+.animate-attempt-shake { animation: attempt-shake 0.4s ease-in-out 1; }
+.animate-attempt-pass {
+  animation: attempt-pass 0.7s ease-out 1;
+  border-radius: var(--radius-lg);
+}
+.animate-xp-gain { animation: xp-gain 1.6s ease-out 1 forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-attempt-shake,
+  .animate-attempt-pass,
+  .animate-xp-gain,
+  .animate-confetti-fall {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Confetti burst — particle fall animation used by
+   src/modules/lessons/components/confetti-burst.tsx
+   ============================================================ */
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(var(--cf-rot-start));
+  }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cf-drift), var(--cf-fall), 0)
+               rotate(var(--cf-rot-end));
+  }
+}
+.animate-confetti-fall {
+  animation-name: confetti-fall;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.6, 1);
+  animation-fill-mode: forwards;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35));
+}
+
+/* ============================================================
+   Crew mascot animations
+   The mascots are SVG with named layers (`.silhouette`, `.face`,
+   `.eye-left`, `.eye-right`, `.mouth`, `.insignia`, `.blush`,
+   `.sparkles`, `.thinking`, `.curious-mark`). See src/modules/crew/.
+   ============================================================ */
+@keyframes crew-blink {
+  0%, 96%, 100% { transform: scaleY(1); }
+  98% { transform: scaleY(0.1); }
+}
+@keyframes crew-spark {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.05) rotate(20deg); }
+}
+@keyframes crew-bounce-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+@keyframes crew-tilt {
+  0%, 100% { transform: rotate(-6deg) translateY(0); }
+  50% { transform: rotate(6deg) translateY(-2px); }
+}
+
+.crew-char {
+  display: block;
+  aspect-ratio: 1 / 1;
+  height: auto;
+}
+.crew-char .eye-left,
+.crew-char .eye-right {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: crew-blink 5.6s ease-in-out infinite;
+}
+.crew-char[data-expression="thinking"] .eye-left,
+.crew-char[data-expression="thinking"] .eye-right,
+.crew-char[data-expression="win"] .eye-left,
+.crew-char[data-expression="win"] .eye-right,
+.crew-char[data-expression="happy"] .eye-left,
+.crew-char[data-expression="happy"] .eye-right {
+  animation: none;
+}
+.crew-char .sparkles g {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: crew-spark 1.6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.crew-char .thinking circle {
+  animation: crew-bounce-dot 1.4s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+.crew-char .curious-mark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: crew-tilt 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew-char,
+  .crew-char .eye-left,
+  .crew-char .eye-right,
+  .crew-char .sparkles g,
+  .crew-char .thinking circle,
+  .crew-char .curious-mark {
+    animation: none;
+  }
+}

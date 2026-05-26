@@ -1,0 +1,96 @@
+---
+title: "Vague vs specific: close the doors"
+order: 2
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Vega needs a prompt to summarize shift reports. She has two drafts.
+    Which one is more likely to give you an output you can actually ship?
+  optionA: |
+    ```
+    Summarize this shift report:
+
+    {{input}}
+    ```
+  optionB: |
+    ```
+    You are an assistant that summarizes shift reports for Vega.
+
+    Return ONE sentence in English (max 25 words) with:
+    - what happened
+    - where
+    - whether it needs follow-up
+
+    If information is missing, write "not reported" instead of inventing.
+
+    Report:
+    {{input}}
+    ```
+  correct: B
+  explanation: |
+    Prompt A leaves **four implicit decisions**: format, length, language,
+    and what to do with gaps. The model will fill them however it sees fit.
+    Sometimes it gives you a paragraph in Spanish. Sometimes a JSON
+    object. Sometimes it invents the location. Not because of a bug:
+    because you didn't tell it what you wanted.
+
+    Prompt B closes all four doors explicitly. It's not longer for the
+    sake of being longer. It's longer because each line **prevents a
+    specific failure** A was going to hit on case 5 or 50 in production.
+
+    Vague in, vague out. Specific in, specific out. The most important
+    rule of the lesson.
+hints:
+  - "Think about what happens when the prompt runs 100 times on 100 different reports. Which gives you **comparable** outputs across runs?"
+  - "Prompt A doesn't specify language, format, length, or what to do if data is missing. The model decides for you."
+  - "B closes four doors: format (one sentence), length (25 words), language (English), nulls ('not reported')."
+teaches:
+  - prompt-specificity
+requires:
+  - prompt-anatomy-basics
+---
+
+## Vague in, vague out
+
+If your prompt doesn't specify format, length, or behavior on missing data, the model will fill those gaps however it sees fit. And *"however it sees fit"* rarely matches what you actually need.
+
+### The four doors a vague prompt leaves open
+
+1. **Format.** One sentence? A paragraph? JSON? A list?
+2. **Length.** 20 words? 2 paragraphs? No limit?
+3. **Language.** English? Spanish? The input's language?
+4. **Behavior on gaps.** Invent? Use null? Skip the field?
+
+If your prompt doesn't answer all four, the model decides for you. And the model's decisions are **statistically average**: you'll get a paragraph in English, variable length, with the gaps filled by whatever sounds plausible.
+
+### The fix: read like a skeptic
+
+Before you send your prompt, read it as if you were someone **looking for reasons to do the opposite**. Every decision that ISN'T explicit is a decision the model takes without you.
+
+Compare:
+
+> *"Summarize this report."*
+>
+> What language? What length? What do I do if something's missing?
+
+vs.
+
+> *"Summarize this report in one sentence in English, max 25 words. If info is missing, write 'not reported' instead of inventing."*
+>
+> Four decisions, four explicit answers.
+
+The second prompt isn't longer for the sake of it. It's longer because it **closed the four doors** the model was about to open.
+
+### The catch: don't over-specify
+
+There's a point where more detail stops helping and starts getting in the way. If your prompt has 12 rules, the model will forget some. Practical rule:
+
+- Specify what **affects format or correctness** of the output.
+- Don't specify style, tone, or internal structure unless it matters.
+
+> A good heuristic: imagine handing the prompt to a teammate over Slack who has to return the output in 30 seconds. If you'd need to ask 4 clarifying questions first, your prompt is vague. If they'd just get it, you're fine.
+
+On the right, two prompts. One vague, one specific. Which one gives you a more reliable output?

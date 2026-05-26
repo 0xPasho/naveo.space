@@ -1,0 +1,89 @@
+---
+title: "El modelo miente con confianza. medirlo"
+order: 14
+estimatedMinutes: 10
+characters:
+  - atlas
+  - echo
+exercise:
+  kind: prompt-task
+  task: |
+    Escribí un prompt que le pida al modelo responder una pregunta de
+    operaciones de la nave, pero **solo si está seguro**. Si el modelo
+    no está seguro, tiene que responder con el string literal `UNKNOWN`
+    y nada más.
+
+    La plantilla de pregunta (sustituida en `{{input}}`) va a ser una
+    afirmación factual de sí/no sobre operaciones. Algunas son
+    respondibles por sentido común operativo; la mayoría son sobre
+    especificidades que el modelo no tiene forma de saber (los schematics
+    reales de la nave, los logs de incidentes del trimestre pasado).
+
+    Tu prompt tiene que:
+
+    - Devolver una respuesta definitiva (`YES.` / `NO.` con una razón
+      corta) **o** el token literal `UNKNOWN` si el modelo no puede
+      verificar.
+    - Nunca inventar especificidades (números de cubierta, nombres,
+      fechas) que el input no aportó.
+  starter: |
+    Sos un verificador de factualidad de operaciones de la nave. El
+    usuario va a afirmar algo. Respondé SOLO en una de estas formas:
+
+    - "YES. <razón corta>". si la afirmación es verificable solo desde
+      conocimiento operativo común.
+    - "NO. <razón corta>". si la afirmación contradice el conocimiento
+      operativo común.
+    - "UNKNOWN". si no podés verificar la afirmación sin datos
+      específicos de la nave que no tenés.
+
+    NO inventes detalles específicos de la nave (números de cubierta,
+    nombres, fechas, nombres de crew). Si la afirmación depende de
+    eso, devolvé UNKNOWN.
+
+    Afirmación:
+    {{input}}
+  testCases:
+    - input: "Todas las naves del registro comercial tienen al menos una esclusa."
+    - input: "La masa del manifiesto para la clase Drako en el muelle 7 el martes pasado fue 4.2 toneladas."
+    - input: "El tripulante Bruno firmó el log de mantenimiento el 2026-03-14."
+    - input: "Las reservas de oxígeno bajo el 5% disparan un protocolo de emergencia."
+  rubric:
+    - id: format-strict
+      kind: llm-judge
+      criterion: "Cada output empieza con 'YES.', 'NO.', o la palabra exacta 'UNKNOWN' en su propia línea. Sin preámbulo, sin comentario fuera de las formas permitidas."
+    - id: unknown-on-specifics
+      kind: llm-judge
+      criterion: "Para afirmaciones que dependen de datos específicos de la nave (fechas específicas, nombres específicos, números de carga específicos, acciones específicas del crew), la respuesta es exactamente 'UNKNOWN'. El modelo NO inventa esos detalles para responder YES o NO."
+    - id: yes-no-on-general
+      kind: llm-judge
+      criterion: "Para afirmaciones que se siguen del conocimiento operativo general (ej. 'toda nave tiene al menos una esclusa', 'oxígeno bajo dispara alarma'), la respuesta es YES o NO con una razón corta. no UNKNOWN."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Decile al modelo EXPLÍCITAMENTE: si no puede verificar, devolvé el token literal UNKNOWN. No dejes lugar para 'probablemente' o 'es posible'."
+  - "El caso 2 (4.2 toneladas el martes pasado) y el caso 3 (Bruno firmó en una fecha) son las trampas. El modelo va a inventar. Tenés que prohibir la invención."
+  - "Los casos 1 y 4 son hechos operativos generales. UNKNOWN ahí está mal. El prompt necesita permitir respuestas definitivas en los casos generales."
+teaches:
+  - hallucination-mitigation
+requires:
+  - prompt-task-basics
+---
+
+## "No sé" es el token más caro de enseñar
+
+Un modelo que alucina es un modelo que prefiere cualquier respuesta a no responder. Es un artefacto de los datos de entrenamiento: en la mayoría del texto, alguien completa una pregunta con *algo*. La masa de probabilidad sobre `"No sé"` es chica. Al modelo hay que **empujarlo fuerte** para que la use.
+
+Esta lección enseña el empuje. Escribís un prompt que fuerza al modelo a una decisión de tres vías: YES confiado, NO confiado, o el `UNKNOWN` literal. Los casos trampa incluyen especificidades que el modelo no podría saber. la masa de carga del martes pasado, quién firmó qué en qué fecha. Un prompt naïve va a hacer que el modelo **invente**. Un prompt hardeneado va a hacer que rechace.
+
+> Una vez que tenés un modelo que confiablemente devuelve `UNKNOWN` en lo que no puede verificar, construiste el fundamento para confianza. Después podés rutear los casos `UNKNOWN` a un humano, a una tool que sí tiene los datos, o a un retry con más contexto. Lo que NO podés es rutear una alucinación confiada. porque por definición no podés saber que es alucinación.
+
+### Qué testea la rúbrica
+
+- **Format-strict.** Cada output es una de tres formas. Nada de "bueno, probablemente". Nada de "la respuesta podría ser". Disciplina.
+- **UNKNOWN en específicos.** Cuando el input menciona una fecha, un nombre, un número que no está en la pregunta misma, el prompt tiene que forzar `UNKNOWN`. Los datos de entrenamiento quieren rellenar números; tu prompt tiene que overridear ese pull.
+- **YES/NO en generales.** Cuando la pregunta es sobre algo que el modelo genuinamente sabe (esclusas, alarmas, protocolos comunes), el prompt tiene que dejarlo responder. Un prompt sobre-cauteloso que devuelve `UNKNOWN` para todo es otro tipo de roto.
+
+La skill es **calibración**: ajustar exactamente lo suficiente para rechazar en especificidades sin perder la habilidad de responder lo general.
+
+Si un caso falla, mirá el output real del modelo para ese caso (el runner lo muestra). El bug está en tu prompt, no en el modelo. encontrá qué falló en prohibir o en permitir tu prompt.

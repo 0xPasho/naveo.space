@@ -1,0 +1,47 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
+  <defs>
+    <linearGradient id="abody" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#445064"></stop>
+      <stop offset="1" stop-color="#1a2030"></stop>
+    </linearGradient>
+    <linearGradient id="apauld" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#c2842c"></stop>
+      <stop offset="1" stop-color="#7a4f0f"></stop>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="226" rx="62" ry="6" fill="#000" opacity=".35"></ellipse>
+  
+  <rect x="50" y="128" width="100" height="88" rx="20" fill="url(#abody)" stroke="#0a0e1d" stroke-width="2"></rect>
+  
+  <rect x="68" y="146" width="64" height="44" rx="8" fill="#0e1424" stroke="#0a0e1d" stroke-width="1.2"></rect>
+  
+  <rect x="82" y="156" width="36" height="3" rx="1" fill="#e0b959"></rect>
+  <rect x="82" y="163" width="36" height="3" rx="1" fill="#e0b959"></rect>
+  <rect x="82" y="170" width="36" height="3" rx="1" fill="#e0b959"></rect>
+  <rect x="82" y="177" width="36" height="3" rx="1" fill="#e0b959"></rect>
+  
+  <path d="M30 132 Q30 110 56 116 L60 144 Q40 152 30 144 Z" fill="url(#apauld)" stroke="#0a0e1d" stroke-width="2"></path>
+  <path d="M170 132 Q170 110 144 116 L140 144 Q160 152 170 144 Z" fill="url(#apauld)" stroke="#0a0e1d" stroke-width="2"></path>
+  <circle cx="44" cy="128" r="4" fill="#fff1b8"></circle>
+  <circle cx="156" cy="128" r="4" fill="#fff1b8"></circle>
+  
+  <rect x="32" y="146" width="22" height="56" rx="10" fill="url(#abody)" stroke="#0a0e1d" stroke-width="2"></rect>
+  <rect x="146" y="146" width="22" height="56" rx="10" fill="url(#abody)" stroke="#0a0e1d" stroke-width="2"></rect>
+  
+  <rect x="90" y="116" width="20" height="18" rx="4" fill="#1a2030" stroke="#0a0e1d" stroke-width="2"></rect>
+  
+  <rect x="46" y="36" width="108" height="84" rx="14" fill="url(#abody)" stroke="#0a0e1d" stroke-width="2.5"></rect>
+  
+  <rect x="46" y="50" width="108" height="8" fill="#e0b959"></rect>
+  <text x="100" y="57" text-anchor="middle" font-family="&#39;JetBrains Mono&#39;,monospace" font-size="6.5" font-weight="700" letter-spacing="2" fill="#3a2208">CAPTAIN</text>
+  
+  <rect x="56" y="74" width="88" height="22" rx="6" fill="#0a0e1d"></rect>
+  <circle cx="80" cy="85" r="4.5" fill="#e25555"></circle>
+  <circle cx="120" cy="85" r="4.5" fill="#e25555"></circle>
+  <circle cx="80" cy="85" r="1.6" fill="#fff"></circle>
+  <circle cx="120" cy="85" r="1.6" fill="#fff"></circle>
+  
+  <rect x="76" y="104" width="48" height="10" rx="3" fill="#0a0e1d"></rect>
+  <rect x="80" y="106" width="40" height="2" fill="#445064"></rect>
+</svg>

@@ -1,0 +1,122 @@
+---
+title: "Misión exprés: anatomía del prompt"
+intro: |
+  Un prompt no es un párrafo suelto. Tiene piezas: rol, contexto, tarea, formato. Si las distinguís, las podés mover.
+station: vega
+teaches:
+  - prompt-anatomy-basics
+characters:
+  - vega
+scenes:
+  - kind: prompt-anatomy
+    task: |
+      Vega armó este prompt para un asistente de reporte de turno.
+      Etiquetá cada parte: rol, contexto, tarea y formato esperado.
+    parts:
+      - id: role
+        label: "Rol (quién es el asistente)"
+        text: "Sos analista de turno de la guardia de la nave, con 10 años a bordo."
+      - id: context
+        label: "Contexto (info estable que necesita conocer)"
+        text: "Los incidentes se trackean con ids INC-XXXX y tienen severidad low, med, high o critical."
+      - id: task
+        label: "Tarea (qué hacer en este pedido)"
+        text: "Resumime los eventos del turno del 24 de mayo entre las 14:00 y las 22:00."
+      - id: format
+        label: "Formato (cómo devolver la salida)"
+        text: "Devolvé 3 bullets máximo, cada uno menor a 15 palabras."
+  - kind: slot-fill-dnd
+    task: |
+      Tenés cinco oraciones sueltas de un prompt desarmado. Clasificá
+      cada una en su pieza: rol, contexto, tarea o formato.
+    slots:
+      - id: role
+        label: "Rol"
+      - id: context
+        label: "Contexto"
+      - id: task
+        label: "Tarea"
+      - id: format
+        label: "Formato"
+    pieces:
+      - id: p1
+        label: "Sos coordinador de turno con experiencia en triage."
+        correctSlot: role
+      - id: p2
+        label: "Resumime los incidentes de la última hora."
+        correctSlot: task
+      - id: p3
+        label: "Las severidades válidas son low, med, high, critical."
+        correctSlot: context
+      - id: p4
+        label: "Devolvé JSON con los campos id, severity, summary."
+        correctSlot: format
+      - id: p5
+        label: "Hablás con un ingeniero on-call que ya conoce el sistema."
+        correctSlot: role
+  - kind: step-order-dnd
+    task: |
+      Ordená las piezas del prompt en el orden que conviene leerlas, de
+      arriba hacia abajo. La idea es que el modelo arme contexto antes
+      de recibir la tarea.
+    steps:
+      - id: s1
+        label: "Rol del asistente."
+        detail: "Quién es y con quién habla. Sin esto, el modo es genérico."
+      - id: s2
+        label: "Contexto del dominio."
+        detail: "Datos, formatos e ids estables que se repiten."
+      - id: s3
+        label: "Tarea concreta."
+        detail: "Qué tiene que hacer este pedido en particular."
+      - id: s4
+        label: "Formato de salida."
+        detail: "Cómo querés recibir el resultado para consumirlo después."
+  - kind: prompt-AB
+    question: |
+      Vega te muestra dos versiones de un mismo pedido. ¿Cuál separa
+      mejor las piezas del prompt y le da al modelo más chances de
+      acertar?
+    optionA: |
+      ```
+      Resumime el reporte del turno de hoy en bullets cortos, sos
+      analista experimentada y los incidentes son tipo INC-XXXX con
+      severidad low a critical, máximo 3 bullets.
+      ```
+    optionB: |
+      ```
+      Rol: sos analista de turno con experiencia.
+      Contexto: incidentes ids INC-XXXX, severidad low/med/high/critical.
+      Tarea: resumime el reporte del turno de hoy.
+      Formato: 3 bullets máximo, menos de 15 palabras cada uno.
+      ```
+    correct: B
+    explanation: |
+      El A mete todo en una sola oración. El modelo tiene que parsear
+      qué es rol, qué es contexto y qué es la tarea real. La
+      información está, pero mezclada.
+
+      El B separa con labels visibles. El modelo lee "Rol", "Contexto",
+      "Tarea", "Formato" y arma el modo paso a paso. Si después querés
+      cambiar solo el formato, sabés exactamente qué línea tocar.
+
+      Regla: las piezas del prompt son las mismas. Lo que cambia es
+      cuán visibles las hacés. Más visibles, más fácil iterar.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este prompt minimalista. A veces tres
+      piezas alcanzan: rol, tarea y formato.
+    parts:
+      - id: role
+        label: "Rol"
+        text: "Sos redactora de release notes para un equipo técnico."
+      - id: task
+        label: "Tarea"
+        text: "Convertí esta lista de PRs cerrados en un changelog legible."
+      - id: format
+        label: "Formato"
+        text: "Markdown con un h2 por área (feat, fix, chore) y bullets debajo."
+---
+
+Misión del día: si sabés nombrar las piezas, las podés mover. Rol,
+contexto, tarea, formato. Cuatro cajones, no un único cajón.

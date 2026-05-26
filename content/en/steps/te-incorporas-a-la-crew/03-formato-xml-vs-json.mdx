@@ -1,0 +1,70 @@
+---
+title: "The format Echo understands"
+order: 3
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo is the crew's quartermaster: she verifies the data for every
+    new crewmate and needs information in order. You have two versions
+    of the same prompt for Echo to extract `alias`, `puesto` and
+    `contacto` from a bio. Which one tends to work better with Claude?
+  optionA: |
+    You are Echo, quartermaster of the crew. Return alias, puesto and
+    contacto from the following text in JSON format:
+
+    { "alias": "...", "puesto": "...", "contacto": "..." }
+
+    Text: "Bru, shift technician, bru@thecrew.io"
+  optionB: |
+    <task>
+      Extract alias, puesto and contacto for the new crewmate.
+    </task>
+
+    <output_format>
+      { "alias": "string", "puesto": "string", "contacto": "string" }
+    </output_format>
+
+    <input>
+      Bru, shift technician, bru@thecrew.io
+    </input>
+  correct: B
+  explanation: |
+    Claude is trained on a lot of HTML/XML and leverages tags like
+    `<task>`, `<input>` and `<output_format>` to separate **roles**
+    inside the prompt. That cuts down confusion of the type "does the
+    model think the example is part of the input?" Both prompts ask for
+    the same thing, but B gives Claude (and Echo) an explicit map of
+    what's what.
+
+    It's not magic: with another model, A would work similarly. It's a
+    style that's Claude-friendly.
+hints:
+  - "Look at how each prompt separates its sections."
+  - "What would happen if the crewmate's text contained the word 'JSON' or 'alias'?"
+teaches:
+  - xml-tags-claude
+requires:
+  - prompt-anatomy-basics
+---
+
+## The style <Character name="echo" /> won't reject
+
+Claude works very well with **XML tags** inside a prompt. Not because it understands XML literally. because its training included tons of HTML and it learned to use tags as **section separators**.
+
+Compare these two ways of asking for a shift report summary:
+
+```
+Summarize the report in one sentence: Bruno finished maintenance on module 4 with no incidents.
+```
+
+vs.
+
+```xml
+<task>Summarize the report in one sentence.</task>
+<input>Bruno finished maintenance on module 4 with no incidents.</input>
+```
+
+When the input is short, you don't notice. When the input grows or contains words that look like instructions, the tags prevent Claude from **mixing the content with what you're asking it to do**. For <Character name="echo" />. who processes many similar reports a day. that's the difference between clean data and trash.
+
+> In this exercise you don't write anything. you just choose. Later, when you reach exercises where **you** write the prompt, you'll want this intuition already built.

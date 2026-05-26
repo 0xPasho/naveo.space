@@ -1,0 +1,73 @@
+---
+title: "Descripciones que el LLM entiende. el corazón del Track"
+order: 10
+estimatedMinutes: 10
+exercise:
+  kind: tool-description
+  toolName: file_incident_report
+  context: |
+    {
+      "name": "file_incident_report",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "system_affected": { "type": "string" },
+          "summary": { "type": "string" }
+        },
+        "required": ["severity", "system_affected", "summary"]
+      }
+    }
+  starter: |
+    Registra un incidente.
+  requiredPhrases:
+    - "abre un ticket"
+    - "cuando el usuario reporte"
+    - "no usar"
+hints:
+  - "El nombre 'file_incident_report' ya dice 'registra incidente'. Tu descripción tiene que decir lo que el modelo NO podría inferir solo del nombre."
+  - "Mencioná: (a) qué pasa al invocarlo (abre un ticket persistente. no es solo logueo), (b) cuándo SÍ usarlo (cuando el usuario reporta algo), (c) cuándo NO usarlo (preguntas hipotéticas, consultas)."
+  - "Una descripción larga y específica es MEJOR que una corta y genérica. El modelo lee con cuidado las descripciones de tools."
+teaches:
+  - tool-description-craft
+requires:
+  - tool-description-precision
+---
+
+## Esto es el corazón del Track.
+
+Construir un schema correcto es ingeniería. Escribir la descripción que el LLM realmente entiende es **el arte**. Y es donde casi todo el mundo falla.
+
+Te dejamos el schema del tool `file_incident_report` ya armado a la derecha. Tu trabajo: **solo la descripción**.
+
+### Por qué importa tanto
+
+El modelo no tiene contexto sobre tu sistema. No sabe:
+
+- Si `file_incident_report` **realmente abre un ticket** (que alguien va a tener que cerrar) o si solo loguea.
+- Si debería invocarlo cuando el usuario dice "tengo un problema con X" o esperar a que confirme.
+- Si "registrar" un incidente para hablar de él en abstracto cuenta como usar el tool.
+
+Cada una de esas ambigüedades te va a costar **ruido en producción**: tickets falsos, oncalls levantados sin razón, o lo opuesto. incidentes reales que el modelo "respondió" sin registrar.
+
+### Lo que tu descripción tiene que tener
+
+1. **Efecto persistente.** "Abre un ticket en el sistema de incidentes" es distinto a "registra". Decí qué pasa después.
+2. **Cuándo SÍ.** "Cuando el usuario reporte un problema concreto que requiera seguimiento".
+3. **Cuándo NO.** "No usar para preguntas hipotéticas, consultas sobre incidentes anteriores, o cuando el problema ya está siendo manejado por otro tool."
+4. **Severity es del modelo.** Si querés que use bien los niveles de `severity`, agregá un guía: "Marcar `critical` solo si hay riesgo inmediato de seguridad."
+
+### Cómo se evalúa
+
+El validador busca **tres frases clave** que demuestran que la description tiene lo que necesita:
+
+- **"abre un ticket"**. capturás el efecto persistente.
+- **"cuando el usuario reporte"**. capturás cuándo SÍ usarlo.
+- **"no usar"**. capturás cuándo NO usarlo (límites explícitos).
+
+No tenés que usar esas frases exactas. el validador es laxo con sinónimos cercanos. Pero las tres ideas tienen que estar.
+
+> Una buena descripción de tool se lee así: tres oraciones. Una dice qué hace. Otra cuándo usarlo. Otra cuándo no.

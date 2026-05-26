@@ -1,0 +1,52 @@
+---
+title: "La traza: cómo decide un agente"
+order: 4
+estimatedMinutes: 4
+demo:
+  id: tool-call-trace
+  props:
+    presenter: forge
+    intent: "Mirá un agente decidir, paso por paso"
+    transcript:
+      - role: user
+        content: |
+          Agregá 50 unidades del tornillo M4 al inventario.
+      - role: assistant
+        content: |
+          Antes de modificar, verifico el stock actual.
+      - role: tool_call
+        tool: list_inventory_items
+        args:
+          sku: "TOR-M4"
+      - role: tool_result
+        tool: list_inventory_items
+        result: |
+          [{"sku":"TOR-M4","name":"Tornillo M4","stock":12}]
+      - role: assistant
+        content: |
+          Stock actual: 12 unidades. Agrego las 50 solicitadas.
+      - role: tool_call
+        tool: add_inventory
+        args:
+          sku: "TOR-M4"
+          quantity: 50
+      - role: tool_result
+        tool: add_inventory
+        result: |
+          {"sku":"TOR-M4","stock":62,"ok":true}
+      - role: assistant
+        content: |
+          Listo. Stock final de TOR-M4: 62 unidades.
+    forgeNotes:
+      - "Empezó por **list_inventory_items** porque su description dice 'verificar stock antes de modificar'. Sin esa pista, habría disparado **add** directo y el reporte final habría sido inventado."
+      - "**add_inventory** tomó dos parámetros (`sku` + `quantity`) gracias al schema. El modelo nunca tuvo que adivinar nombres de campos. el JSON se armó solo desde la definición de la tool."
+---
+
+<Character name="Forge" /> te muestra cómo un agente bien armado **decide en qué orden invocar las tools**. La diferencia entre "agente útil" y "agente que rompe cosas" no es el modelo. es la descripción que vos le diste a cada tool.
+
+Avanzá turno a turno y prestá atención a dos cosas:
+
+1. **Por qué el modelo eligió cada tool en ese momento**. no es magia, está leyendo la description.
+2. **Cómo el resultado de la primera tool informa la segunda**. el flujo no fue programado, emergió del contexto.
+
+Al final, la lectura de Forge te dice qué decisión tomó cada turno. Si las descripciones hubieran sido ambiguas, esta traza se vería muy distinta.

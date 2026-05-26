@@ -1,0 +1,38 @@
+---
+title: "MCP firmado"
+order: 26
+estimatedMinutes: 1
+demo:
+  id: lesson-complete
+  props:
+    signedBy: forge
+---
+
+## Track cerrado. Forge firma.
+
+Acabás de hacer la transición más grande del producto: de **ayudante que conversa** a **agente que actúa**. La crew ya no te necesita solo para coordinar. te necesita para **construir las herramientas con las que el resto se coordina**.
+
+**Lo que llevás a bordo de este track:**
+
+- Diferenciar un tool de un prompt: el tool es código real que el modelo decide invocar; el prompt es palabras que el modelo lee.
+- Decidir **cuándo SÍ y cuándo NO** crear un tool. mucha "lógica" la resuelve el LLM solo.
+- Escribir un **JSON Schema** de tool. name, description, parameters tipados, required mínimos, enums, formatos, bounds.
+- Elegir **nombres verbo+sustantivo** que el agente descubre rápido.
+- Distinguir **required de opcional** sin sobre-bloquear ni dejar agujeros.
+- Diseñar el **output del tool** como contrato, igual que el input.
+- Construir **descripciones de tools** que el modelo realmente usa: dicen qué hace, cuándo SÍ, cuándo NO, qué garantiza.
+- **Marcar side-effects** en la description para que el agente trate las destructivas con cuidado.
+- Implementar **handlers que no rompen el agente**. errores estructurados, no excepciones.
+- **Errores ricos** con `code` + `message` + datos para que el agente se autocorrija.
+- **Idempotencia** con `idempotency_key` para que los retries no cobren dos veces.
+- **Logging y request_id** para reconstruir cualquier invocación en producción.
+- Encadenar **múltiples tools** con shapes composables (output de uno encaja en input del siguiente).
+- Calibrar el **tamaño del catálogo**. 5-15 tools, no 30.
+- **Cachear** resultados de tools read-only para bajar costo y latencia.
+- Mantener **estado entre llamadas** cuando el caso lo requiere (carrito, sesión, contexto persistente).
+- Chequear **autorización** en cada handler. el agente no es admin.
+- Debuggear un MCP **que el agente ignora**: leer el spec desde el lado del LLM.
+
+<Character name="forge" /> firma el track. Pasaste de alumno a **autor de tools**. Track 4 (cuando llegue) entra al territorio donde combinás todo: agentes con loops, chains, RAG, evals.
+
+Por ahora, mirá el toolkit que construiste. Eso ya es producto.

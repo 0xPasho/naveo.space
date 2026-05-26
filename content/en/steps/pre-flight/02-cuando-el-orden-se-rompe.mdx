@@ -1,0 +1,91 @@
+---
+title: "When the order breaks"
+order: 2
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Two launch protocols. Both make it to the end without raising any
+    error. But one **leaves someone behind**. Which?
+
+    **Protocol A**
+    1. Close airlock
+    2. Confirm crew on board
+    3. Captain authorizes ignition
+    4. Engage thrusters
+
+    **Protocol B**
+    1. Confirm crew on board
+    2. Close airlock
+    3. Captain authorizes ignition
+    4. Engage thrusters
+  optionA: |
+    **Protocol A is broken.** You seal the airlock before counting the crew.
+    If someone's outside, they stay outside. The protocol "completes" but
+    there's a crewmate on the dock.
+  optionB: |
+    **Protocol B is broken.** You count the crew before sealing the airlock,
+    so anyone could walk in afterwards and throw off the count.
+  correct: A
+  explanation: |
+    In A, swapping steps 1 and 2 changes what step 2 is even doing. "Confirm
+    crew" loses its job if the door is already closed. The count in A
+    passes but it ignores whoever's left outside.
+
+    In B you count heads first and then seal, so the count is the last
+    reading **before** closing. It works the way it was meant to.
+
+    This is the ugliest kind of bug: the system **doesn't warn you**. No
+    red screen, no alarm. You only find out something's wrong when you
+    arrive somewhere and people are missing. That's why debugging isn't
+    looking for "the error". It's reading the chain and asking yourself
+    *"this step, is it still doing what it promised when we wrote it?"*
+hints:
+  - "Both protocols finish without errors. The question is which one still does what each step **promised**."
+  - "What does 'Confirm crew' do after the airlock is closed? Is it still protecting against anything?"
+  - "The only difference between the two protocols is the order of the first two steps."
+teaches:
+  - sequencing-debugging
+requires:
+  - sequencing-basics
+---
+
+## The bug that doesn't warn you
+
+In the last lesson the swaps were obvious. *Engage thrusters before close airlock*, and the atmosphere vents into space. Red alarm, everyone screaming. Easy to catch.
+
+But most real bugs aren't like that. They're **silent**. The protocol runs. The ship launches. Every gauge green. And the damage shows up three shifts later, when it's too late to react.
+
+### Anatomy of a silent swap
+
+Take two steps from the launch in lesson 1:
+
+```
+Confirm crew on board
+Close airlock
+```
+
+In this order, "Confirm crew" counts heads while the airlock is still open. If someone's outside, they walk in now. If nobody's outside, you seal with the correct count.
+
+Flip the two:
+
+```
+Close airlock
+Confirm crew on board
+```
+
+The seal runs first. Then you count. The count says "4" because there are 4 people inside, but the ship was supposed to launch with 5. **Four inside, one on the dock, nobody the wiser.**
+
+The protocol never failed. It just stopped protecting against the problem it was designed for.
+
+### The question you need to learn to ask
+
+When something goes wrong and you can't find "the error", the question isn't *"which line is broken?"*. The question is:
+
+> **"Each step, is it still doing what it promised when we wrote it?"**
+
+That question is the difference between a 2-minute debug and a 2-day debug. You'll use it on every prompt bug you write: the prompt "runs", the model "responds", but the response stopped being the one you needed because some earlier step changed what was reaching it.
+
+On the right, two protocols. Both finish. One leaves someone behind.

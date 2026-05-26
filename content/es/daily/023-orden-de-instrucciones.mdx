@@ -1,0 +1,133 @@
+---
+title: "Misión exprés: orden de las instrucciones"
+intro: |
+  No es lo mismo decir el formato al final que enterrarlo en el medio. El orden de las piezas le ahorra al modelo trabajo de parseo.
+station: vega
+characters:
+  - echo
+  - vega
+scenes:
+  - kind: step-order-dnd
+    task: |
+      Echo arma un prompt nuevo y te pide que ordenes los bloques en la
+      secuencia natural que conviene leer. De arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Rol del asistente."
+        detail: "Quién es y desde qué perspectiva habla."
+      - id: s2
+        label: "Contexto del dominio."
+        detail: "Datos, jerga y restricciones que se mantienen estables."
+      - id: s3
+        label: "Tarea concreta."
+        detail: "Qué tiene que hacer en este pedido en particular."
+      - id: s4
+        label: "Formato de salida."
+        detail: "Cómo querés recibir la respuesta para usarla después."
+      - id: s5
+        label: "Ejemplo opcional."
+        detail: "Una muestra del estilo de salida que esperás, si hace falta."
+  - kind: prompt-AB
+    question: |
+      Echo te muestra dos prompts con la misma información. ¿Cuál
+      respeta el orden natural y le hace más fácil la lectura al modelo?
+    optionA: |
+      ```
+      Devolveme un JSON con campos id, summary y severity. Y, ah, sos
+      analista de turno con experiencia, los incidentes vienen como
+      INC-XXXX. Resumime los del turno de hoy.
+      ```
+    optionB: |
+      ```
+      Sos analista de turno con experiencia.
+      Los incidentes vienen como INC-XXXX, severidad low/med/high/critical.
+      Resumime los del turno de hoy.
+      Devolvé JSON con campos id, summary y severity.
+      ```
+    correct: B
+    explanation: |
+      El A arranca por el formato y mete el rol como aclaración en el
+      medio. El modelo lee "JSON con campos..." sin saber todavía quién
+      es ni de qué van los incidentes. Tiene que rebobinar.
+
+      El B sigue el orden natural: primero quién sos, después qué
+      sabés, después qué hacer, después cómo entregar. Cada bloque le
+      prepara contexto al siguiente.
+
+      Regla: contexto antes de tarea, tarea antes de formato. Si lo
+      invertís, el modelo tiene que armar el rompecabezas él solo.
+  - kind: prompt-anatomy
+    task: |
+      Vega y Echo arman un prompt corto y bien ordenado. Etiquetá cada
+      bloque con la pieza que le corresponde.
+    parts:
+      - id: role
+        label: "Rol (va al principio)"
+        text: "Sos editora de release notes para un equipo técnico."
+      - id: context
+        label: "Contexto (va arriba, antes de la tarea)"
+        text: "El equipo etiqueta los PRs con feat, fix o chore en el título."
+      - id: task
+        label: "Tarea (va en el medio)"
+        text: "Convertí esta lista de PRs cerrados en un changelog legible."
+      - id: format
+        label: "Formato (va al final)"
+        text: "Markdown con un h2 por etiqueta y bullets de una línea debajo."
+  - kind: slot-fill-dnd
+    task: |
+      Echo te pasa cinco piezas de un prompt. Decidí cuáles van al
+      principio y cuáles al final del bloque de instrucciones.
+    slots:
+      - id: start
+        label: "Va al principio"
+      - id: end
+        label: "Va al final"
+    pieces:
+      - id: o1
+        label: "Rol del asistente."
+        correctSlot: start
+      - id: o2
+        label: "Restricciones generales (nunca inventes datos, no respondas en inglés)."
+        correctSlot: start
+      - id: o3
+        label: "El input concreto a procesar (el texto, la lista, el JSON)."
+        correctSlot: end
+      - id: o4
+        label: "El formato esperado de salida."
+        correctSlot: end
+      - id: o5
+        label: "Contexto del dominio (jerga, ids, severidades)."
+        correctSlot: start
+  - kind: prompt-AB
+    question: |
+      Mismo pedido, distinto lugar para el formato. ¿Cuál de los dos
+      prompts produce salidas más estables?
+    optionA: |
+      ```
+      Resumime las ventas. Devolvé un CSV con columnas region, total y
+      ranking, en orden descendente. Las regiones son LATAM, NA y EU.
+      Tomá los datos del último trimestre.
+      ```
+    optionB: |
+      ```
+      Tomá los datos del último trimestre. Las regiones son LATAM, NA y
+      EU. Resumime las ventas.
+      Formato: CSV con columnas region, total y ranking, en orden descendente.
+      ```
+    correct: B
+    explanation: |
+      En A el formato aparece en la segunda oración, antes del contexto
+      sobre las regiones. El modelo lee "CSV con columnas..." sin
+      todavía saber qué regiones existen, y después tiene que volver.
+
+      En B el formato cierra el prompt. Cuando llega a esa línea, el
+      modelo ya sabe los datos, las regiones y la tarea. El formato es
+      la última instrucción y queda fresca al momento de generar.
+
+      Truco: poné el formato lo más cerca del momento de generar la
+      salida. Suele significar ponerlo al final.
+---
+
+Orden importa: rol y contexto arriba, tarea en el medio, formato e
+input al final. El modelo lee de arriba abajo, no tenés que hacerle
+rebobinar.

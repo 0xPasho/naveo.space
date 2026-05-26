@@ -1,0 +1,114 @@
+---
+title: "Las cajas se actualizan"
+order: 9
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    El manifiesto de carga. La nave arranca con la caja `carga` en cero y
+    aplica cinco operaciones en orden:
+
+    ```
+    carga = 0
+    carga = carga + 1000   (subir contenedor base)
+    carga = carga + 200    (subir suministros)
+    carga = carga - 50     (bajar caja vacía)
+    carga = carga + 300    (subir celdas de combustible)
+    carga = carga + 100    (subir equipo de investigación)
+    ```
+
+    Arrastrá el valor correcto al estado de `carga` **después** de cada paso.
+  slots:
+    - id: after_base
+      label: "Después de subir el contenedor base"
+    - id: after_supplies
+      label: "Después de subir suministros"
+    - id: after_offload
+      label: "Después de bajar la caja vacía"
+    - id: after_fuel
+      label: "Después de subir celdas de combustible"
+    - id: after_research
+      label: "Después de subir equipo de investigación"
+  pieces:
+    - id: val_1000
+      label: "1000"
+      correctSlot: after_base
+    - id: val_1200
+      label: "1200"
+      correctSlot: after_supplies
+    - id: val_1150
+      label: "1150"
+      correctSlot: after_offload
+    - id: val_1450
+      label: "1450"
+      correctSlot: after_fuel
+    - id: val_1550
+      label: "1550"
+      correctSlot: after_research
+hints:
+  - "Cada operación arranca con el valor que dejó la operación anterior. No reiniciás desde 0."
+  - "`carga = carga + 200` significa: lee el valor actual de `carga`, sumale 200, guardá el resultado de vuelta en `carga`."
+  - "Si dudás de un paso, sumá o restá desde el valor del paso anterior. La cuenta no se hace contra el original."
+teaches:
+  - variable-assignment
+requires:
+  - variables-basics
+---
+
+## Las cajas se actualizan
+
+En la lección 8 viste que la **etiqueta** se queda y el **valor** adentro puede cambiar. Ahora vamos al **cómo** cambia.
+
+### Asignación: guardar un valor en una caja
+
+El signo `=` no significa *"es igual a"*. Significa **"poné esto adentro de aquella caja"**.
+
+```
+combustible = 100
+```
+
+Se lee: *"la caja `combustible` ahora vale 100"*. Antes podía valer cualquier cosa. Ahora vale 100.
+
+### El truco: la caja se lee antes de escribirla
+
+Mirá esto:
+
+```
+combustible = combustible - 5
+```
+
+Parece extraño. ¿Cómo `combustible` puede ser igual a `combustible - 5`? **No es una ecuación matemática.** Es un proceso en dos pasos:
+
+1. **Lee** el valor actual de `combustible` (digamos 100).
+2. **Escribe** el resultado (100 menos 5 = 95) de vuelta en `combustible`.
+
+Resultado: ahora `combustible` vale 95. La caja se actualizó.
+
+Si repetís la misma línea:
+
+```
+combustible = combustible - 5     # ahora 90
+combustible = combustible - 5     # ahora 85
+combustible = combustible - 5     # ahora 80
+```
+
+Cada línea **arranca con el valor que dejó la línea anterior**. Eso es una secuencia de asignaciones.
+
+### Por qué importa: el orden manda
+
+```
+carga = 1000
+carga = carga + 200       # 1200
+carga = carga - 50        # 1150
+carga = carga + 300       # 1450
+```
+
+Si invertís dos líneas, el resultado cambia. No porque la matemática sea distinta, sino porque cada línea lee lo que la anterior dejó. Es la regla de la lección 1 (el orden importa) aplicada a variables.
+
+### En un prompt
+
+Cuando armás cadenas de prompts (vas a hacerlo en el Track 4), pasa exactamente lo mismo: la salida de un paso es la entrada del siguiente. El "valor de la caja" pasa de mano en mano. Si invertís dos pasos de la cadena, el último recibe un input distinto y la respuesta entera cambia.
+
+A la derecha, el manifiesto de carga: cinco operaciones modifican la variable `carga`. Asigná el valor correcto al estado de la caja después de cada operación.

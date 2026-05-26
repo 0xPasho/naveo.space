@@ -1,0 +1,168 @@
+---
+title: "Capstone: an inventory MCP the agent actually uses"
+order: 25
+estimatedMinutes: 18
+exercise:
+  kind: tool-schema-author
+  toolName: inventory_mcp
+  toolPurpose: |
+    Design a complete 3-tool MCP so an agent can manage the ship's critical
+    parts inventory. The agent will use it for requests like:
+
+    - "how many bay regulators do we have left?"
+    - "mark the bay 3 charger as low-stock"
+    - "add 12 H7-type air filters to the inventory"
+
+    Three minimum tools to cover the case:
+
+    1. `list_inventory_items(category?)`. read. Lists items with their stock.
+       category is optional, to filter (e.g. "regulator", "filter", "charger").
+    2. `add_inventory(item_id, quantity, location)`. write. Adds units to
+       an existing item. Returns the new total.
+    3. `mark_item_low_stock(item_id, reason)`. write. Marks an item as
+       requiring re-supply. reason is free-form text (the reason for the alert).
+
+    Your job: the complete JSON with all 3 definitions. The descriptions
+    must be good enough that an agent picks them correctly without you
+    having to orient the conversation.
+  exampleInvocations:
+    - 'list_inventory_items(category: "regulator") → {items: [{item_id: "reg-bay-001", name: "...", stock: 4, location: "vault-A"}, ...]}'
+    - 'add_inventory(item_id: "filter-H7", quantity: 12, location: "vault-A") → {ok: true, new_stock: 28}'
+    - 'mark_item_low_stock(item_id: "charger-bay-3", reason: "Intermittent failure, replace before next cycle") → {ok: true}'
+  starter: |
+    {
+      "tools": [
+        {
+          "name": "list_inventory_items",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "add_inventory",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "mark_item_low_stock",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        }
+      ]
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Valid JSON"
+    - id: three-tools
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "list_inventory_items[\\s\\S]+add_inventory[\\s\\S]+mark_item_low_stock"
+      criterion: "Defines the three tools in order"
+    - id: list-category-optional
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "list_inventory_items[\\s\\S]{0,800}\"required\"\\s*:\\s*\\[\\s*\\]"
+      criterion: "list_inventory_items: category is defined but NOT in required (optional)"
+    - id: add-three-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "add_inventory[\\s\\S]{0,1000}\"required\"\\s*:\\s*\\[[^\\]]*\"item_id\"[^\\]]*\"quantity\"[^\\]]*\"location\""
+      criterion: "add_inventory: all 3 parameters (item_id, quantity, location) are in required"
+    - id: low-stock-two-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "mark_item_low_stock[\\s\\S]{0,800}\"required\"\\s*:\\s*\\[[^\\]]*\"item_id\"[^\\]]*\"reason\""
+      criterion: "mark_item_low_stock: item_id and reason are in required"
+    - id: descriptions-distinguish-read-write
+      kind: llm-judge
+      criterion: "The descriptions clearly distinguish READ operations (list) from WRITE operations (add, mark). The model, reading the 3 descriptions, knows that only `list` is safe to use for exploratory queries; the other two mutate state."
+    - id: descriptions-have-when-not-to-use
+      kind: llm-judge
+      criterion: "At least ONE of the descriptions explicitly mentions when NOT to use the tool. Example: in `add_inventory`, mentioning it's NOT for creating new items (only adding to existing ones). Or in `mark_item_low_stock`, that it's not for re-supply. only for marking."
+    - id: descriptions-mention-composition
+      kind: llm-judge
+      criterion: "The descriptions mention or suggest the chained usage pattern. Example: the `mark_item_low_stock` description can suggest it's used after `list_inventory_items` to identify low-stock items. NOT mandatory for each tool, but at least one must orient it."
+    - id: parameters-documented
+      kind: llm-judge
+      criterion: "Each parameter has its own `description`. For `item_id`, ideally a format/example. For `quantity`, ideally mentions units. For `reason`, ideally mentions expected length. No parameter is left undocumented."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "For `list_inventory_items`, define `category` but leave `required` empty. That tells the model: 'you can filter if you want, but it's not mandatory'."
+  - "In `add_inventory`, make it clear in the description that it ADDS to existing stock. If the item doesn't exist, it returns an error. That avoids the agent invoking it to create items."
+  - "In `mark_item_low_stock`, mention the typical pattern: 'Use when you detect an item needs re-supply, generally after `list_inventory_items` to confirm current stock.' That teaches the chain."
+teaches:
+  - capstone-track-3
+requires:
+  - tool-schema-author-basics
+  - tool-schema-multi-param
+  - tool-description-craft
+  - mcp-multi-tool-design
+---
+
+## Your first complete MCP
+
+So far every tool has been an isolated case. The capstone is **the whole MCP**: 3 tools covering a domain (critical parts inventory), designed so an agent picks them by itself, without extra instructions from the user.
+
+### The scenario
+
+<Character name="forge" /> has a record of critical replacement parts. She wants an agent to be able to:
+
+- **Query the stock**. "how many regulators are left?"
+- **Restock items**. "add 12 H7 filters to vault-A"
+- **Mark items for re-supply**. "the bay 3 charger is failing, mark it low-stock"
+
+Three tools cover the whole domain. Your job: design the full MCP JSON Schema, with descriptions precise enough that the agent knows which one to use for each request, **without you having to orient the conversation**.
+
+### What has to be right
+
+8 criteria. the first 5 deterministic (structure, correct required), the last 3 LLM-judge over the **quality of the descriptions**:
+
+1. Valid JSON.
+2. The 3 tools defined.
+3. `list_inventory_items.category` is optional (NOT in required).
+4. `add_inventory` has 3 required.
+5. `mark_item_low_stock` has 2 required.
+6. Descriptions distinguish read vs write.
+7. At least one description says when NOT to use the tool.
+8. At least one description mentions the chained usage pattern.
+9. All parameters have a description.
+
+### How everything from the track applies
+
+| Unit | Skill | How it shows up here |
+|---|---|---|
+| 1 · What a tool is | The 3 tools have name + description + parameters |
+| 2 · Schema craft | Clear names, correct required, enums where they apply, documented outputs |
+| 3 · Descriptions the LLM reads | Criteria 6, 7 and 8: read vs write, when NOT to use, composition hint |
+| 4 · Production handlers | Applies to the real handler (not this schema). Think idempotency: `add_inventory` called 2× should add 2×, not 1×. And actionable error messages. |
+| 5 · Composition and catalog | Criterion 8: the `list_inventory_items` → `mark_item_low_stock` pattern has to be suggested |
+| 6 · State, scope, debugging | Think: what scope does each tool need? `list` is read-only, the other two modify state. Does the agent have write authorization? |
+
+If your MCP passes the 9 deterministic and judge criteria, you can trust an agent will use it well without you having to babysit every conversation.
+
+> When you pass, Forge signs your first MCP. You're cleared to design real tools. the ones used in production, not in demos.

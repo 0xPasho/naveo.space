@@ -1,0 +1,156 @@
+---
+title: "Misión exprés: output estructurado sin preamble"
+intro: |
+  El JSON está bien, pero el modelo arrancó con "Claro, acá tenés...". Hora de cortar el preamble desde el prompt.
+station: vega
+teaches:
+  - structured-output
+  - suppress-preamble
+characters:
+  - orbit
+  - vega
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Estás revisando outputs del modelo cuando le pediste un JSON.
+      Clasificá cada output: ¿es parseable de una (bien) o necesita
+      limpieza manual (mal)?
+    slots:
+      - id: good
+        label: "Bien: parseable directo"
+      - id: bad
+        label: "Mal: necesita limpieza"
+    pieces:
+      - id: p1
+        label: '{"name": "Pasho", "role": "engineer"}'
+        correctSlot: good
+      - id: p2
+        label: 'Claro, acá tenés el JSON: {"name": "Pasho", "role": "engineer"}'
+        correctSlot: bad
+      - id: p3
+        label: "```json\n{\"name\": \"Pasho\"}\n```"
+        correctSlot: bad
+      - id: p4
+        label: '{"items": [{"id": 1}, {"id": 2}]}'
+        correctSlot: good
+      - id: p5
+        label: 'Sure! Here is the structured response:\n{"ok": true}'
+        correctSlot: bad
+      - id: p6
+        label: '{"status": "ok", "count": 3}'
+        correctSlot: good
+  - kind: prompt-AB
+    question: |
+      Orbit necesita un JSON con la forma `{title, summary, tags[]}`.
+      Está probando dos formas de pedirlo. ¿Cuál le va a dar un output
+      parseable más seguido?
+    optionA: |
+      ```
+      Respondeme como JSON con titulo, resumen y tags.
+      ```
+    optionB: |
+      ```
+      Respondé SOLO con un objeto JSON que matchee este schema. No
+      escribas texto antes ni despues. No uses code fences. No
+      comentes el output.
+      
+      Schema:
+      {
+        "title": string (max 80 chars),
+        "summary": string (max 200 chars),
+        "tags": string[] (entre 3 y 6 tags, lowercase)
+      }
+      ```
+    correct: B
+    explanation: |
+      El A es ambiguo en cosas que importan: ¿cuáles son los tipos?
+      ¿el modelo puede agregar campos? ¿puede escribir "Acá va el
+      JSON: ..." antes? Cada modelo lo va a interpretar distinto, y
+      el mismo modelo lo va a interpretar distinto entre runs.
+
+      El B hace tres cosas: declara un schema explícito (con tipos y
+      límites), prohíbe el envoltorio típico ("texto antes o después",
+      "code fences"), y dice qué hace cada campo. El modelo tiene
+      menos espacio para improvisar.
+
+      Regla: pedir "como JSON" es una invitación al preamble. Pedir
+      "SOLO un objeto JSON que matchee este schema, sin texto antes
+      ni después" es una orden ejecutable.
+  - kind: step-order-dnd
+    task: |
+      Estás diseñando un endpoint que va a usar el output del modelo
+      como JSON. Ordená los pasos para asegurarte de que el output
+      sea robusto, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Definí el schema antes de escribir el prompt."
+        detail: "Si no sabés qué forma querés, el modelo va a decidir por vos."
+      - id: s2
+        label: "En el prompt, declará explícitamente el schema (campos, tipos, límites)."
+        detail: "Las descripciones por campo previenen errores tontos."
+      - id: s3
+        label: "Prohibí preamble, code fences, y texto extra en una línea explícita."
+        detail: "Sin esta línea, el modelo va a saludar."
+      - id: s4
+        label: "Mostrá un ejemplo de output bien formado dentro del prompt."
+        detail: "Un ejemplo concreto vale mas que tres descripciones."
+      - id: s5
+        label: "Validá el output con un parser real (JSON.parse + schema check) antes de usarlo."
+        detail: "El prompt no garantiza forma, lo garantiza la validacion."
+      - id: s6
+        label: "Si la validación falla, tené un fallback: reintentar una vez con un mensaje de corrección, o devolver error."
+        detail: "Reintento infinito o silencio son las dos peores opciones."
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de una especificación de output estructurado
+      bien armada. Las partes que no pueden faltar: schema, restricciones,
+      ejemplo, y la regla anti-preamble.
+    parts:
+      - id: schema
+        label: "Schema explícito (campos y tipos)"
+        text: "Respondé con un JSON: `{\"title\": string, \"summary\": string, \"tags\": string[]}`."
+      - id: constraints
+        label: "Restricciones por campo (límites concretos)"
+        text: "`title` máximo 80 caracteres. `summary` máximo 200. `tags` entre 3 y 6, en lowercase, sin espacios."
+      - id: example
+        label: "Ejemplo del output bien formado"
+        text: "Ejemplo: `{\"title\": \"Deploy fallido\", \"summary\": \"El job de deploy se cayo en el step 3.\", \"tags\": [\"deploy\", \"ci\", \"incidente\"]}`."
+      - id: noPreamble
+        label: "Regla anti-preamble"
+        text: "Respondé SOLO con el objeto JSON. No texto antes ni después. No code fences. No comentarios."
+  - kind: prompt-AB
+    question: |
+      Vega está peleando con un modelo que arranca cada respuesta con
+      "Claro, acá tenés...". Tiene dos opciones para cortar el
+      preamble. ¿Cuál es la efectiva?
+    optionA: |
+      ```
+      No empieces con "Claro" ni con frases de cortesia.
+      ```
+    optionB: |
+      ```
+      El primer caracter de tu respuesta es `{`. Cualquier texto
+      antes de `{` invalida la respuesta. Empezá directamente con la
+      llave de apertura.
+      ```
+    correct: B
+    explanation: |
+      El A es una instrucción negativa que nombra justo la frase a
+      evitar. Algunos modelos respetan, otros la incluyen igual
+      ("Claro, acá tenés..." es prácticamente un reflejo en modelos
+      con RLHF). Estás peleando con el sesgo en lugar de evitarlo.
+
+      El B define un constraint positivo y verificable: el primer
+      caracter es `{`. Esto se puede chequear con un parser, y le da
+      al modelo una regla concreta que sigue mejor que "no seas
+      cortés". Como bonus, si el output empieza con cualquier otra
+      cosa, el validador rechaza sin ambigüedad.
+
+      Regla: para cortar preamble, reformulá como condición sobre el
+      primer caracter. "Empezá con `{`" es más fuerte que "no
+      saludes".
+---
+
+Misión del día: el output estructurado se gana en el prompt y se asegura
+en el parser. Schema explícito, regla anti-preamble, validación al
+final.

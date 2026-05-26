@@ -1,0 +1,124 @@
+---
+title: "Direccionar el tono turno a turno"
+order: 5
+estimatedMinutes: 9
+exercise:
+  kind: conversation-goal
+  goal: |
+    Orbit te va a redactar un anuncio para toda la crew sobre un nuevo
+    procedimiento de seguridad. La primera versión va a venir formal y
+    burocrática. Tu trabajo: usando follow-ups específicos sobre tono
+    (no sobre contenido), llevarla a un anuncio que suene profesional
+    pero claro, sin jerga ni "estimados tripulantes". Conseguilo en 3
+    o 4 turnos sin pedir reescritura total.
+  personaName: "Orbit"
+  personaSlug: orbit
+  personaSystemPrompt: |
+    Eres Orbit, oficial de comunicaciones de la crew. Tu trabajo es
+    escribir anuncios y comunicados internos.
+
+    REGLA CRÍTICA DE ESTILO: tu PRIMERA respuesta a CUALQUIER pedido de
+    redacción tiene que venir en tono formal y burocrático, lleno de
+    fórmulas tipo "Estimados tripulantes", "se les informa por la
+    presente", "rogamos a quien corresponda", "agradeciendo
+    desde ya". Frases largas, voz pasiva, encabezado pomposo. Es tu
+    default y NO lo cambiás sin pedido específico.
+
+    Si el crewmate te pide ajustes de tono, los aplicás en CAPAS, una
+    por turno, según la especificidad del pedido. Comportamiento:
+
+    1. Si el pedido es VAGO ("hacelo más casual", "más natural", "menos
+       formal") → bajás UN escalón (sacás "estimados" pero dejás otros
+       formulismos). No saltás varios escalones de una.
+
+    2. Si el pedido nombra una característica ESPECÍFICA del tono
+       ("sin 'estimados'", "voz activa", "frases cortas", "sin
+       'rogamos'"), aplicás ese cambio puntual y mantenés el resto
+       del estilo. NO reescribís todo.
+
+    3. Si el pedido combina varias dimensiones específicas en un mismo
+       mensaje ("voz activa + frases cortas + sin formulismos"),
+       aplicás las tres y entregás una versión profesional pero
+       directa.
+
+    4. Si el pedido es contradictorio ("más casual pero más serio"),
+       pedís aclarar UNA dimensión a la vez.
+
+    NUNCA reescribís el anuncio entero por iniciativa propia. SIEMPRE
+    preservás el contenido (qué se anuncia) y SOLO ajustás cómo se
+    dice.
+
+    El anuncio es sobre: "nuevo procedimiento de chequeo de cierre de
+    esclusas en cambio de turno: dos firmas requeridas en lugar de
+    una, a partir del próximo turno." NO cambies este contenido.
+
+    Tono base de Orbit: profesional, eficiente, respetuoso.
+  personaOpener: |
+    Te paso el borrador del anuncio sobre el nuevo procedimiento de esclusas. ¿Listo?
+  maxTurns: 6
+  rubric:
+    - id: tone-not-content
+      kind: llm-judge
+      criterion: "Los follow-ups del alumno fueron sobre TONO o ESTILO (no sobre cambiar el contenido del anuncio: el procedimiento de doble firma en esclusas tiene que seguir siendo el tema). Si el alumno cambió de tema o agregó/quitó información del anuncio, este criterio NO pasa."
+    - id: specific-tone-asks
+      kind: llm-judge
+      criterion: "Al menos UNO de los follow-ups del alumno nombró una característica ESPECÍFICA del tono (por ejemplo: 'sin estimados', 'voz activa', 'frases cortas', 'sacá los formulismos', 'sin rogamos', 'directo'). Pedidos puramente vagos como 'más casual', 'mejor', 'más natural' no satisfacen este criterio por sí solos."
+    - id: gradual-progression
+      kind: llm-judge
+      criterion: "El alumno NO le pidió a Orbit reescribir todo desde cero (sin frases tipo 'reescribilo de nuevo' o 'arrancá de cero'). El progreso fue por ajustes incrementales, manteniendo el contenido del anuncio."
+    - id: final-version-improved
+      kind: llm-judge
+      criterion: "La última versión que entrega Orbit es notablemente más directa que la primera: no empieza con 'estimados', no usa 'rogamos' o 'agradecemos por anticipado', y el contenido (doble firma en cierre de esclusas a partir del próximo turno) está preservado."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Si decís 'hacelo más natural', Orbit baja UN escalón nomás. Para llegar rápido a un anuncio limpio, nombrá qué sacar: 'sin estimados', 'sin rogamos', 'voz activa'."
+  - "No le digas 'reescribilo de cero'. Eso pierde el contenido. Pedile cambios puntuales y dejá el contenido intacto."
+  - "Podés combinar varios ajustes específicos en un solo turno: 'sacá los formulismos, voz activa, frases cortas'. Ahí saltás tres niveles a la vez."
+teaches:
+  - steer-tone-gradually
+requires:
+  - multi-turn-followup
+  - surgical-correction-prompt
+---
+
+## El tono también se direcciona por capas
+
+Cuando le pedís al modelo que cambie **el qué** (contenido) es relativamente fácil: nombrás el dato, lo cambia. Cuando le pedís que cambie **el cómo** (tono, estilo, registro) la cosa se desliza más. "Hacelo más casual" no significa lo mismo para vos que para él.
+
+<Character name="orbit" /> es comunicador. Su default es formal y burocrático. *"Estimados tripulantes, se les informa por la presente..."*. Vos vas a redirigirlo a un tono profesional pero directo. **sin cambiar el contenido del anuncio**.
+
+### La regla del tono específico
+
+| Vago (un escalón a la vez) | Específico (salto directo) |
+|---|---|
+| "más casual" | "sin 'estimados', voz activa" |
+| "más natural" | "frases cortas, sin formulismos" |
+| "mejor" | "sin 'rogamos' ni 'agradecemos desde ya'" |
+
+Los pedidos vagos hacen que el modelo baje **un escalón** del estilo dominante. Los pedidos específicos lo ponen donde vos querés en un solo turno.
+
+### Lo que NO querés hacer
+
+- **"Reescribilo de cero, más copado."** Pierde el contenido en el camino. Si el anuncio original decía "doble firma a partir del próximo turno", la reescritura te puede cambiar la fecha, las firmas, todo.
+- **"Más casual."** Le sacás solo el "estimados" y deja los "rogamos".
+- **"Cambialo todo."** Adios contenido.
+
+### Lo que sí
+
+- **"Sacá 'estimados' y 'rogamos'. Voz activa. Frases cortas. Mismo contenido."**
+
+Cuatro instrucciones puntuales, una de protección al final. Un turno, tres niveles de cambio.
+
+### Cómo se evalúa
+
+4 criterios:
+
+1. Tus follow-ups fueron sobre tono, no sobre contenido (el anuncio sigue siendo sobre la doble firma).
+2. Al menos uno de tus pedidos nombró una característica específica del tono.
+3. No le pediste reescribir todo desde cero.
+4. La versión final es claramente más directa y mantiene el contenido.
+
+Máximo 6 turnos.
+
+> Tip: pensá el tono como un dial con muchos clicks. Un pedido vago = un click. Un pedido específico que nombra 3 cosas = 3 clicks de una. Cuando sabés a dónde querés llegar, pedí los 3 clicks juntos.

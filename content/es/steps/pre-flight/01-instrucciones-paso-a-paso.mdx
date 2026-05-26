@@ -1,0 +1,64 @@
+---
+title: "Paso a paso: el orden importa"
+order: 1
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: step-order-dnd
+  task: |
+    Protocolo pre-despegue. Arrastrá los pasos al orden en que la crew los
+    ejecuta. Si despegás con la esclusa abierta, **muere todo el mundo**.
+    Si encendés motores antes de la autorización, la mano del capitán
+    todavía no apretó el botón. la nave no se mueve.
+  steps:
+    - id: hull
+      label: "1. Integridad del casco"
+      detail: "Confirmar que no hay fisuras antes que cualquier otra cosa."
+    - id: diagnostics
+      label: "2. Diagnóstico pre-vuelo"
+      detail: "Correr el chequeo de sistemas. Detectar fallas en tierra."
+    - id: crew
+      label: "3. Confirmar crew a bordo"
+      detail: "Contar cabezas. Nadie vuela si alguien quedó en el muelle."
+    - id: airlock
+      label: "4. Cerrar esclusa"
+      detail: "Sellar la nave antes de encender nada."
+    - id: authorize
+      label: "5. Capitán autoriza ignición"
+      detail: "Atlas aprieta la llave. Sin llave, sin fuego."
+    - id: thrusters
+      label: "6. Activar propulsores"
+      detail: "Ahora sí, salís."
+hints:
+  - "Pensá qué paso **habilita** al siguiente. Diagnóstico antes del despegue, no después."
+  - "Los peligrosos son *Cerrar esclusa* y *Activar propulsores*. Invertirlos y estás venteando atmósfera al espacio."
+  - "La autoridad viene del capitán. La ignición no dispara sin la autorización arriba."
+teaches:
+  - sequencing-basics
+---
+
+## Un programa es una lista de pasos, en orden
+
+Escuchaste la palabra "código". Sacale el misterio: código es **una lista de pasos que la computadora ejecuta de arriba a abajo**. Lo mismo en la nave. Lo mismo en la crew.
+
+El truco es que **el orden no es decorativo**. Si invertís dos pasos que parecen inocuos, podés perder la nave.
+
+> La crew le llama **protocolo**. Vos podés decirle *receta*, *checklist*, *playbook*. Es la misma idea.
+
+### Dos swaps, dos formas de perder la nave
+
+**Activar propulsores antes de Cerrar esclusa.** Los motores prenden, la esclusa sigue abierta, la atmósfera de la nave se va al vacío en segundos. Todos asfixiados antes de poder reaccionar. Un solo paso fuera de lugar.
+
+**Diagnóstico después del despegue.** Despegás. A 8.000 km/h descubrís que un sensor está roto. En tierra era una pieza de 2 minutos. En vuelo es una emergencia que ya no podés resolver.
+
+Los pasos no son ítems de una lista. Son una **cadena de causas y efectos**: cada uno habilita o protege al siguiente. Cuando armás un prompt vas a tener exactamente la misma propiedad. *"primero contexto, después instrucción, después formato"* no es estética, es la cadena que hace que la respuesta salga bien.
+
+A la derecha tenés los seis pasos de un protocolo de despegue. mezclados. Arrastralos al orden en que la crew los ejecuta.
+
+Cuando aprietes **Comprobar**, <Character name="vega" /> va a:
+
+- Verificar que estén los seis pasos (no podés saltarte ninguno).
+- Verificar que el orden sea correcto.
+
+Esta es la regla que vas a usar el resto de tu carrera: **las mismas palabras, distinto orden, distinto resultado**. Aplica al protocolo de despegue. Aplica a un prompt. Aplica a una tool. Internalizalo acá.

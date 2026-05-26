@@ -1,0 +1,163 @@
+---
+title: "Think before answering: chain of thought"
+order: 14
+estimatedMinutes: 9
+exercise:
+  kind: prompt-task
+  task: |
+    Forge asks for help diagnosing symptoms from the ship's systems.
+    For each symptom, you want the model to **reason step by step** and
+    **then** give the probable cause. not shoot a cause at random.
+
+    Write a prompt that produces two clearly marked sections:
+    - `Analysis:`. step-by-step reasoning (at least 2 steps).
+    - `Probable cause:`. a single line with the most probable cause.
+
+    Where the symptom goes, use `{{input}}`.
+  starter: |
+    <task>
+      Diagnose the following system symptom. Reason step by step
+      before concluding.
+    </task>
+
+    <output_format>
+      Analysis:
+      1. <observation>
+      2. <implication>
+      3. <hypothesis>
+
+      Probable cause: <one line>
+    </output_format>
+
+    <symptom>
+      {{input}}
+    </symptom>
+  testCases:
+    - input: "The auxiliary generator starts up but shuts off after 10 seconds. The red light on the panel blinks 3 times before each shutdown."
+    - input: "The lights in corridor B dim every time someone uses the comms in bay 2."
+    - input: "The water recycler returns liquid with a yellow tint, but only between 02:00 and 04:00."
+  rubric:
+    - id: has-analisis
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "analysis\\s*:"
+        flags: "i"
+      criterion: "Output includes an 'Analysis:' section"
+    - id: has-causa
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "probable\\s+cause\\s*:"
+        flags: "i"
+      criterion: "Output includes a 'Probable cause:' section"
+    - id: enough-length
+      kind: deterministic
+      check: length-between
+      args:
+        min: 120
+      criterion: "Output is at least 120 characters (filters one-line answers without real reasoning)"
+    - id: stepwise-reasoning
+      kind: llm-judge
+      criterion: "The 'Analysis:' section contains real step-by-step reasoning (at least 2 chained observations or implications), not a single statement without development."
+    - id: plausible-cause
+      kind: llm-judge
+      criterion: "The 'Probable cause:' is plausible for the given symptom and consistent with the analysis presented."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "The trick isn't to _ask_ for reasoning, it's to **give the reasoning structure**. The `<output_format>` with `Analysis:` and `Probable cause:` already helps."
+  - "If the model jumps straight to the cause, add explicit numbering: 'Reason in 3 steps: 1. ... 2. ... 3. ...'"
+  - "Ask it to **cite part of the symptom** in its analysis. That anchors the reasoning to the input and reduces hallucination."
+teaches:
+  - chain-of-thought-basics
+requires:
+  - prompt-task-basics
+---
+
+## The model is smarter if you let it think
+
+By default, LLMs **guess fast and may be wrong**. If you ask "cause of this symptom", they tend to fire off the first hypothesis that comes to mind.
+
+**Chain of thought** (CoT) is the technique of asking the model to **show its reasoning step by step before** concluding. It's not magic: it's giving the model the space (literally, tokens) to process.
+
+It works because every token the model generates is a step of compute. If you force it to generate analysis first, it's "warming up" the answer before committing to a conclusion.
+
+### See it side by side
+
+Same symptom, two prompts.
+
+**Without CoT:**
+
+```
+Prompt: "Probable cause of: the auxiliary generator shuts down 10 seconds after starting."
+
+Response: "Probably an issue with the voltage regulator."
+```
+
+The model fired off the first hypothesis that came out. Plausible, but why that one and not another? Impossible to verify.
+
+**With CoT:**
+
+```
+Prompt: "Reason step by step before concluding.
+Analysis:
+1. ...
+2. ...
+3. ...
+
+Probable cause: ..."
+
+Response:
+Analysis:
+1. A shutdown at 10 seconds suggests the system starts but detects something in the first cycles.
+2. Protection that trips at 10s is usually thermal or oil pressure.
+3. If it were the voltage regulator, the symptom would be oscillation, not a clean shutdown.
+
+Probable cause: thermal protection triggering due to oil sensor failure or low oil.
+```
+
+The second analysis **actively ruled out** the regulator hypothesis (the one the model gave without CoT) and landed on a more specific one. It's not magic: those were 3 extra generation steps the first run didn't have.
+
+> When you let the model write "1, 2, 3" before the conclusion, you're explicitly giving it room to reason. The conclusion that comes after uses all that "evidence" as context.
+
+### The task
+
+<Character name="forge" /> maintains the ship's systems. When a strange symptom appears, she doesn't want a hunch. she wants to see **how** the model got to the conclusion, so she can verify it.
+
+Your prompt must produce two marked sections:
+
+```
+Analysis:
+1. ...
+2. ...
+3. ...
+
+Probable cause: ...
+```
+
+The validator checks:
+
+1. The `Analysis:` section exists.
+2. The `Probable cause:` section exists.
+3. The analysis is **actually** step by step (not a single statement).
+4. The cause is plausible for the symptom.
+
+### The key detail
+
+There are two ways to ask for reasoning:
+
+**Weak:** _"Think step by step before answering."_ (sometimes works, sometimes gets ignored)
+
+**Strong:** showing the exact format in `<output_format>`:
+
+```
+Analysis:
+1. ...
+2. ...
+3. ...
+
+Probable cause: ...
+```
+
+The second one always works because the model treats the format as a contract. The structure IS the chain of thought.

@@ -1,0 +1,159 @@
+---
+title: "Quick mission: system vs user"
+intro: |
+  What goes in the system prompt (the stable stuff) and what goes in the user prompt (today's task).
+station: vega
+teaches:
+  - system-vs-user
+  - system-prompt-design
+characters:
+  - forge
+  - vega
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Forge is building an assistant to coordinate shifts. Sort each line:
+      is it stable behavior that goes in the system prompt, or a one-off
+      task that goes in the user prompt?
+    slots:
+      - id: system
+        label: "System prompt"
+      - id: user
+        label: "User prompt"
+    pieces:
+      - id: p1
+        label: "You are the shift coordinator for a nursing duty rotation."
+        correctSlot: system
+      - id: p2
+        label: "Summarize today's shift report in 3 bullets."
+        correctSlot: user
+      - id: p3
+        label: "Always answer in short bullets, max 10 words each."
+        correctSlot: system
+      - id: p4
+        label: "Three new shifts start today at 2:00 PM."
+        correctSlot: user
+      - id: p5
+        label: "Never mention personal data about patients."
+        correctSlot: system
+  - kind: prompt-AB
+    question: |
+      You want the assistant to sign every response with the exact line
+      "Crew on duty." at the end. It must happen in every response, every
+      day. Where do you put it?
+    optionA: |
+      ```
+      [system]
+      You are the shift coordinator. Always close every response with
+      the exact line: "Crew on duty."
+      ```
+    optionB: |
+      ```
+      [user]
+      Summarize today's report. Remember to close with "Crew on duty."
+      ```
+    correct: A
+    explanation: |
+      If the behavior repeats on every interaction, it belongs in the
+      system. That is the mental check: "does this apply to every request
+      I will ever send, or just this one?"
+
+      "Close with 'Crew on duty.'" applies to every one. If you put it in
+      the user message, you have to copy it into every prompt and you will
+      forget eventually. The assistant stops doing it and it looks like a
+      bug, but really the instruction just went missing.
+
+      In the system it stays persistent: the model applies it to the first
+      response, to the fourth, and to the one you send tomorrow without
+      resetting anything. That is why the system is for rules that do not
+      change.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this full prompt for a daily reports assistant.
+      Think of it as "assistant role, global rule, today's task, expected
+      format".
+    parts:
+      - id: role
+        label: "Role (system, defines who they are)"
+        text: "You are a shift analyst for a nursing duty rotation with 10 years of experience."
+      - id: constraint
+        label: "Constraint (system, rule that applies to every response)"
+        text: "Never mention patient names. Use initials if you need to refer to someone."
+      - id: task
+        label: "Task (user, what you need today)"
+        text: "Summarize the events from the May 24 shift between 2:00 PM and 10:00 PM."
+      - id: format
+        label: "Format (can go in system or user, defines the output shape)"
+        text: "Return at most 3 bullets, each one under 15 words."
+  - kind: prompt-AB
+    question: |
+      Forge needs to summarize the specific report from today's 2:00 PM
+      shift. It is a one-off task: today is that report, tomorrow will be
+      another one. Where does the instruction go?
+    optionA: |
+      ```
+      [system]
+      Summarize today's 2:00 PM to 10:00 PM shift report in 3 bullets.
+      ```
+    optionB: |
+      ```
+      [user]
+      Summarize today's 2:00 PM to 10:00 PM shift report in 3 bullets.
+      ```
+    correct: B
+    explanation: |
+      Mirror rule from the previous scene: if the instruction changes
+      tomorrow, it belongs in user. Today's report is not tomorrow's,
+      and the assistant has to be ready for you to ask different things
+      every day without touching the system.
+      
+      If you put today's report in the system, tomorrow you have two bad
+      options: change the system (breaks the session, loses context) or
+      ask again in user (the instruction shows up twice and the model
+      gets confused about which report is the real one).
+      
+      System = stable rules. User = the request of the moment. If you
+      hesitate, ask yourself "will this change tomorrow?". If the answer
+      is yes, it goes in user.
+  - kind: wiring-dnd
+    task: |
+      Connect each type of content to the place where it belongs. Think
+      about what changes and what stays the same across requests.
+    sources:
+      - id: src-role
+        label: "Assistant role"
+        detail: "'You are a shift analyst', 'you are the coordinator'."
+      - id: src-fewshot
+        label: "Fixed few-shot example"
+        detail: "Input -> output template you always reuse."
+      - id: src-input
+        label: "Today's input"
+        detail: "The specific text to process today."
+      - id: src-ruleglobal
+        label: "Global tone rule"
+        detail: "'Always answer in short bullets'."
+      - id: src-question
+        label: "User question this turn"
+        detail: "What you are typing in the chat right now."
+    targets:
+      - id: tgt-system
+        label: "System prompt"
+        detail: "What stays the same across requests."
+      - id: tgt-user
+        label: "User prompt"
+        detail: "What changes on every request."
+    correctConnections:
+      - from: src-role
+        to: tgt-system
+      - from: src-fewshot
+        to: tgt-system
+      - from: src-input
+        to: tgt-user
+      - from: src-ruleglobal
+        to: tgt-system
+      - from: src-question
+        to: tgt-user
+---
+
+Mission of the day: learn to split the stable from the one-off. The system
+is for rules. The user is for the task.

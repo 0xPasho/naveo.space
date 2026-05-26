@@ -1,0 +1,130 @@
+---
+title: "Decomposing a big task"
+order: 15
+estimatedMinutes: 7
+characters:
+  - atlas
+exercise:
+  kind: prompt-task
+  task: |
+    Atlas needs to process maintenance tickets. Each output must have
+    THREE labeled sections, in this order and format:
+
+    ```
+    SUMMARY: <one sentence describing the problem>
+    SEVERITY: <high, medium or low>
+    ACTION: <concrete one-sentence recommendation>
+    ```
+
+    Write a prompt that takes a ticket in `{{input}}` and generates the
+    three fields consistently.
+  starter: |
+    <task>
+      Process the following maintenance ticket.
+      Return THREE labeled sections, in this order:
+
+      1. SUMMARY: one sentence describing the problem.
+      2. SEVERITY: one of [high, medium, low].
+      3. ACTION: concrete one-sentence recommendation.
+    </task>
+
+    <output_format>
+      SUMMARY: ...
+      SEVERITY: high|medium|low
+      ACTION: ...
+    </output_format>
+
+    <ticket>
+      {{input}}
+    </ticket>
+  testCases:
+    - input: "Bay 7 water recycler losing 5L/h since last night. No contamination detected. Equipment still operational but steady decline."
+    - input: "Bridge display flickers when the comms unit is used. Reported by 3 shift officers. No data loss so far."
+    - input: "Auxiliary generator #2 won't start after scheduled maintenance. Current bypass to generator #1 works but no redundancy."
+  rubric:
+    - id: has-summary-line
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "(?m)^SUMMARY:\\s+\\S"
+      criterion: "Contains a line that starts with `SUMMARY: ` followed by content."
+    - id: has-severity-line
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "(?mi)^SEVERITY:\\s+(high|medium|low)\\s*$"
+      criterion: "Contains a `SEVERITY: ` line with one of the three valid values."
+    - id: has-action-line
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "(?m)^ACTION:\\s+\\S"
+      criterion: "Contains a line that starts with `ACTION: ` followed by content."
+    - id: coherent-content
+      kind: llm-judge
+      criterion: "SUMMARY correctly describes the ticket's problem. SEVERITY is reasonable for the problem (not 'low' for a critical leak, not 'high' for a cosmetic flicker). ACTION is concrete and applicable to the problem."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "The labels (SUMMARY:, SEVERITY:, ACTION:) are **visual commitments** that help the model not blend the three tasks into one paragraph."
+  - "Explicitly restrict severity to 'high', 'medium', 'low'. Without that closed list, the model will use 'critical', 'urgent', 'minor', etc."
+  - "If a section comes out weak, add a specific sub-rule: 'ACTION must be a sentence with a verb, not just a noun phrase'."
+teaches:
+  - task-decomposition
+requires:
+  - prompt-task-basics
+  - structured-output
+---
+
+## Big task, big problems
+
+When you ask the model *"summarize, classify, and recommend an action"* in one sentence, it will:
+
+1. Mix all three into a paragraph.
+2. Forget one (usually the last).
+3. Generate them in different order or format each time.
+
+The fix: **break the task into explicit sub-steps inside the prompt**.
+
+### CoT vs decomposition: similar but different
+
+| | CoT (lesson 14) | Decomposition |
+| --- | --- | --- |
+| When | One task that requires deep reasoning | Multiple parallel tasks |
+| Structure | Thought steps → conclusion | N labeled outputs |
+| Example | "Analysis: ... / Cause: ..." | "SUMMARY: ... / SEVERITY: ... / ACTION: ..." |
+
+CoT is **vertical** (think deep about one thing). Decomposition is **horizontal** (do N separate things).
+
+### How to decompose in 3 steps
+
+**1. List the sub-tasks explicitly** in the instruction:
+
+```
+This task has 3 parts:
+1. Summarize the issue (one sentence).
+2. Classify severity (high, medium, low).
+3. Recommend a concrete action.
+```
+
+**2. Show the exact output format** with labels:
+
+```
+SUMMARY: ...
+SEVERITY: high|medium|low
+ACTION: ...
+```
+
+**3. Make each part parseable** from code.
+
+If SUMMARY is always on its own line, you can extract it with a one-line regex. If it's buried in a paragraph, you need another LLM just to parse it. That multiplies cost and error.
+
+### Why it works
+
+Each label is a "commitment" by the model. When it writes `SEVERITY:`, the next-token probabilities collapse onto `high|medium|low`. There's no room to wander.
+
+Without labels, the model generates a paragraph where "severity" might appear at the start, middle, end, or not at all. With labels, it's where it should be, in the format you need.
+
+> The hidden bonus: decomposing also makes **debugging easier**. If only severity is wrong, you know exactly where to look. Without decomposition, "the prompt is broken" is all you've got.
+
+On the right, three maintenance tickets. Write a prompt that generates the three labeled fields consistently.

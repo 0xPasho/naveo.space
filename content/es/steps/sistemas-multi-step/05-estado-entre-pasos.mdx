@@ -1,0 +1,94 @@
+---
+title: "Estado entre pasos: qué pasás, qué tirás"
+order: 5
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Tu cadena de procesamiento de tickets tiene 4 pasos. Entre cada par
+    de pasos hay un **contexto compartido** que carga datos. Si pasás
+    TODO el estado siempre, los prompts se ahogan y el costo explota.
+    Si pasás MUY poco, los pasos downstream alucinan o piden cosas que
+    no tienen.
+
+    <Character name="orbit" /> te marca cuatro slots. Para cada
+    transición de paso, arrastrá la pieza que describe **qué debería
+    estar en el contexto cuando arranca el siguiente paso**.
+  slots:
+    - id: after-classify
+      label: "Después de classify → entra a extract"
+    - id: after-extract
+      label: "Después de extract → entra a recommend"
+    - id: after-recommend
+      label: "Después de recommend → entra a notify"
+    - id: never-pass
+      label: "NUNCA pasar a ningún paso"
+  pieces:
+    - id: text-category
+      label: "Texto original + categoría"
+      correctSlot: after-classify
+    - id: fields-category
+      label: "Categoría + fields extraídos (sin texto crudo si pesa mucho)"
+      correctSlot: after-extract
+    - id: action-context
+      label: "Recomendación + categoría + severidad (lo mínimo para notificar)"
+      correctSlot: after-recommend
+    - id: secrets
+      label: "API keys, tokens de sesión, embeddings crudos del modelo previo"
+      correctSlot: never-pass
+hints:
+  - "El texto original NO siempre tiene que llegar a los pasos finales. Si los fields capturan todo lo relevante, pasalo solo cuando el siguiente paso lo NECESITA."
+  - "El paso de notificación solo necesita lo justo para componer el mensaje. Inundarlo con el texto crudo y todos los fields agrega ruido y costo."
+  - "Secrets y embeddings del modelo NUNCA viajan por el contexto compartido. Acceso por tool si hace falta, no por payload."
+teaches:
+  - chain-state-management
+requires:
+  - chain-design-basics
+---
+
+## El contexto compartido es un asiento, no un baúl
+
+Cuando un paso termina y arranca el siguiente, ¿qué viaja entre ellos? Hay dos pecados opuestos:
+
+1. **Pasar todo siempre.** El contexto crece paso a paso. Texto crudo, intermedios, metadata, debugging logs. Para el paso 6, el prompt tiene 8K tokens de basura y el costo se triplicó.
+2. **Pasar muy poco.** El paso N necesita algo que el paso N-1 ya descartó. Empezás a hacer roundtrips a la base, o peor, el modelo alucina porque no tiene contexto suficiente.
+
+La regla: **cada paso recibe el mínimo que necesita para hacer su trabajo bien**. Ni más, ni menos.
+
+### Qué pasar (típicamente)
+
+- **Output relevante del paso anterior.** Si extract devolvió `fields`, el siguiente paso recibe `fields`. No el texto crudo del que vino, a menos que lo necesite.
+- **Metadata compartida.** Categoría, severidad, trace_id. valores chicos que casi todos los pasos usan.
+- **Referencias, no payloads.** Si necesitás el documento completo, pasá un `document_id`, no el documento. El paso que lo necesita lo trae con tool.
+
+### Qué NO pasar
+
+- **Secrets.** API keys, tokens, credenciales. Nunca por el contexto. Acceso del lado del runtime, no del prompt.
+- **Embeddings o blobs binarios.** Pesan y el modelo no los procesa.
+- **Texto crudo si ya extrajiste lo relevante.** Pasalo solo si el siguiente paso REALMENTE lo lee. Si solo lo lleva "por las dudas", lo estás ahogando con tokens muertos.
+- **Pasos intermedios de debug.** Las trazas viven en el log, no en el contexto del modelo.
+
+### Una analogía
+
+> Pensá el contexto compartido como la mesada de la cocina. Tenés lo que estás usando ahora, no toda la despensa. Si trabajás con TODA la despensa abierta sobre la mesada, no encontrás el cuchillo cuando lo necesitás. El modelo es igual: con demasiado contexto pierde de vista lo que importa.
+
+### La forma correcta de declararlo
+
+En el YAML de la cadena, **declarás explícitamente** qué entra a cada paso. No "todo lo que esté en el contexto", sino "estas keys, de estos pasos":
+
+```yaml
+- id: recommend
+  input:
+    category: from chain.steps.classify.output.category
+    severity: from chain.steps.severity.output.score
+    fields: from chain.steps.extract.output.fields
+  # NO: 'todo el contexto'
+```
+
+Declarativo, auditable, debuggeable. Si un paso recibe algo, está escrito; si no lo recibe, también está escrito.
+
+### Tu ejercicio
+
+A la derecha, cuatro transiciones de tu cadena. Para cada una, arrastrá la pieza que describe el mínimo correcto que debería estar en el contexto. Una de las piezas no se pasa nunca. esa va al slot "nunca".

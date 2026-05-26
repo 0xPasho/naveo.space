@@ -1,0 +1,107 @@
+---
+title: "The tool name is already half the description"
+order: 6
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge has a tool that **creates** a new night shift in the ship's
+    roster. She has two candidate names. Which one makes the agent pick it
+    faster and with less ambiguity?
+  optionA: |
+    {
+      "name": "shift",
+      "description": "Works with a shift in the roster.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "object" }
+        },
+        "required": ["data"]
+      }
+    }
+  optionB: |
+    {
+      "name": "create_night_shift",
+      "description": "Creates a new night shift in the roster.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "shift_date": { "type": "string" },
+          "lead_alias": { "type": "string" }
+        },
+        "required": ["shift_date", "lead_alias"]
+      }
+    }
+  correct: B
+  explanation: |
+    The model picks tools by **association between the user's intent and
+    the name + description**. The name is the first thing it sees. if it
+    doesn't communicate the action, the model is already at a disadvantage.
+
+    "shift" is a noun alone. Create? Read? Modify? Delete? The model has no
+    idea. The description "works with a shift" is just as vague. Result:
+    either it doesn't invoke it, or it invokes it for anything mentioning
+    a shift.
+
+    "create_night_shift" follows the **verb_noun** pattern that almost the
+    whole ecosystem expects: `get_user`, `list_files`, `send_email`,
+    `delete_session`. The verb tells the model what kind of operation it
+    is. The noun tells it what it operates on. In three words you already
+    have an almost complete contract.
+
+    Rules that hold for 90% of names:
+    - **Verb + noun.** `create_shift`, not `shift`.
+    - **Snake_case.** `create_night_shift`, not `createNightShift` or
+      `CreateNightShift`.
+    - **Right verb for the domain.** `get`/`list` for reads, `create`/
+      `add`/`update`/`delete` for writes, `notify`/`send` for external
+      effects. The model learned these verbs from the corpus. use them.
+    - **Specific over general.** `create_night_shift` is more
+      "discoverable" than `create_shift` when the domain has several
+      shift types.
+hints:
+  - "Think about how the model searches tools. it has a user intent and compares it against the names. A standalone noun almost never matches well."
+  - "The name has to stand on its own, without the description. If someone deleted the description, could you still infer what it does?"
+teaches:
+  - tool-naming-discoverability
+requires:
+  - tool-schema-author-basics
+---
+
+## The name is the first filter
+
+Before the model reads your description, it reads the name. If you have 15 tools registered and the user's intent is "add 50 units to stock", the model scans names first. The ones that match by verb and noun rise to the top of the pile. the others get ignored upfront.
+
+That's why a good tool name **is already half the description**. It doesn't save you from writing the description (that's the contract), but it saves you from the model never getting to read it.
+
+### The pattern that works
+
+```
+verb_noun[_detail]
+```
+
+Examples from <Character name="forge" />'s repo:
+
+- `lookup_crewmate` (read)
+- `assign_shift` (write)
+- `notify_crewmate` (external effect)
+- `add_inventory` (write, sum)
+- `mark_item_low_stock` (write, mark)
+- `cart_checkout` (write, state transition)
+
+Consistent pattern. The model doesn't have to guess whether "shift" is a verb or a noun, because it always sees `verb_shift` or `shift_verb`.
+
+### Canonical verbs by intent
+
+| Intent | Recommended verb | Anti-example |
+|---|---|---|
+| Fetch **one** item | `get_` / `lookup_` | `find_` (ambiguous: one or many?) |
+| Fetch **many** | `list_` / `search_` | `query_` (technical, out of domain) |
+| Create new | `create_` / `add_` | `do_` / `new_` |
+| Modify existing | `update_` / `set_` | `change_` (sounds destructive) |
+| Delete | `delete_` / `remove_` | `clear_` (ambiguous: one or all?) |
+| External effect | `send_` / `notify_` / `publish_` | `do_` |
+| Mark state | `mark_` / `flag_` | `set_status_` (verbose) |
+
+> A bad name + a good description beats a good name + a bad description. but a good name + a good description beats both. Take the 30 seconds to pick the right verb.

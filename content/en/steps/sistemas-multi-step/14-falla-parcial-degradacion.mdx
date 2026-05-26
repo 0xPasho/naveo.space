@@ -1,0 +1,110 @@
+---
+title: "Partial failure: degrade, don't die"
+order: 14
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: wiring-dnd
+  task: |
+    Your "Watch Officer Assistant" system (the one you'll build in the
+    capstone) has five subsystems that can fail. For each failure,
+    Orbit already defined four possible response modes. Your job:
+    connect each failure to its **correct degradation mode**.
+
+    The rule: the whole system should NEVER go down because of a
+    failure in ONE subsystem. Each failure has a "better than nothing"
+    strategy.
+  sources:
+    - id: classifier-down
+      label: "The initial classifier is down"
+      detail: "You can't classify the message into one of the 4 routes."
+    - id: rag-empty
+      label: "RAG finds no relevant snippets"
+      detail: "Retrieval came back empty or irrelevant."
+    - id: tool-roster-down
+      label: "The roster API is down"
+      detail: "User asked 'who's on shift' and you can't query."
+    - id: enrichment-slow
+      label: "The enrichment step (non-critical) takes 30s+"
+      detail: "An optional step that adds context is stuck."
+    - id: notification-fails
+      label: "The notify-human step failed"
+      detail: "The user already received the answer; the notification log broke."
+  targets:
+    - id: route-to-default
+      label: "Route to the safe default"
+      detail: "Send the message to the `escalate_to_human` flow and log it."
+    - id: answer-without
+      label: "Reply, making the limitation explicit"
+      detail: "Return the answer you DO have + warn what's missing."
+    - id: skip-and-continue
+      label: "Skip the step and continue"
+      detail: "The step wasn't critical. The system continues without it."
+    - id: log-and-degrade-silently
+      label: "Log and degrade silently"
+      detail: "The user already got value; the failure is housekeeping only."
+  correctConnections:
+    - from: classifier-down
+      to: route-to-default
+    - from: rag-empty
+      to: answer-without
+    - from: tool-roster-down
+      to: answer-without
+    - from: enrichment-slow
+      to: skip-and-continue
+    - from: notification-fails
+      to: log-and-degrade-silently
+hints:
+  - "If the system CAN'T make a central decision (classify), the safe default is to escalate to human. Never continue blindly."
+  - "If external data is missing (RAG, roster, lookup), the system replies with what it DOES have and WARNS the user what was missing. 'I couldn't query the roster' is better than 'I don't know' or making something up."
+  - "Non-critical steps (enrichment, secondary analytics, telemetry) are skipped. Any step that doesn't affect the main response can degrade silently."
+teaches:
+  - graceful-degradation
+requires:
+  - chain-design-basics
+---
+
+## Design for failure, not for the happy path
+
+When everything works, any system looks well-designed. The difference shows when ONE piece falls: does the whole system die, or does it **degrade gracefully** and stay useful?
+
+> <Character name="orbit" />'s rule: *a well-designed system fails with dignity*. The user receives something useful even when an internal piece is broken. Bad design: the user sees a 500 because the secondary analytics was hanging.
+
+### The four degradation modes
+
+#### 1. Route to the safe default
+When the system **can't decide** (classifier down, router lost context), the only sensible exit is to escalate to human. Forcing a decision without info invites silent mis-routing.
+
+#### 2. Reply, making the limitation explicit
+When **a piece of data is missing but you can answer partially**, return what you do have and declare what's missing. "I couldn't query Friday's roster, but here's Thursday's" is infinitely better than "I don't know" or "[inventing a roster that isn't real]".
+
+#### 3. Skip the step and continue
+When the step is **optional or non-critical**, the system skips it and continues. Enrichment, cosmetic recommendations, telemetry that decorates the response. anything that doesn't affect the main output can go without noise.
+
+#### 4. Log and degrade silently
+When the failure is **post-response or housekeeping**, don't tell the user about it. The user already got value; log for internal fix and continue. Secondary notifications, metrics, follow-up that fails. log, alert oncall if applicable, don't break the experience.
+
+### What NOT to do
+
+- **Fail-stop on the first error.** A secondary piece fails and the whole system returns 500. Easiest to implement, worst for the user.
+- **Fail-silent invisible to the user.** The system says "OK, done" but half the work was missing. Worse than failing visibly: the user thinks they have something they don't.
+- **Degrade everything always.** If your system says "I couldn't" too often, you lose credibility. Degradation is the exception, not the routine.
+
+### The mental test
+
+For each subsystem ask yourself: *if this piece fails, what's the "least bad" thing the system can do?*. That answer is your degradation mode. Write it in the design before it happens.
+
+```
+classifier_down  → route to escalate (better: human)
+rag_empty        → answer with disclaimer
+roster_api_down  → answer with disclaimer
+enrichment_slow  → skip (not critical)
+notify_fails     → log + alert (user already has value)
+```
+
+> Users don't know how many internal pieces are having problems in a day. They know **how many times the system was useless**. Those two things can be uncorrelated. it depends on how you design degradation.
+
+### Your exercise
+
+On the right, five possible failures of the Watch Officer Assistant. Connect each failure to its correct degradation mode. When the graph is complete, you've designed the invisible half of the system. the half that decides if your system works in production.

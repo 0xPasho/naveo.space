@@ -1,0 +1,165 @@
+---
+title: "Misión exprés: una description que el modelo lee"
+intro: |
+  La tool existe, el handler funciona. Si el modelo no la elige, el problema casi siempre está en la description.
+station: forge
+teaches:
+  - tool-description-craft
+  - tool-description-precision
+characters:
+  - forge
+  - vega
+scenes:
+  - kind: tool-description
+    toolName: send_alert
+    context: |
+      Schema de la tool `send_alert`:
+
+      {
+        "name": "send_alert",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "severity": { "type": "string", "enum": ["low", "med", "high", "critical"] },
+            "message": { "type": "string" },
+            "channel": { "type": "string", "enum": ["pager", "email", "chat"] }
+          },
+          "required": ["severity", "message", "channel"]
+        }
+      }
+
+      `send_alert` despierta a alguien del turno on-call. No es un log:
+      cada invocacion cuesta tiempo de una persona real. Escribi una
+      description que diga claramente cuando SI invocarla, cuando NO, y
+      que pasa al invocarla.
+
+      El validador busca tres ideas, no frases exactas: que mencione
+      "urgente" o sinonimo, que aclare que la "tripulacion" o el equipo
+      on-call recibe la alerta, y que ate la decision a un "incidente"
+      concreto y no a consultas hipoteticas.
+    starter: |
+      Manda una alerta.
+    requiredPhrases:
+      - "urgente"
+      - "tripulación"
+      - "incidente"
+  - kind: prompt-AB
+    question: |
+      Forge te muestra dos descriptions para la misma tool `send_alert`.
+      ¿Cuál hace que el modelo la elija mejor cuando toca?
+    optionA: |
+      ```
+      Envía una alerta al equipo correspondiente.
+      ```
+    optionB: |
+      ```
+      Despierta a la persona on-call cuando hay un incidente urgente que
+      requiere atencion inmediata de la tripulacion. NO usar para
+      consultas hipoteticas, simulaciones, o eventos historicos. Usar
+      severity "critical" solo si hay riesgo de perdida de datos o
+      sistema caido en produccion.
+      ```
+    correct: B
+    explanation: |
+      La A es vaga en las tres dimensiones que importan. "Envia una
+      alerta" no dice si despierta a alguien o si solo guarda un log.
+      "Al equipo correspondiente" tampoco define cual ni cuando. El
+      modelo no tiene como elegirla con confianza, asi que la usa de
+      menos o de mas.
+
+      La B nombra el efecto concreto ("despierta a la persona on-call"),
+      el disparador correcto ("incidente urgente"), los casos NO
+      ("consultas hipoteticas, simulaciones, historicos"), y guia el uso
+      de severity. El modelo ahora puede decidir bien.
+
+      Regla: la description tiene que decir lo que el nombre de la tool
+      no comunica solo. Si tu description repite el nombre, no esta
+      aportando.
+  - kind: wiring-dnd
+    task: |
+      Conectá cada pedido de la tripulación con la tool que el modelo
+      debería elegir. Pensá en cuál es el efecto real de cada una.
+    sources:
+      - id: src-fire
+        label: "Pedido: hay humo en la sala de motores."
+        detail: "Algo urgente, alguien tiene que reaccionar ya."
+      - id: src-question
+        label: "Pedido: ¿qué severity uso si hay un warning de disco?"
+        detail: "Es una consulta, no un incidente."
+      - id: src-summary
+        label: "Pedido: resumime los 5 alerts de las últimas 24 horas."
+        detail: "Necesita historial, no escribir nada nuevo."
+      - id: src-bug
+        label: "Pedido: el dashboard de monitoreo se cayó."
+        detail: "Sistema productivo afectado, hay que avisar."
+    targets:
+      - id: tgt-alert
+        label: "send_alert (despierta a on-call)"
+        detail: "Para incidentes urgentes."
+      - id: tgt-query
+        label: "query_docs (busca en la documentacion)"
+        detail: "Para preguntas que tienen respuesta escrita."
+      - id: tgt-history
+        label: "list_alerts (lee alerts pasadas)"
+        detail: "Para resumenes y reportes."
+    correctConnections:
+      - from: src-fire
+        to: tgt-alert
+      - from: src-question
+        to: tgt-query
+      - from: src-summary
+        to: tgt-history
+      - from: src-bug
+        to: tgt-alert
+  - kind: slot-fill-dnd
+    task: |
+      Estás revisando la description de una tool nueva. Clasificá cada
+      línea: ¿ayuda al modelo a decidir cuándo elegir la tool, o es
+      ruido que no aporta?
+    slots:
+      - id: signal
+        label: "Útil para selección"
+      - id: noise
+        label: "Ruido"
+    pieces:
+      - id: p1
+        label: "Usar cuando el usuario reporta un incidente que requiere accion humana."
+        correctSlot: signal
+      - id: p2
+        label: "Esta tool fue creada por el equipo de plataforma en marzo."
+        correctSlot: noise
+      - id: p3
+        label: "NO usar para consultas hipoteticas ni para repreguntar lo que ya se respondio."
+        correctSlot: signal
+      - id: p4
+        label: "Internamente usa el endpoint /v2/alerts con autenticacion JWT."
+        correctSlot: noise
+      - id: p5
+        label: "Al invocarla, despierta a la persona on-call via pager."
+        correctSlot: signal
+      - id: p6
+        label: "Es una herramienta importante y deberias usarla con cuidado."
+        correctSlot: noise
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de esta description bien armada. Una buena
+      description cubre las cuatro: propósito, cuándo SÍ, cuándo NO, y
+      qué hacen los args clave.
+    parts:
+      - id: purpose
+        label: "Propósito (qué hace y qué efecto tiene)"
+        text: "Despierta a la persona on-call de la guardia. Cada invocacion suena un pager, no es un log silencioso."
+      - id: yes
+        label: "Cuándo SÍ usarla"
+        text: "Usar cuando un usuario reporta un incidente productivo que afecta la operacion y necesita respuesta humana en minutos."
+      - id: no
+        label: "Cuándo NO usarla"
+        text: "No usar para consultas, simulaciones, alertas historicas, ni cuando el incidente ya esta siendo manejado por otro flujo."
+      - id: args
+        label: "Notas sobre args clave"
+        text: "El campo severity controla el canal: critical va al pager, high al chat de oncall, med y low al email del equipo."
+---
+
+Misión del día: la description es la única forma que tiene el modelo de
+elegir tu tool. Si no le decís qué pasa, cuándo SÍ y cuándo NO, no la
+elige.

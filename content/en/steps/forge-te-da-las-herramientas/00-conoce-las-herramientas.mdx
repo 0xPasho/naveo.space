@@ -1,0 +1,21 @@
+---
+title: "The model needs hands"
+order: 0
+estimatedMinutes: 2
+---
+
+## So far it was words. Now come actions.
+
+In the previous tracks you learned to **make the model understand**: structure prompts, sustain conversations, recover from bad outputs. All that is communication. But there's a huge class of problems where the answer isn't telling you something. it's **doing something**: looking a record up in a database, assigning a shift, sending a notification, querying inventory.
+
+For that, the model needs **tools**.
+
+> A **tool** is a function the model can decide to invoke. You define what it does, what it's called, what inputs it accepts. The model decides when to use it based **exclusively** on what you wrote about it.
+
+<Character name="forge" /> is the crew's engineer. the one who builds the tools. In this track she'll teach you the three skills that separate an MCP the model uses from one it ignores:
+
+1. **Define the schema**. what inputs it accepts and what it guarantees.
+2. **Write the description**. when the model should pick it.
+3. **Implement the handler**. what happens when it's invoked, including the edge cases.
+
+You start in the next step. Forge has things she needs to automate, and you're going to build her the toolkit.

@@ -1,0 +1,381 @@
+/* Dashboard C (crew-forward) — ported from /tmp/design-pkg main-screens/project/styles/kit.css. Namespaced under .crew-dashboard. Source of truth: the design package. */
+
+/* ============== Cards ============== */
+.crew-dashboard .card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-deck), var(--inset-highlight);
+  padding: 20px;
+}
+.crew-dashboard .card.raised { background: var(--card-raised); }
+.crew-dashboard .card.sunk { background: var(--card-sunk); }
+.crew-dashboard .card-h {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.crew-dashboard .card-h .title {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--fg-dim); margin: 0;
+}
+.crew-dashboard .card-h .title .accent { color: var(--brand-cyan); }
+.crew-dashboard .card-h .more {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em;
+  color: var(--fg-dim); cursor: pointer; text-transform: uppercase;
+  background: transparent; border: 0;
+}
+.crew-dashboard .card-h .more:hover { color: var(--brand-cyan); }
+
+/* ============== Buttons ============== */
+.crew-dashboard .btn {
+  font-family: var(--font-sans); font-size: 13px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  padding: 12px 22px; border-radius: 24px; border: 0;
+  cursor: pointer; user-select: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform 100ms var(--ease-out);
+}
+.crew-dashboard .btn-cta {
+  background: var(--xp-gold); color: #2a1a00;
+  box-shadow: 0 4px 0 var(--xp-gold-deep), 0 8px 18px rgb(0 0 0 / .35);
+  transform: translateY(-2px);
+}
+.crew-dashboard .btn-cta:active:not(:disabled) { transform: translateY(0); box-shadow: 0 1px 0 var(--xp-gold-deep), 0 2px 6px rgb(0 0 0 / .3); }
+.crew-dashboard .btn-cta:disabled { background: var(--card-raised); color: var(--fg-faint); box-shadow: 0 4px 0 oklch(0 0 0 / .35); cursor: not-allowed; transform: none;}
+.crew-dashboard .btn-cyan {
+  background: var(--signal-cyan); color: #001621;
+  box-shadow: 0 4px 0 var(--signal-cyan-deep), 0 8px 18px rgb(0 0 0 / .35);
+  transform: translateY(-2px);
+}
+.crew-dashboard .btn-cyan:active { transform: translateY(0); box-shadow: 0 1px 0 var(--signal-cyan-deep), 0 2px 6px rgb(0 0 0 / .3); }
+.crew-dashboard .btn-magenta {
+  background: var(--mission-magenta); color: #2a0010;
+  box-shadow: 0 4px 0 var(--mission-magenta-deep), 0 8px 18px rgb(0 0 0 / .35);
+  transform: translateY(-2px);
+}
+.crew-dashboard .btn-ghost {
+  background: transparent; color: var(--fg-muted);
+  border: 1px solid var(--border-strong);
+}
+.crew-dashboard .btn-ghost:hover { background: oklch(1 0 0 / 5%); color: var(--fg); }
+.crew-dashboard .btn-sm { padding: 8px 14px; font-size: 11px; }
+
+/* ============== Stat tiles ============== */
+.crew-dashboard .stat-row { display: grid; gap: 14px; }
+.crew-dashboard .stat-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: var(--shadow-deck), var(--inset-highlight);
+  position: relative; overflow: hidden;
+}
+.crew-dashboard .stat-tile .lab {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--fg-dim);
+}
+.crew-dashboard .stat-tile .val {
+  font-size: 32px; font-weight: 700; letter-spacing: -.02em;
+  font-feature-settings: "tnum";
+}
+.crew-dashboard .stat-tile .delta {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.crew-dashboard .stat-tile .delta.up { color: var(--crew-green); }
+.crew-dashboard .stat-tile .delta.dn { color: var(--hazard-red); }
+.crew-dashboard .stat-tile.xp .val { color: var(--xp-gold); }
+.crew-dashboard .stat-tile.streak .val { color: var(--forge-orange); }
+.crew-dashboard .stat-tile.crew .val { color: var(--brand-cyan); }
+.crew-dashboard .stat-tile.boss .val { color: var(--mission-magenta); }
+.crew-dashboard .stat-tile .icon {
+  position: absolute; right: 10px; top: 10px;
+  width: 24px; height: 24px; opacity: .9;
+}
+
+/* ============== Crew card grid ============== */
+.crew-dashboard .crew-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.crew-dashboard .crew-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  position: relative;
+  box-shadow: var(--shadow-deck), var(--inset-highlight);
+  overflow: hidden;
+  cursor: pointer;
+}
+.crew-dashboard .crew-card .ribbon {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; background: var(--ribbon, var(--brand-gold));
+}
+.crew-dashboard .crew-card .glow {
+  position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 140px; height: 100px;
+  background: radial-gradient(50% 60% at 50% 100%, var(--ribbon, var(--brand-gold)), transparent 70%);
+  opacity: .25;
+  pointer-events: none;
+}
+.crew-dashboard .crew-card img.mascot { width: 96px; height: auto; position: relative; }
+.crew-dashboard .crew-card .name { font-weight: 700; font-size: 15px; letter-spacing: -.01em; color: var(--ribbon, var(--brand-gold));}
+.crew-dashboard .crew-card .role {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--fg-dim);
+}
+.crew-dashboard .crew-card .level {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card-sunk); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 10px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--fg-muted);
+}
+.crew-dashboard .crew-card .level b { color: var(--ribbon, var(--brand-gold)); }
+.crew-dashboard .crew-card.locked { opacity: .55; }
+.crew-dashboard .crew-card.locked img.mascot { filter: grayscale(0.6) brightness(0.6); }
+
+/* ============== utilities ============== */
+.crew-dashboard .row { display: flex; align-items: center; gap: 12px; }
+.crew-dashboard .col { display: flex; flex-direction: column; gap: 12px;}
+.crew-dashboard .spread { justify-content: space-between; }
+.crew-dashboard .muted { color: var(--fg-muted); }
+.crew-dashboard .dim { color: var(--fg-dim); }
+.crew-dashboard .eyebrow {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--brand-cyan); font-weight: 500;
+}
+.crew-dashboard .eyebrow.gold { color: var(--brand-gold);}
+.crew-dashboard .eyebrow.magenta { color: var(--mission-magenta);}
+.crew-dashboard .section-title {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--fg-dim); margin: 0 0 12px;
+}
+.crew-dashboard .gap-2 { gap: 8px;} .crew-dashboard .gap-3 { gap: 12px;} .crew-dashboard .gap-4 { gap: 16px;}
+
+/* ============================================================
+   Dashboard A/B extras — continue-hero, quest, streak-grid, ring,
+   path-vert, mascot-card. Ported from /tmp/design-pkg main-screens/project/styles/kit.css.
+   Same namespace as the rules above (.crew-dashboard).
+   ============================================================ */
+
+/* ============== Continue hero ============== */
+.crew-dashboard .continue-hero {
+  position: relative;
+  border-radius: 28px;
+  padding: 28px 28px 28px;
+  background:
+    radial-gradient(70% 100% at 100% 0%, oklch(0.78 0.10 200 / .25), transparent 60%),
+    linear-gradient(135deg, oklch(0.22 0.05 240), oklch(0.16 0.04 240));
+  border: 1px solid oklch(.78 .10 200 / 30%);
+  box-shadow: var(--shadow-lift), var(--inset-highlight);
+  overflow: hidden;
+  display: grid; grid-template-columns: 1fr 220px; gap: 24px; align-items: center;
+}
+.crew-dashboard .continue-hero .eyebrow { color: var(--brand-cyan); }
+.crew-dashboard .continue-hero h1 {
+  font-size: 32px; line-height: 1.05; letter-spacing: -.03em;
+  margin: 8px 0 6px; text-wrap: pretty;
+}
+.crew-dashboard .continue-hero h1 em { color: var(--brand-gold); font-style: normal; }
+.crew-dashboard .continue-hero p { color: var(--fg-muted); font-size: 14px; margin: 0 0 18px; line-height: 1.55; max-width: 52ch; }
+.crew-dashboard .continue-hero .progress-row {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+}
+.crew-dashboard .continue-hero .progress {
+  height: 10px; flex: 1; max-width: 320px;
+  background: oklch(0 0 0 / 35%); border-radius: 999px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.crew-dashboard .continue-hero .progress b {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--xp-gold), oklch(.86 .18 90));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .35);
+}
+.crew-dashboard .continue-hero .progress-num {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  color: var(--fg-dim); text-transform: uppercase;
+}
+.crew-dashboard .continue-hero .mascot-frame {
+  position: relative;
+  align-self: stretch;
+  display: grid; place-items: end center;
+}
+.crew-dashboard .continue-hero .mascot-frame img {
+  width: 200px; height: auto;
+  filter: drop-shadow(0 14px 24px rgb(0 0 0 / .55));
+}
+.crew-dashboard .continue-hero .mascot-frame::before {
+  content: "";
+  position: absolute; inset: auto 0 -20px 0;
+  height: 30px;
+  background: radial-gradient(50% 100% at 50% 0%, oklch(0 0 0 / .55), transparent 70%);
+  filter: blur(6px);
+}
+
+/* ============== Daily quests ============== */
+.crew-dashboard .quest-list { display: flex; flex-direction: column; gap: 10px; }
+.crew-dashboard .quest {
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 14px; align-items: center;
+  padding: 12px 14px;
+  background: var(--card-raised);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.crew-dashboard .quest .icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: oklch(0 0 0 / 35%); border: 1px solid var(--border);
+  display: grid; place-items: center;
+}
+.crew-dashboard .quest .icon img { width: 22px; height: 22px;}
+.crew-dashboard .quest .label { font-size: 14px; font-weight: 600; }
+.crew-dashboard .quest .sub {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--fg-dim); text-transform: uppercase;
+}
+.crew-dashboard .quest .reward {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--xp-gold); font-weight: 700; font-feature-settings: "tnum";
+  font-size: 13px;
+}
+.crew-dashboard .quest .reward img { width: 18px; height: 18px;}
+.crew-dashboard .quest .bar {
+  grid-column: 2 / -1;
+  height: 8px; background: var(--card-sunk); border-radius: 999px;
+  border: 1px solid var(--border); overflow: hidden;
+  margin-top: 6px;
+}
+.crew-dashboard .quest .bar b {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--xp-gold), oklch(.86 .18 90));
+}
+.crew-dashboard .quest.done {
+  background: var(--success-soft);
+  border-color: oklch(.72 .16 145 / 50%);
+}
+.crew-dashboard .quest.done .label { color: var(--crew-green); text-decoration: line-through; opacity: .85;}
+
+/* ============== Streak / weekly chart ============== */
+.crew-dashboard .streak-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
+}
+.crew-dashboard .streak-day {
+  aspect-ratio: 1;
+  background: var(--card-sunk);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 11px; color: var(--fg-dim);
+  position: relative;
+}
+.crew-dashboard .streak-day.done {
+  background: oklch(.74 .17 50 / .18);
+  border-color: var(--forge-orange);
+  color: var(--forge-orange);
+}
+.crew-dashboard .streak-day.done::after {
+  content: ""; position: absolute; inset: 6px;
+  background: url("/icons/streak-flame.svg") center/contain no-repeat;
+  filter: drop-shadow(0 0 6px oklch(.74 .17 50 / .6));
+}
+.crew-dashboard .streak-day.done .lab { display: none; }
+.crew-dashboard .streak-day.today { box-shadow: 0 0 0 2px var(--brand-cyan); }
+
+/* ============== Mastery ring ============== */
+.crew-dashboard .ring-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.crew-dashboard .ring {
+  width: 96px; height: 96px;
+  display: grid; place-items: center;
+  position: relative;
+}
+.crew-dashboard .ring svg { width: 100%; height: 100%; transform: rotate(-90deg);}
+.crew-dashboard .ring .core {
+  position: absolute; inset: 14px; border-radius: 50%;
+  background: var(--card-sunk); border: 1px solid var(--border);
+  display: grid; place-items: center;
+  font-weight: 700; font-size: 16px;
+  font-feature-settings: "tnum";
+}
+.crew-dashboard .ring .lab {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--fg-dim);
+  position: absolute; inset: auto 0 -20px 0;
+  text-align: center;
+}
+
+/* ============== Path map ============== */
+.crew-dashboard .path-vert {
+  display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 12px 0 24px;
+}
+.crew-dashboard .path-node {
+  position: relative; width: 88px; height: 88px;
+  display: grid; place-items: center; cursor: pointer;
+}
+.crew-dashboard .path-node .ring2 {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: var(--card); border: 2px solid var(--border-strong);
+  box-shadow: 0 6px 0 oklch(0 0 0 / .45), 0 10px 20px rgb(0 0 0 / .35), var(--inset-highlight);
+  transition: transform 100ms var(--ease-out);
+}
+.crew-dashboard .path-node:hover .ring2 { transform: translateY(-2px); }
+.crew-dashboard .path-node img { position: relative; width: 38px; height: 38px; }
+.crew-dashboard .path-node.done .ring2 { background: var(--crew-green); border-color: var(--crew-green-deep); box-shadow: 0 6px 0 var(--crew-green-deep), 0 10px 20px rgb(0 0 0 / .35), var(--inset-highlight); }
+.crew-dashboard .path-node.current .ring2 {
+  background: var(--signal-cyan); border-color: var(--signal-cyan-deep);
+  box-shadow: 0 6px 0 var(--signal-cyan-deep), 0 0 0 4px oklch(.74 .13 205 / .25), 0 0 24px oklch(.74 .13 205 / .55), var(--inset-highlight);
+  animation: crew-pulse-cyan 2.4s var(--ease-out) infinite;
+}
+.crew-dashboard .path-node.boss .ring2 { background: var(--mission-magenta); border-color: var(--mission-magenta-deep); box-shadow: 0 6px 0 var(--mission-magenta-deep), 0 10px 20px rgb(0 0 0 / .35), var(--inset-highlight); }
+.crew-dashboard .path-node.locked .ring2 { background: var(--card-sunk); }
+.crew-dashboard .path-node.locked img { opacity: .55; }
+.crew-dashboard .path-node .label {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--fg-dim); white-space: nowrap; margin-top: 6px;
+}
+.crew-dashboard .path-node .stars {
+  position: absolute; top: -8px; right: -8px;
+  background: var(--card-raised); border: 1px solid var(--brand-gold); border-radius: 999px;
+  padding: 2px 6px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; color: var(--brand-gold);
+}
+.crew-dashboard .path-conn { width: 2px; height: 18px; background: repeating-linear-gradient(180deg, var(--border-strong) 0 4px, transparent 4px 8px); }
+@keyframes crew-pulse-cyan {
+  0%, 100% { box-shadow: 0 6px 0 var(--signal-cyan-deep), 0 0 0 4px oklch(.74 .13 205 / .25), 0 0 24px oklch(.74 .13 205 / .55), var(--inset-highlight); }
+  50%      { box-shadow: 0 6px 0 var(--signal-cyan-deep), 0 0 0 10px oklch(.74 .13 205 / .12), 0 0 36px oklch(.74 .13 205 / .75), var(--inset-highlight); }
+}
+
+/* ============== Mascot card ============== */
+.crew-dashboard .mascot-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+  box-shadow: var(--shadow-deck), var(--inset-highlight);
+}
+.crew-dashboard .mascot-card .top { display: flex; align-items: center; gap: 12px; }
+.crew-dashboard .mascot-card .top img { width: 56px; height: 68px; object-fit: contain; }
+.crew-dashboard .mascot-card .name { font-weight: 700; font-size: 15px; letter-spacing: -.01em; }
+.crew-dashboard .mascot-card .role { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-dim); }
+.crew-dashboard .mascot-card .bubble {
+  background: var(--card-raised);
+  border: 1px solid var(--ribbon, var(--brand-gold));
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13.5px; line-height: 1.5;
+  position: relative;
+}
+.crew-dashboard .mascot-card .bubble::before {
+  content: "";
+  position: absolute; top: -7px; left: 18px;
+  width: 12px; height: 12px;
+  background: var(--card-raised);
+  border-left: 1px solid var(--ribbon, var(--brand-gold));
+  border-top: 1px solid var(--ribbon, var(--brand-gold));
+  transform: rotate(45deg);
+}
+.crew-dashboard .mascot-card .bubble em { color: var(--ribbon, var(--brand-gold)); font-style: normal; font-weight: 600; }

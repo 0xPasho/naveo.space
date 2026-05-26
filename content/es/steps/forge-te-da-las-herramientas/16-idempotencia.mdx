@@ -1,0 +1,125 @@
+---
+title: "Idempotencia: llamar dos veces no es lo mismo que llamar dos veces"
+order: 16
+estimatedMinutes: 10
+exercise:
+  kind: tool-handler-implement
+  toolName: register_payment
+  toolSchema: |
+    {
+      "name": "register_payment",
+      "description": "Registra el pago de un crewmate por un servicio puntual. Soporta una `idempotency_key` opcional. Si se invoca dos veces con la misma key, NO crea un segundo pago: devuelve el resultado original.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "crewmate_alias": { "type": "string" },
+          "amount": { "type": "number", "minimum": 0 },
+          "service_code": { "type": "string" },
+          "idempotency_key": { "type": "string", "description": "Opcional. Si se pasa la misma key dos veces, la segunda devuelve el mismo resultado sin crear otro pago." }
+        },
+        "required": ["crewmate_alias", "amount", "service_code"]
+      }
+    }
+  starter: |
+    // Handler para register_payment.
+    // Disponible:
+    //   db.payments.findByIdempotencyKey(key) → {payment_id, amount, created_at} | null
+    //   db.payments.create({crewmate_alias, amount, service_code, idempotency_key}) → {payment_id, created_at}
+    //
+    // El agente puede reintentar esta tool si la red se cae a mitad. Vos
+    // tenés que asegurar que no se cobre dos veces al mismo crewmate por
+    // el mismo servicio aunque el handler se ejecute dos veces.
+
+    async function handle({ crewmate_alias, amount, service_code, idempotency_key }) {
+      // TODO
+      const payment = await db.payments.create({ crewmate_alias, amount, service_code, idempotency_key });
+      return { ok: true, payment_id: payment.payment_id, replayed: false };
+    }
+  language: javascript
+  scenarios:
+    - description: "Primer call: crewmate='Em', amount=50, service='medkit', idempotency_key='req-001'. No existe pago previo con esa key."
+      expected: "ok: true, payment_id: <nuevo>, replayed: false. Pago creado en DB."
+    - description: "Reintento exacto: misma llamada con idempotency_key='req-001'. Ya existe el pago anterior."
+      expected: "ok: true, payment_id: <mismo que el anterior>, replayed: true. NO se crea un segundo pago."
+    - description: "Call distinto con key distinta: crewmate='Em', amount=50, service='medkit', key='req-002'."
+      expected: "ok: true, payment_id: <nuevo, distinto>, replayed: false. Se crea un segundo pago."
+    - description: "Call sin idempotency_key: crewmate='Em', amount=50, service='medkit'."
+      expected: "ok: true, payment_id: <nuevo>, replayed: false. Sin key, no hay protección contra duplicados (responsabilidad del cliente)."
+  rubric:
+    - id: checks-idempotency-first
+      kind: llm-judge
+      criterion: "Si se pasó `idempotency_key`, el handler PRIMERO consulta db.payments.findByIdempotencyKey(key). Si encuentra un pago previo, retorna ESE mismo payment_id sin crear uno nuevo."
+    - id: returns-replayed-flag
+      kind: llm-judge
+      criterion: "El resultado incluye un flag (replayed: true/false o equivalente) que le dice al agente si la operación creó algo nuevo o devolvió un resultado previo. Sin ese flag el agente no puede saber si su retry tuvo efecto."
+    - id: stores-key-when-creating
+      kind: llm-judge
+      criterion: "Al crear un nuevo pago, pasa la `idempotency_key` a db.payments.create para que un futuro retry la pueda encontrar. Sin esto, la protección dura solo durante la ejecución actual y no protege un retry posterior."
+    - id: works-without-key
+      kind: llm-judge
+      criterion: "Si NO se pasa `idempotency_key`, el handler igual funciona y crea el pago. No requiere la key como obligatoria. Pero el cliente sin key pierde la protección de idempotencia (eso está OK; es decisión del cliente)."
+    - id: no-double-charge
+      kind: llm-judge
+      criterion: "Si el agente reintenta la MISMA call (misma key) dos veces seguidas, el sistema NO termina con dos pagos en DB. Esto es la garantía central."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "El patrón estándar es: si hay idempotency_key, buscá pago previo con esa key → si existe, retornalo con replayed:true → si no existe, creá uno nuevo con esa key + retornalo con replayed:false."
+  - "El flag `replayed` no es cosmético: en un sistema real, el agente puede tener que reportar al usuario 'el pago ya estaba registrado' vs 'pago nuevo procesado'. Diferencias relevantes para el usuario."
+  - "Sin idempotency_key, el handler sigue funcionando pero sin protección. Eso es OK: el contrato es 'pasame una key si querés protección'. Está documentado en el schema."
+teaches:
+  - tool-idempotency
+requires:
+  - mcp-error-handling
+---
+
+## Reintentar es un hecho. Cobrar dos veces no.
+
+En un agente, **las tools se reintentan**. Mucho. Las razones:
+
+- Timeouts de red (la primera llamada se perdió en el aire).
+- El agente cambia de opinión en medio de un turno y vuelve a invocar.
+- Un retry handler genérico que vos ni armaste y igual está corriendo.
+- El modelo, viendo un error ambiguo, vuelve a probar.
+
+Si la tool tiene side effects (crea un registro, cobra plata, manda un mail), reintentar sin protección significa: **dos registros, doble cobro, dos mails**. Para el usuario, eso es un bug en producción que cuesta confianza y dinero.
+
+La solución es **idempotencia**: diseñar la tool de modo que llamarla N veces con los mismos parámetros equivale a llamarla 1 vez.
+
+### Las tres formas de hacer una tool idempotente
+
+1. **Naturalmente idempotente.** Algunas operaciones ya lo son. `set_status("active")` llamada 5 veces deja el mismo estado. No hace falta hacer nada extra.
+
+2. **Por `idempotency_key`.** El cliente (o el agente) genera una key única por intent, y la pasa. El servidor recuerda esa key y el resultado. Si la key se repite, devuelve el resultado anterior sin re-ejecutar. **Este es el patrón canónico para crear cosas (pagos, órdenes, registros).**
+
+3. **Por chequeo de estado.** Antes de actuar, el handler chequea si el efecto ya ocurrió. `assign_shift` puede chequear si el crewmate ya está asignado a ese turno y, si sí, devolver `{ ok: true, already_assigned: true }`.
+
+### El contrato de `idempotency_key`
+
+Cuando soportás idempotency_key:
+
+- **Documentalo en la description del tool.** El agente lo aprende y empieza a generar keys con `req-{uuid}` o similar.
+- **Marcalo opcional** (no required). Algunos clientes no la pasan; eso es válido pero implica "sin protección".
+- **Devolvé un flag `replayed`** o equivalente. El agente necesita saber si la operación creó algo nuevo o devolvió un resultado existente.
+- **Guardá la asociación key → resultado** persistentemente. Si solo lo guardás en memoria, un retry después de un restart pierde la protección.
+
+### Patrón en código
+
+```js
+async function handle({ ..., idempotency_key }) {
+  if (idempotency_key) {
+    const prev = await db.payments.findByIdempotencyKey(idempotency_key);
+    if (prev) {
+      return { ok: true, payment_id: prev.payment_id, replayed: true };
+    }
+  }
+  const payment = await db.payments.create({ ..., idempotency_key });
+  return { ok: true, payment_id: payment.payment_id, replayed: false };
+}
+```
+
+### Tu tarea
+
+A la derecha tenés `register_payment`. El starter cobra cada vez que se llama. Convertilo en idempotente.
+
+> En agentes que tocan dinero, estado externo, o humanos, **la idempotencia no es opcional**. Es la diferencia entre un sistema que se puede operar y un sistema que da soporte cada semana porque "se duplicó".

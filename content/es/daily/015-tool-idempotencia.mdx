@@ -1,0 +1,150 @@
+---
+title: "Misión exprés: idempotencia en tools"
+intro: |
+  Si una tool se reintenta, ¿cobra dos veces? El modelo no sabe. Vos sí, y tenés que decirle.
+station: forge
+teaches:
+  - tool-idempotency
+  - tool-side-effect-marking
+characters:
+  - atlas
+  - forge
+scenes:
+  - kind: prompt-AB
+    question: |
+      Atlas te muestra dos descriptions para una tool `charge_card`. Hay
+      un retry automático arriba en el cliente. ¿Cuál description hace
+      que el modelo no la dispare dos veces sin querer?
+    optionA: |
+      ```
+      Cobra una tarjeta. Crea un nuevo cargo cada vez que se invoca.
+      ```
+    optionB: |
+      ```
+      Cobra una tarjeta. NO es idempotente: cada invocacion crea un
+      cargo nuevo. Si necesitas reintento seguro, pasa
+      `idempotency_key` (string unico). Con la misma key, devuelve el
+      cargo previo en vez de crear uno nuevo.
+      ```
+    correct: B
+    explanation: |
+      La A es la trampa clasica. "Crea un nuevo cargo cada vez" suena
+      explicativo, pero le esta diciendo al modelo (y al cliente que
+      orquesta reintentos) que esta tool no se puede reintentar nunca.
+      El primer timeout de red y el usuario paga dos veces.
+
+      La B nombra el riesgo ("NO es idempotente") y ofrece el escape:
+      una key que vos generas y mandas. Con la misma key, la tool
+      devuelve el cargo existente. El modelo aprende a usar la key
+      cuando hay chance de retry, y los reintentos dejan de ser fatales.
+
+      Regla: side effects irreversibles (cobrar, mandar email, borrar)
+      necesitan o ser idempotentes por diseño, o aceptar una
+      idempotency_key. Si no, cualquier red flaky te arruina el dia.
+  - kind: slot-fill-dnd
+    task: |
+      Clasificá cada operación: ¿es idempotente (mismo input dos veces
+      es seguro) o no (mismo input dos veces causa daño)?
+    slots:
+      - id: idempotent
+        label: "Idempotente (safe-to-retry)"
+      - id: not-idempotent
+        label: "NO idempotente (riesgo)"
+    pieces:
+      - id: p1
+        label: "GET /user/42 (leer el perfil del usuario 42)."
+        correctSlot: idempotent
+      - id: p2
+        label: "POST /payments (crear un cargo nuevo de $100)."
+        correctSlot: not-idempotent
+      - id: p3
+        label: "PUT /user/42 con body {name: 'Pasho'} (sobrescribir el nombre)."
+        correctSlot: idempotent
+      - id: p4
+        label: "send_email(to, subject, body) (mandar un email)."
+        correctSlot: not-idempotent
+      - id: p5
+        label: "set_status(record_id, 'closed') (marcar un registro como cerrado)."
+        correctSlot: idempotent
+      - id: p6
+        label: "append_log(message) (sumar una linea al log)."
+        correctSlot: not-idempotent
+  - kind: wiring-dnd
+    task: |
+      Conectá cada operación con el tier de idempotencia que le toca.
+      Pensá en qué pasa si se invoca dos veces con el mismo input.
+    sources:
+      - id: src-get
+        label: "Leer datos (GET /resource/id)."
+        detail: "No modifica nada."
+      - id: src-overwrite
+        label: "Reemplazar el estado completo (PUT con body fijo)."
+        detail: "Mismo input deja el mismo resultado."
+      - id: src-create
+        label: "Crear un recurso nuevo (POST /orders)."
+        detail: "Cada invocacion suma una fila."
+      - id: src-key
+        label: "Crear un recurso con idempotency_key."
+        detail: "Misma key, mismo cargo, sin duplicar."
+    targets:
+      - id: tgt-natural
+        label: "Idempotente por naturaleza"
+        detail: "Reintentar es trivialmente seguro."
+      - id: tgt-engineered
+        label: "Idempotente por diseño (con key)"
+        detail: "Seguro si vos generas la key."
+      - id: tgt-unsafe
+        label: "No idempotente (peligroso reintentar)"
+        detail: "Cada invocacion tiene efecto."
+    correctConnections:
+      - from: src-get
+        to: tgt-natural
+      - from: src-overwrite
+        to: tgt-natural
+      - from: src-create
+        to: tgt-unsafe
+      - from: src-key
+        to: tgt-engineered
+  - kind: step-order-dnd
+    task: |
+      Estás diseñando una tool `create_invoice` que va a vivir detrás de
+      un retry automático. Ordená los pasos para hacerla safe-to-retry,
+      de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Identificá el side effect concreto que la tool produce."
+        detail: "Sin saber qué efecto tiene, no podés saber si retry es seguro."
+      - id: s2
+        label: "Marcá explícitamente en la description si es o no idempotente."
+        detail: "El modelo y el orquestador leen eso para decidir si reintentar."
+      - id: s3
+        label: "Agregá un parámetro `idempotency_key` (string) requerido para escrituras."
+        detail: "Sin la key, no hay forma de saber si dos llamadas son la misma."
+      - id: s4
+        label: "En el handler, antes de crear, buscá si ya existe un registro con esa key."
+        detail: "Si existe, devolvé el de antes en lugar de crear uno nuevo."
+      - id: s5
+        label: "Probá el retry artificialmente: invocala dos veces seguidas con la misma key."
+        detail: "Si el resultado es uno solo, está bien. Si son dos, falta lógica."
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de esta description de tool bien armada. Una
+      description responsable nombra el side effect, el tier de
+      idempotencia, los args clave y un dry-run cuando aplica.
+    parts:
+      - id: effect
+        label: "Side effect (qué le pasa al mundo al invocar)"
+        text: "Crea un cobro real en la tarjeta del cliente. Es plata que se mueve, no un log."
+      - id: tier
+        label: "Tier de idempotencia (safe o no para retry)"
+        text: "No es idempotente por defecto. Cada invocacion crea un cargo distinto, salvo que pases `idempotency_key`."
+      - id: key
+        label: "Argumento que hace seguro el retry"
+        text: "`idempotency_key` (string, opcional pero recomendado): con la misma key, devuelve el cargo previo sin cobrar de nuevo."
+      - id: dryrun
+        label: "Dry-run (probar sin efecto real)"
+        text: "Pasa `dry_run: true` para validar el input y devolver el cargo simulado sin tocar la tarjeta. Util para checks previos."
+---
+
+Misión del día: si la tool tiene side effect, decile al modelo si reintentar
+es seguro. El silencio en la description es la causa más cara de bug.

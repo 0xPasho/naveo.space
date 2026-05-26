@@ -1,0 +1,114 @@
+---
+title: "Boxes get updated"
+order: 9
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    The cargo manifest. The ship starts with the `cargo` box at zero and
+    applies five operations in order:
+
+    ```
+    cargo = 0
+    cargo = cargo + 1000   (load base container)
+    cargo = cargo + 200    (load supplies)
+    cargo = cargo - 50     (offload empty crate)
+    cargo = cargo + 300    (load fuel cells)
+    cargo = cargo + 100    (load research equipment)
+    ```
+
+    Drag the right value to the state of `cargo` **after** each step.
+  slots:
+    - id: after_base
+      label: "After loading the base container"
+    - id: after_supplies
+      label: "After loading supplies"
+    - id: after_offload
+      label: "After offloading the empty crate"
+    - id: after_fuel
+      label: "After loading fuel cells"
+    - id: after_research
+      label: "After loading research equipment"
+  pieces:
+    - id: val_1000
+      label: "1000"
+      correctSlot: after_base
+    - id: val_1200
+      label: "1200"
+      correctSlot: after_supplies
+    - id: val_1150
+      label: "1150"
+      correctSlot: after_offload
+    - id: val_1450
+      label: "1450"
+      correctSlot: after_fuel
+    - id: val_1550
+      label: "1550"
+      correctSlot: after_research
+hints:
+  - "Each operation starts with the value the previous one left behind. You don't reset to 0 each time."
+  - "`cargo = cargo + 200` means: read the current value of `cargo`, add 200, store the result back into `cargo`."
+  - "If you're stuck on a step, add or subtract from the previous step's value. The math is never against the original."
+teaches:
+  - variable-assignment
+requires:
+  - variables-basics
+---
+
+## Boxes get updated
+
+In lesson 8 you saw that the **label** stays and the **value** inside can change. Now let's look at **how** it changes.
+
+### Assignment: storing a value into a box
+
+The `=` sign doesn't mean *"is equal to"*. It means **"put this into that box"**.
+
+```
+fuel = 100
+```
+
+Read it as *"the `fuel` box now holds 100"*. It could have held anything before. Now it holds 100.
+
+### The trick: the box is read before it's written
+
+Look at this:
+
+```
+fuel = fuel - 5
+```
+
+It looks strange. How can `fuel` equal `fuel - 5`? **It's not a math equation.** It's a two-step process:
+
+1. **Read** the current value of `fuel` (say, 100).
+2. **Write** the result (100 minus 5 = 95) back into `fuel`.
+
+Result: `fuel` now holds 95. The box was updated.
+
+If you repeat the same line:
+
+```
+fuel = fuel - 5     # now 90
+fuel = fuel - 5     # now 85
+fuel = fuel - 5     # now 80
+```
+
+Each line **starts with the value the previous line left behind**. That's a sequence of assignments.
+
+### Why this matters: order rules
+
+```
+cargo = 1000
+cargo = cargo + 200      # 1200
+cargo = cargo - 50       # 1150
+cargo = cargo + 300      # 1450
+```
+
+If you swap two lines, the result changes. Not because the math is different, but because each line reads what the previous one wrote. It's the lesson-1 rule (order matters) applied to variables.
+
+### In a prompt
+
+When you build prompt chains (you'll do this in Track 4), the same thing happens: the output of one step is the input to the next. The "box value" gets handed down the chain. If you swap two steps, the last one receives a different input and the whole answer changes.
+
+On the right, the cargo manifest: five operations modify the `cargo` variable. Assign the right value to the state of the box after each operation.

@@ -1,0 +1,110 @@
+---
+title: "Log the conversation to debug it"
+order: 17
+estimatedMinutes: 5
+characters:
+  - hex
+exercise:
+  kind: prompt-AB
+  question: |
+    You're iterating on an agent that talks to users. Sometimes the
+    output on turn 6 is wrong and you don't know why. What
+    information do you need to capture from each conversation to
+    diagnose the problem afterward?
+  optionA: |
+    ```
+    Just save the user's last message and the model's last output.
+    If something goes wrong, you look at those two and you're done.
+    ```
+  optionB: |
+    ```
+    Save the FULL conversation turn by turn, including:
+    - System prompt used
+    - Every user/assistant message with timestamp
+    - Model parameters (temperature, model name, max_tokens)
+    - Conversation ID correlating all turns
+    ```
+  correct: B
+  explanation: |
+    Saving only the last two messages (A) is the equivalent of
+    debugging a crash by looking at only the last line of the stack
+    trace. It's not enough. The bug on turn 6 was very likely born on
+    turn 2 (a bad assumption, a missing data point, a vague answer
+    the model carried forward).
+
+    Without the full conversation you CAN'T:
+
+    - **Reproduce the bug.** Without the history, you can't run the
+      same input again and see if it happens again.
+    - **Identify the root turn.** The visible error is on turn 6,
+      but the cause is earlier. You need the full trail.
+    - **Compare prompt versions.** When you change the system prompt,
+      you want to compare before/after conversations.
+    - **Audit.** For production, you'll need a log when a user
+      complains.
+
+    The 4 elements in prompt B are the minimum:
+
+    1. **System prompt** (changes between deploys, you have to know
+       which one was used).
+    2. **Messages with timestamps** (order + latency).
+    3. **Model parameters** (same prompt + different temperature =
+       different output).
+    4. **Conversation ID** (correlates all turns of a session).
+
+    If you're going to bring an LLM project to production, the
+    structured conversation logger is the least glamorous and most
+    critical infra piece. Every bug reported against the model needs
+    those 4 elements to be diagnosable.
+teaches:
+  - conversation-logging
+requires:
+  - multi-turn-followup
+---
+
+## The turn-6 bug was born on turn 2
+
+When an LLM conversation fails, **it almost never fails on the turn where you notice it**. The bad output on turn 6 usually came carried from something that happened turns earlier: a bad assumption, a vague question, a weak answer no one challenged.
+
+To diagnose, you need to see the whole conversation. And to see the whole conversation, you have to have **logged it well from the start**.
+
+### The 4 minimum elements of the log
+
+```
+{
+  "conversation_id": "...",
+  "system_prompt": "<full text>",
+  "model": "claude-opus-4-7",
+  "params": { "temperature": 0.7, "max_tokens": 2048 },
+  "turns": [
+    { "role": "user", "ts": "...", "content": "..." },
+    { "role": "assistant", "ts": "...", "content": "..." }
+  ]
+}
+```
+
+### Why each element matters
+
+- **conversation_id:** without a shared ID, you can't filter the turns of ONE specific conversation out of millions.
+- **system_prompt:** if you change the system prompt in a deploy and a user reports a bug, you need to know which system was active when it happened.
+- **model + params:** the same conversation with temperature 0.3 vs 0.9 can give very different outputs. The model changes between versions; the log has to know which was used.
+- **turns with timestamps:** execution order + latency between turns (useful to detect slowdowns or timeouts).
+
+### What does NOT work
+
+| Anti-pattern | Why it fails |
+|---|---|
+| Logging only the last turn | You can't reproduce the bug. |
+| Logging without conversation_id | Impossible to reconstruct the session. |
+| Logging without system_prompt | When it changes, you lose the history. |
+| Logging with console prints | They get lost, not searched, not filtered. |
+
+> Advanced tip: if your app lets users edit previous messages (like ChatGPT), your log has to capture **every version** of the message, not just the last. Otherwise you'll have conversations where "the user said X" and the model answered "Y" without you understanding why.
+
+### When it matters
+
+- **If you're just exploring a chat**, you don't need this. screenshots are fine.
+- **If you're going to put an agent in production**, this logger is mandatory infra.
+- **If you're iterating on a system prompt and comparing versions**, you'll thank yourself for setting it up on day 1.
+
+On the right, two ways to log conversations. Which one lets you debug the turn-6 bug?

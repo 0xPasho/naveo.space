@@ -1,0 +1,126 @@
+---
+title: "Contraejemplos: enseñar con lo que NO hacer"
+order: 8
+estimatedMinutes: 5
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo necesita extraer **solo el alias** de bios cortas. Muchas bios
+    incluyen el nombre completo. ¿Cuál prompt va a fallar menos?
+  optionA: |
+    ```
+    Extrae el alias.
+
+    Bio: "María Pérez (alias 'Em'), enfermera"
+    Alias: Em
+
+    Bio: "Bruno (alias 'Bru'), técnico"
+    Alias: Bru
+
+    Bio: {{input}}
+    Alias:
+    ```
+  optionB: |
+    ```
+    Extrae solo el alias (NO el nombre completo).
+
+    Bio: "María Pérez (alias 'Em'), enfermera"
+    ✓ CORRECTO: Em
+    ✗ INCORRECTO: María Pérez
+
+    Bio: "Bruno (alias 'Bru'), técnico"
+    ✓ CORRECTO: Bru
+    ✗ INCORRECTO: Bruno
+
+    Bio: {{input}}
+    Alias:
+    ```
+  correct: B
+  explanation: |
+    El prompt A muestra solo respuestas correctas. El modelo aprende
+    *"extraer alias"*, pero no se da cuenta de la trampa: cuando llegue
+    una bio con nombre completo prominente, va a poder confundirse y
+    devolver el nombre.
+
+    El prompt B muestra **ambas posibles respuestas**, etiquetadas.
+    "Esto está bien / esto está mal" es una señal más fuerte que "esto
+    está bien". El modelo aprende la distinción explícitamente, no la
+    tiene que inferir.
+
+    Los contraejemplos no siempre ganan. pero cuando el modelo tiene una
+    tendencia natural a confundirse entre dos opciones cercanas,
+    mostrarle ambas con etiquetas es más eficiente que solo mostrar la
+    correcta.
+hints:
+  - "Few-shot común enseña por imitación: 'así sí'. Contraejemplos enseñan por contraste: 'así sí y así no'."
+  - "¿Cuándo hay riesgo de que el modelo confunda el alias con el nombre? Cuando la bio tiene el nombre completo y el alias se parece a parte de él."
+  - "Pensá cuál de los dos prompts deja al modelo más espacio para equivocarse."
+teaches:
+  - counter-examples
+requires:
+  - few-shot-basics
+  - few-shot-selection
+---
+
+## Mostrar lo que NO hacer
+
+Few-shot común te muestra *"así sí"*. Contraejemplos te muestran *"así no"*. A veces el segundo enseña más, especialmente cuando el modelo tiene una tendencia natural a equivocarse en una dirección específica.
+
+### Cuándo ayudan los contraejemplos
+
+Los contraejemplos brillan cuando:
+
+1. **El modelo tiene un default incorrecto** que quieres evitar.
+2. **La distinción es sutil**: la respuesta correcta y la incorrecta se parecen mucho.
+3. **Ya probaste positive-only** y falla en el caso predecible.
+
+Ejemplo: extraer solo el alias de una bio. Sin contraejemplos, el modelo a veces devuelve el nombre completo. Con un par "INCORRECTO: nombre completo / CORRECTO: alias", la distinción es explícita.
+
+### Tres formas de escribirlos
+
+**1. Etiqueta directa, lado a lado.**
+
+```
+Bio: "María Pérez (alias 'Em')"
+✓ CORRECTO: Em
+✗ INCORRECTO: María Pérez
+```
+
+Simple y claro. El modelo ve la distinción pegada al input.
+
+**2. En la descripción.**
+
+```
+Extrae el alias (NO el nombre completo).
+Si la bio dice "María Pérez (alias 'Em')", devuelve "Em", no "María Pérez".
+```
+
+Útil cuando solo quieres prevenir un error específico sin meter ejemplos extra.
+
+**3. Bloque "anti-patterns" separado.**
+
+```xml
+<examples>
+  Bio: "..." → Alias: "Em"
+</examples>
+
+<avoid>
+  No devuelvas el nombre completo.
+  No devuelvas valores entre comillas.
+  No expliques tu razonamiento.
+</avoid>
+```
+
+Para tareas con varias formas posibles de fallar.
+
+### El pero importante: cuidado con reforzar el patrón malo
+
+Hay un fenómeno raro de los LLMs: si insistes mucho en *"NO digas X"*, a veces el modelo lo dice más. La frase "no menciones el tiempo" puede **aumentar** la probabilidad de que mencione el tiempo, porque "tiempo" entró en el contexto y se volvió un token disponible.
+
+Regla práctica: **una mención negativa está bien, repetirla 3 veces aumenta el riesgo**. Si tu prompt tiene "no hagas X" en 4 lugares, replantéalo: probablemente sea más efectivo decir positivamente qué SÍ hacer.
+
+> Esta es una de las trampas más conocidas de los LLMs (la vamos a ver más en lección 17). Por ahora: contraejemplos sí, en moderación, y siempre con etiqueta visible.
+
+A la derecha, dos prompts. Uno solo con ejemplos positivos, otro con positivos + negativos. ¿Cuál extrae mejor?

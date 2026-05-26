@@ -1,0 +1,108 @@
+---
+title: "Iterating on a failing prompt"
+order: 18
+estimatedMinutes: 8
+characters:
+  - forge
+exercise:
+  kind: prompt-task
+  task: |
+    Forge needs to extract the date from reports and return it as JSON
+    `{ "date": "YYYY-MM-DD" }` or `{ "date": null }`. The starter is
+    **intentionally weak**: the first run will fail. Your job: iterate
+    until all 4 cases pass.
+
+    The cases will surface, one by one, the things the starter doesn't
+    cover.
+  starter: |
+    <task>
+      Get the date from the report. Return JSON.
+    </task>
+
+    <report>
+      {{input}}
+    </report>
+  testCases:
+    - input: "Report from March 15, 2026. Bay 7 OK, no incidents."
+    - input: "2026-03-15, Bay 7 OK."
+    - input: "Bay 7 OK, all nominal at last check."
+    - input: "Report from 03/15/2026, updated 03/16/2026 with new observations."
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "The output is valid JSON."
+    - id: has-date-key
+      kind: deterministic
+      check: has-keys
+      args: ["date"]
+      criterion: "Contains the `date` key."
+    - id: format-iso-or-null
+      kind: llm-judge
+      criterion: "The value of `date` is a string with exact YYYY-MM-DD format (e.g., '2026-03-15'), or the JSON null VALUE. NOT 'null' as string. NOT 'pending'. NOT '03/15/2026' or 'March 15' format."
+    - id: correct-date
+      kind: llm-judge
+      criterion: "For reports with a date, returns the correct date converted to YYYY-MM-DD. For reports without a date (case 3), returns null. For reports with multiple dates (case 4), returns the first/earliest."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Iteration 1: the starter doesn't specify format. Case 1 will come out as 'March 15' or '2026-03-15' at random. Add the ISO format rule."
+  - "Iteration 2: case 3 (no date) will invent or return a string. Add the rule 'if there's no date, return null'."
+  - "Iteration 3: case 4 has two dates. Tell it explicitly which to pick: 'if there are several, use the earliest'."
+teaches:
+  - prompt-iteration-loop
+requires:
+  - prompt-task-basics
+  - structured-output
+  - null-handling-systematic
+---
+
+## Prompt engineering = iteration
+
+Almost no prompt comes out right on the first try. The real skill isn't writing the perfect prompt in one shot. It's **iterating fast**.
+
+### The loop
+
+```
+1. Write prompt v1.
+2. Run it against your test cases.
+3. Look at what fails and why.
+4. Change ONE specific thing.
+5. Run again.
+6. Repeat.
+```
+
+The step most people skip: **step 3**. Look at the actual output, don't assume what the problem is. If you assume, you end up changing what isn't broken.
+
+### The 4 failure categories
+
+Almost every prompt bug falls into one of four. Recognizing which saves you hours:
+
+**1. Format.** The content is correct but breaks the parser (extra preamble, missing key, inconsistent format).
+**Fix:** add explicit format rules, use `<output_format>`, show the exact output shape.
+
+**2. Coverage.** Some cases work, others don't. The prompt assumes the input takes a certain form and edge cases break it.
+**Fix:** add a specific rule for the failing case.
+
+**3. Inventions (hallucination).** Returns data that's not in the input.
+**Fix:** add *"if not present, return null"*, explicitly.
+
+**4. Tone / language / length.** The easiest. Specific constraints solve.
+
+### The isolated-change trick
+
+When you iterate, change **one thing at a time**. Temptation: see 3 problems, change 3 rules in the prompt, run everything. Result: if 1 of the 3 fixes makes something else worse, you don't know which it was.
+
+Discipline: one iteration = one change = one run. Boring but a thousand times faster to land at the correct prompt.
+
+### The 3 questions for every failing output
+
+In order:
+
+1. **Which criterion failed specifically?** (The feedback says.)
+2. **Does the output show partial understanding or full miss?** (Partial = tweak; full = rethink.)
+3. **Does my prompt mention this situation explicitly?** (If "no", you know what to add.)
+
+> The final prompt that passes all cases is rarely the most elegant one. It's the one that survived the 4 iterations it took. Don't fall in love with v1.
+
+On the right, an intentionally weak starter. Run it as-is, look at what fails, change one thing. Repeat.

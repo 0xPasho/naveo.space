@@ -1,0 +1,91 @@
+---
+title: "Your first prompt: extract data for Echo"
+order: 10
+estimatedMinutes: 8
+exercise:
+  kind: prompt-task
+  task: |
+    Echo needs to process short bios from new crewmates and return a JSON
+    with three fields: `alias`, `puesto` and `contacto`.
+
+    Write a prompt that takes a crewmate's bio (where it says `{{input}}`)
+    and returns that JSON. If any field isn't in the bio, use null.
+  starter: |
+    <task>
+      Extract alias, puesto and contacto from the following text.
+      If any field is missing, use null.
+    </task>
+
+    <output_format>
+      { "alias": "string|null", "puesto": "string|null", "contacto": "string|null" }
+    </output_format>
+
+    <input>
+      {{input}}
+    </input>
+  testCases:
+    - input: "Bru, shift technician, bru@thecrew.io"
+    - input: "María Pérez (alias 'Em'), nurse, em@thecrew.io"
+    - input: "Carlos no contact info, mechanic"
+    - input: "Report: the new crewmate (alias Tova) joined yesterday. Position pending assignment. No contact registered."
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Output is valid JSON"
+    - id: keys-present
+      kind: deterministic
+      check: has-keys
+      args: ["alias", "puesto", "contacto"]
+      criterion: "Contains alias, puesto and contacto"
+    - id: no-hallucination
+      kind: llm-judge
+      criterion: "If the bio doesn't mention a field, the corresponding value is `null` (not an empty string, not a placeholder, not an invented value). Never invents an email, number or role that doesn't appear literally in the bio."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Start by copying the `<starter>` we gave you. You only need to tighten the instruction."
+  - "Remember to tell the model what to do when a field is missing. If you don't say it, it'll invent something."
+  - "Try one of the cases in your head: if your prompt wouldn't tell you what to answer, it won't tell the model either."
+teaches:
+  - prompt-task-basics
+requires:
+  - xml-tags-claude
+---
+
+## Echo needs a prompt to process new recruits
+
+So far you've only picked or filled blanks. Now you **write the full prompt**.
+
+<Character name="echo" /> has a pile of bios from new crewmates and it takes her half an afternoon to process them by hand. Your job is to give her a prompt that converts them into clean JSON.
+
+### How this exercise works
+
+1. You write your prompt in the editor on the right.
+2. Where you want the crewmate's bio to go, place `{{input}}`.
+3. When you hit **Check**, the system will:
+   - Replace `{{input}}` with each of the 3 test cases.
+   - Send the resulting prompt to a model (Claude Haiku).
+   - Evaluate the output against the rubric.
+
+To pass, **all 4 cases** must satisfy **all 3 criteria**:
+
+- The output is valid JSON.
+- It has the keys `alias`, `puesto`, `contacto`.
+- It doesn't invent anything when the bio doesn't say it.
+
+### The missing-data trick
+
+Cases 3 and 4 are what separate a good prompt from a mediocre one. For example:
+
+```
+Carlos no contact info, mechanic
+```
+
+If your prompt doesn't tell the model what to do when a field is missing, it will **invent** a plausible email. That's hallucination. and for <Character name="echo" /> it's worse than a visible error: it looks like real data.
+
+Case 4 raises the stakes: the bio explicitly mentions that data is missing. Your prompt should return `null` there too. not a `"pending"` or `"unknown"`.
+
+> Tip: a single line like _"If any field doesn't appear, use null"_ resolves 90% of hallucinations. The rubric is here to reward you when you do it well.
+
+If you get stuck, open the hints (they come in order, least to most explicit).

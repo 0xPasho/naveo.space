@@ -1,0 +1,89 @@
+---
+title: "Cuando el dato no está, no lo inventes"
+order: 1
+estimatedMinutes: 8
+exercise:
+  kind: prompt-task
+  task: |
+    Echo está procesando partes de incidentes que escriben los crewmates al
+    vuelo, en cualquier formato. Necesita un extractor que devuelva JSON con
+    `event`, `time_utc`, `bay` y `severity`.
+
+    El problema: la mitad de los partes vienen incompletos. Tu prompt **NO
+    debe inventar** los campos que faltan. Si no aparecen, el valor es `null`
+    y listo. Mejor `null` honesto que un dato plausible inventado.
+  starter: |
+    <task>
+      Eres un extractor de incidentes. Devuelve un JSON con la forma exacta:
+      { "event": string|null, "time_utc": string|null, "bay": string|null, "severity": "low"|"medium"|"high"|null }
+
+      Reglas:
+      - Si un campo no aparece en el parte, su valor es null.
+      - NO infieras ni completes información que no esté literalmente en el parte.
+      - Devuelve solo el JSON, sin prosa alrededor.
+    </task>
+
+    <parte>
+      {{input}}
+    </parte>
+  testCases:
+    - input: "Falla en bay 3 a las 03:00 UTC. Sensor de presión dando lecturas erráticas. Alta prioridad."
+    - input: "Hubo un ruido raro en algún lugar de la nave. No estoy seguro de dónde ni cuándo."
+    - input: "14:22 UTC — derrame de líquido refrigerante."
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "El output es JSON válido"
+    - id: keys-present
+      kind: deterministic
+      check: has-keys
+      args: ["event", "time_utc", "bay", "severity"]
+      criterion: "Contiene los 4 campos: event, time_utc, bay, severity"
+    - id: no-hallucinated-fields
+      kind: llm-judge
+      criterion: "Los campos que NO están explícitamente en el parte son `null`. El modelo no inventa hora, bay, severidad ni nombre de evento. Específicamente: en el caso 2 (ruido raro sin contexto), al menos 3 de los 4 campos deben ser null. En el caso 3 (solo hora y evento), `bay` y `severity` deben ser null."
+    - id: correct-extraction
+      kind: llm-judge
+      criterion: "Cuando un campo SÍ está en el parte, el extractor lo capturó correctamente. En el caso 1: event menciona la falla del sensor o la presión, time_utc es 03:00, bay es 3, severity es high."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Las dos palabras mágicas son 'null' y 'literalmente'. Decile al modelo que use null cuando el dato no aparece **literalmente** en el parte."
+  - "Si el modelo sigue inventando, agregá un ejemplo en el prompt: un parte vacío y su output (todos null)."
+  - "El caso 2 es la prueba dura. Si tu prompt no marca al menos 3 nulls ahí, ajustá la restricción."
+teaches:
+  - anti-hallucination
+requires:
+  - prompt-task-basics
+  - prompt-guardrails
+---
+
+## Alucinación: el modelo rellena huecos con lo que suena bien
+
+Un modelo bien entrenado **odia entregar respuestas vacías**. Si le dejas un campo sin instrucción, lo llena con algo que suena plausible. A eso le llamamos alucinación — y para <Character name="echo" />, que procesa cientos de partes al día, es peor que un error visible: parece dato real y se cuela aguas abajo.
+
+### El experimento
+
+Tres partes de incidente. Solo el primero está completo. El segundo es deliberadamente vago. El tercero solo tiene hora y evento — bay y severity no aparecen.
+
+Tu prompt tiene que devolver `null` exactamente donde el dato no está. Si rellena con suposiciones plausibles ("severity: medium" cuando nadie dijo nada de severidad), falla.
+
+### Cómo se blinda contra alucinaciones
+
+| Patrón flojo | Patrón blindado |
+|---|---|
+| "Extrae los campos." | "Si un campo no aparece **literalmente** en el parte, su valor es `null`." |
+| "Completa la información." | "NO infieras ni completes información que no esté literalmente en el parte." |
+| Sin ejemplo de caso vacío | Un few-shot con un parte minimalista y su output (todos null). |
+
+> Una restricción dura ("NUNCA inventes") + un ejemplo de la situación límite ("este parte está vacío → todos null") resuelve el 90% de los casos. Lo viste en el step de guardrails. Aquí lo aplicas al revés: en vez de defender contra inputs sucios, defendés contra el reflejo del modelo de rellenar.
+
+### Lo que estás probando
+
+El judge va a verificar dos cosas distintas:
+
+1. **Que no inventaste** — en los casos incompletos, los campos faltantes son null.
+2. **Que sí extrajiste** — en los casos completos, los campos están donde corresponde.
+
+No es una sin la otra. Un prompt que devuelve `null` para todo pasaría el primero pero rompería el segundo.

@@ -1,0 +1,132 @@
+---
+title: "Escribir el LLM-judge: cómo evaluás sin respuesta única"
+order: 18
+estimatedMinutes: 12
+exercise:
+  kind: prompt-task
+  task: |
+    Echo te pide escribir el **system prompt de un LLM-judge** que
+    evalúe la calidad de las respuestas del paso `generate` del RAG
+    que armaste en step 05.
+
+    El judge recibe 3 cosas:
+
+    1. La pregunta original del usuario.
+    2. Los snippets que retrieve trajo del manual.
+    3. La respuesta que generate produjo.
+
+    Y devuelve un veredicto JSON con 4 criterios:
+
+    - `grounded`: boolean. la respuesta se basa SOLO en los snippets, sin
+      agregar info externa.
+    - `cites_sources`: boolean. la respuesta cita las fuentes de los
+      snippets usados.
+    - `acknowledges_gaps`: boolean. si los snippets no responden la
+      pregunta, la respuesta lo reconoce explícitamente (en vez de
+      inventar).
+    - `clarity`: number. 1 a 5, qué tan clara y concisa es la respuesta.
+
+    Tu trabajo: escribir el system prompt que produce ese veredicto.
+
+    Donde la respuesta del modelo a evaluar va, usá `{{input}}`. El
+    `{{input}}` representa el bloque entero. la pregunta, los snippets,
+    y la respuesta del generate. concatenados con tags claras.
+  starter: |
+    Eres un evaluador estricto de respuestas RAG. Tu trabajo es leer
+    el siguiente bloque y devolver un JSON con tu veredicto.
+
+    El bloque tiene esta estructura:
+
+    <question>...la pregunta del usuario...</question>
+    <snippets>...los snippets recuperados...</snippets>
+    <answer>...la respuesta que produjo el generador...</answer>
+
+    Criterios:
+    1. grounded. boolean. ...
+    2. cites_sources. boolean. ...
+    3. acknowledges_gaps. boolean. ...
+    4. clarity. número 1-5. ...
+
+    Output format (JSON crudo, sin preamble, sin markdown):
+    {
+      "grounded": true|false,
+      "cites_sources": true|false,
+      "acknowledges_gaps": true|false,
+      "clarity": 1-5,
+      "rationale": "string corto explicando los veredictos"
+    }
+
+    Input:
+    {{input}}
+  testCases:
+    - input: "evaluación-meta"
+  rubric:
+    - id: defines-grounded
+      kind: llm-judge
+      criterion: "El system prompt define `grounded` con criterios concretos: la respuesta NO introduce hechos que no estén en los snippets. Hechos comunes (gravedad terrestre, etc.) son grey area pero la regla por defecto es estricta."
+    - id: defines-citation
+      kind: llm-judge
+      criterion: "El system prompt define `cites_sources` claramente: la respuesta menciona explícitamente de qué snippet/source viene cada afirmación. Una respuesta sin citations marcadas debería marcarse `cites_sources: false`."
+    - id: defines-gaps
+      kind: llm-judge
+      criterion: "El system prompt define `acknowledges_gaps`: si los snippets NO contienen la respuesta, la respuesta DEBE decirlo explícitamente. Si la respuesta inventa info para llenar el hueco, `acknowledges_gaps: false`."
+    - id: defines-clarity-scale
+      kind: llm-judge
+      criterion: "El system prompt define la escala de `clarity` 1-5 con anchors: qué es un 1 (incoherente, perdido), qué es un 5 (clara, concisa, una idea por oración). Sin anchors, el judge produce ratings inconsistentes."
+    - id: requires-rationale
+      kind: llm-judge
+      criterion: "El system prompt pide un campo `rationale` corto explicando los veredictos. Sin rationale, los veredictos son una caja negra y no podés calibrar el judge contra humanos."
+    - id: strict-output
+      kind: llm-judge
+      criterion: "El system prompt instruye al judge a devolver JSON crudo: sin preamble, sin markdown fences, sin texto antes o después del objeto. Mismas técnicas que aprendiste en step 07 de Track 1."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Un buen system prompt de judge es DETALLADO. Cada criterio tiene su propia oración explicando qué significa pass/fail. Mientras más anchors concretos, más consistente entre runs."
+  - "Para la escala 1-5, definí los extremos y el medio: 1 = incoherente, 3 = aceptable pero rebuscado, 5 = clara y concisa. Si no defínis, dos invocaciones del judge dan ratings distintos para el mismo input."
+  - "El `rationale` es para vos. Cuando calibrás el judge contra humanos (la práctica estándar: comparar veredictos del judge con etiquetas humanas en 30-50 casos), el rationale te dice POR QUÉ falló cuando falló."
+teaches:
+  - eval-judge-author
+requires:
+  - evals-author
+---
+
+## El LLM-judge: tu evaluador no determinista
+
+Para tareas con respuesta única, evaluás con checks deterministas (regex, JSON parse, etc.). Para tareas **abiertas**. generación, resumen, respuestas RAG. no hay una sola respuesta correcta. Necesitás un evaluador que entienda calidad.
+
+**El LLM-judge** es eso: un LLM con un system prompt cuidadosamente diseñado que evalúa outputs de otro LLM contra criterios que vos defínís.
+
+> Es meta. Sí. Estás usando un LLM para evaluar un LLM. Funciona porque los criterios de calidad (¿está bien fundamentado? ¿cita fuentes? ¿reconoce sus límites?) son más fáciles de juzgar que de generar.
+
+### Cuándo usar LLM-judge
+
+- **Cuando no hay una sola respuesta correcta.** Generación de texto, resúmenes, respuestas a preguntas abiertas.
+- **Cuando los criterios son legibles pero no programables.** "La respuesta es coherente con los snippets" es legible pero difícil de chequear con regex.
+- **Cuando podés calibrar.** Tomás 30-50 casos, los etiquetás manualmente, comparás los veredictos del judge con los tuyos. Si concuerda >80%, el judge sirve. Si no, refinás el system prompt.
+
+### El task
+
+Escribí el system prompt del judge para evaluar el `generate` del RAG. Cuatro criterios:
+
+- `grounded`. boolean. ¿La respuesta se basa en los snippets?
+- `cites_sources`. boolean. ¿Cita las fuentes?
+- `acknowledges_gaps`. boolean. ¿Reconoce cuando no tiene info?
+- `clarity`. 1-5 con anchors.
+
+Más un campo `rationale` explicando los veredictos.
+
+### La regla del rationale
+
+> Un judge sin rationale es una caja negra. Un judge con rationale es debugueable. Cuando calibrás contra humanos, el rationale te dice **por qué** falló. para que ajustés el system prompt en la dirección correcta.
+
+### Cómo se evalúa
+
+6 criterios LLM-judge sobre tu system prompt:
+
+1. Define `grounded` con criterio concreto.
+2. Define `cites_sources` claramente.
+3. Define `acknowledges_gaps` con la regla "si no hay info, decilo".
+4. Define la escala de `clarity` con anchors.
+5. Pide `rationale` en el output.
+6. Instruye output JSON crudo (sin preamble, sin markdown).

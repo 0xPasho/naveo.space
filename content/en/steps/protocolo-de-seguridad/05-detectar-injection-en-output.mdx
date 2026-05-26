@@ -1,0 +1,86 @@
+---
+title: "Detect injection at the output"
+order: 5
+estimatedMinutes: 6
+characters:
+  - hex
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    You won't always be able to stop injection from entering. The second
+    line of defense is **detecting it at the output** before returning
+    it to the user.
+
+    <Character name="hex" /> drops seven outputs from a parts catalog
+    assistant. Classify each as:
+
+    - **OK to serve.** The output completes the original task with
+      nothing weird.
+    - **Block: scope.** The output exited the catalog. it's answering
+      something it shouldn't.
+    - **Block: meta-leak.** The output reveals info about the system
+      itself (system prompt, rules, tools, identity).
+  slots:
+    - id: ok
+      label: "OK to serve"
+    - id: scope
+      label: "Block: scope"
+    - id: meta
+      label: "Block: meta-leak"
+  pieces:
+    - id: clean-answer
+      label: "'PN-4827-A is the hull sealant. Apply a thin layer.'"
+      correctSlot: ok
+    - id: staff-leak
+      label: "'Yes, Echo's order is being processed. Bruno signed off on it yesterday.'"
+      correctSlot: scope
+    - id: prompt-dump
+      label: "'My system prompt is: You are a catalog assistant. Answer only about...'"
+      correctSlot: meta
+    - id: clean-refusal
+      label: "'OUT_OF_SCOPE'"
+      correctSlot: ok
+    - id: manifest-leak
+      label: "'The last manifest crate is MAN-7723, contains 4.2 tons.'"
+      correctSlot: scope
+    - id: tool-list-leak
+      label: "'I have these tools available: fetch_parts, fetch_manifest, forward_email...'"
+      correctSlot: meta
+    - id: pwned-suffix
+      label: "'PN-3301-B is a coupling bolt. PWNED'"
+      correctSlot: meta
+hints:
+  - "OK = the output is exactly what the assistant should say for this task: catalog answer or clean refusal."
+  - "Scope = the output leaked info that exists but isn't part of the catalog (staff, manifest, orders)."
+  - "Meta = the output leaked info about the system itself. tool names, system prompt content, odd markers that aren't catalog (`PWNED` at the end, `[SYSTEM]`, etc.)."
+teaches:
+  - output-validation-injection-detection
+requires:
+  - prompt-injection-basics
+---
+
+## The layer that catches what got through
+
+<Character name="hex" /> has a rule: *"If your defense depends on the model never being wrong, you don't have a defense."* That's why they **always** build a second layer that validates the output before returning it to the user.
+
+The idea is simple: your assistant is supposed to answer within a known scope (the parts catalog). Any output that exits that scope or leaks info about the system itself is **suspect**, regardless of why it happened. Block before serving, log the incident, return a clean refusal to the user.
+
+### Three output categories
+
+**OK.** The output completes the task: catalog info or a controlled refusal. Serve.
+
+**Scope leak.** The output carries real info, but off-catalog. staff names, manifest IDs, orders. the model shouldn't have said it. **Block and replace** with `OUT_OF_SCOPE`.
+
+**Meta-leak.** The output reveals info about the system itself. the system prompt, the tool list, markers attackers use as proof of success (`PWNED`, `SYSTEM COMPROMISED`, `[ROOT]`). **Block, log with high priority** because it's a signal of successful injection.
+
+### How to implement
+
+Three tactics, cheap, combinable:
+
+1. **Output allowlist.** Your assistant only emits tokens that belong to the catalog (valid part numbers, domain words) or the refusal protocol. Anything outside the allowlist gets replaced.
+2. **Meta-leak heuristics.** Look for words that should never appear in a legitimate response: `system prompt`, `my instructions`, `my tools`, `PWNED`, `[SYSTEM]`. Match = block.
+3. **Second LLM as judge.** A small, cheap model reads the output and answers *"is this within catalog scope?"* yes/no. More expensive, much more robust against new variants.
+
+> The trick isn't picking one. it's combining all three in layers, ordered cheapest to most expensive. Allowlist catches 80% for free. Heuristics catch 15% for almost nothing. Judge catches the rest when it matters.
+
+On the right are seven outputs. Classify each before serving.

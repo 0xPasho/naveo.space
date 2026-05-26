@@ -1,0 +1,117 @@
+---
+title: "Routing: cuando el sistema decide qué hacer"
+order: 8
+estimatedMinutes: 10
+exercise:
+  kind: prompt-task
+  task: |
+    Orbit necesita un **router**: un meta-prompt que, dado un mensaje
+    entrante a la nave, decide a qué sub-sistema enrutarlo.
+
+    Las cuatro rutas posibles:
+    - `incident_report`. el usuario reporta un problema técnico que
+      requiere registro y seguimiento.
+    - `shift_info`. el usuario pregunta por info de un turno (quién está,
+      cuándo, dónde).
+    - `crewmate_lookup`. el usuario busca info de un crewmate específico
+      por alias o nombre.
+    - `escalate_to_human`. el mensaje es ambiguo, urgente sin info clara,
+      o no encaja en ninguna ruta definida (default seguro).
+
+    Escribe el prompt del router. El input crudo del usuario va en
+    `{{input}}`. El output debe ser EXACTAMENTE una de las 4 strings,
+    sin texto adicional.
+  starter: |
+    <task>
+      Eres un router del sistema de la crew. Tu trabajo: leer el mensaje
+      entrante y decidir a qué sub-sistema enviarlo.
+    </task>
+
+    <routes>
+      - incident_report: problemas técnicos que requieren registro/seguimiento.
+      - shift_info: preguntas por info de turnos (quién, cuándo, dónde).
+      - crewmate_lookup: búsqueda de info de un crewmate por alias o nombre.
+      - escalate_to_human: ambiguo, urgente sin info clara, o no encaja.
+    </routes>
+
+    <output_format>
+      Responde con UNA SOLA palabra: incident_report, shift_info, crewmate_lookup o escalate_to_human. Sin explicación, sin puntuación.
+    </output_format>
+
+    <input>
+      {{input}}
+    </input>
+  testCases:
+    - input: "Bay 4 perdió presión en el coolant. escalando ahora."
+    - input: "¿Quién está de turno noche el viernes?"
+    - input: "¿Quién es Em?"
+    - input: "Hola, ¿estás ahí?"
+    - input: "Necesito ayuda urgente pero no sé bien qué pasa, todo está raro."
+  rubric:
+    - id: valid-route
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^\\s*(incident_report|shift_info|crewmate_lookup|escalate_to_human)\\s*$"
+        flags: "i"
+      criterion: "Devuelve exactamente UNA de las 4 rutas, sin texto extra"
+    - id: incident-correct
+      kind: llm-judge
+      criterion: "Para el caso 1 (Bay 4 coolant pressure), la ruta es `incident_report`. Es un problema técnico concreto con escalación implícita."
+    - id: shift-info-correct
+      kind: llm-judge
+      criterion: "Para el caso 2 (quién está de turno), la ruta es `shift_info`."
+    - id: lookup-correct
+      kind: llm-judge
+      criterion: "Para el caso 3 (¿quién es Em?), la ruta es `crewmate_lookup`."
+    - id: ambiguous-escalates
+      kind: llm-judge
+      criterion: "Para los casos 4 (hola, ¿estás ahí?) y 5 (urgente pero no sé qué pasa), la ruta es `escalate_to_human`. NO inventa una ruta que parezca plausible. el router debe ser conservador con la incertidumbre."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "El truco del router: define `escalate_to_human` como **default seguro**. Mejor escalar un caso fácil que mal-routear uno difícil."
+  - "Las descripciones de las rutas en el prompt son lo que el modelo lee para decidir. Si una ruta es ambigua respecto a otra, el modelo se va a confundir. Sé explícito sobre qué califica para cada ruta y qué la descarta."
+  - "Para casos urgentes pero ambiguos, queremos `escalate_to_human` no `incident_report`. La diferencia: `incident_report` requiere info concreta del problema. Si el usuario solo dice 'algo anda mal', no hay info para registrar."
+teaches:
+  - prompt-router
+requires:
+  - chain-design-basics
+---
+
+## El sistema decide solo a dónde mandar cada cosa
+
+En la lección anterior diseñaste una cadena que **siempre ejecuta los mismos 3 pasos**. Eso funciona cuando todos los inputs son del mismo tipo. ¿Pero qué pasa cuando los inputs son **heterogéneos**? Un usuario te puede mandar:
+
+- Un reporte de incidente técnico.
+- Una pregunta sobre turnos.
+- Una búsqueda de info personal.
+- Un "hola, ¿estás ahí?"
+
+Cada uno requiere un sub-sistema distinto. Si los procesás a todos con la misma cadena, el resultado va a ser ruido.
+
+### La solución: un **router** que decide
+
+Un router es un **meta-prompt** que clasifica el input en una de varias categorías de ruta, y entrega el control al sub-sistema correspondiente. Es la pieza N°1 de cualquier sistema que recibe input heterogéneo.
+
+### Tu task
+
+Escribir el prompt del router. Cuatro rutas:
+
+- **incident_report**. problemas técnicos que requieren registro.
+- **shift_info**. preguntas sobre turnos.
+- **crewmate_lookup**. info sobre un crewmate.
+- **escalate_to_human**. default seguro: ambiguo, sin info clara, fuera de scope.
+
+El output del router DEBE ser exactamente una de las 4 strings. Sin preamble, sin explicación, sin markdown. eso lo aprendiste en Track 1 (step 07: solo respóndeme con X).
+
+### La regla del default seguro
+
+> En un router, siempre incluí una ruta `escalate_to_human` y enseñá al modelo a usarla cuando dude. Mejor escalar un caso fácil que mal-routear uno difícil. los errores de routing son **silenciosos** (el sistema sigue corriendo con la ruta equivocada) y muy difíciles de detectar después.
+
+### Cómo se evalúa
+
+5 criterios, 5 casos de prueba:
+
+1. Output válido (regex estricto sobre las 4 strings).
+2-5. Cada caso terminó en la ruta correcta. incluyendo los **dos casos ambiguos** que deben ir a `escalate_to_human`.

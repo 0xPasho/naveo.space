@@ -1,0 +1,42 @@
+---
+title: "Onboarding completo"
+order: 21
+estimatedMinutes: 2
+demo:
+  id: lesson-complete
+  props:
+    signedBy: atlas
+---
+
+## Onboarding completo. Atlas te firma como ingeniero de sistemas.
+
+Empezaste sin saber hablar con un LLM. Cerraste el onboarding **diseñando un sistema multi-step end-to-end con evals**.
+
+**Lo que llevás a bordo después de Track 4:**
+
+- Reconocer cuándo un prompt no alcanza y necesitás **partir en una cadena**, y cuándo NO partir.
+- Diseñar **cadenas** declarativas: steps focales, dependencias explícitas, output keys únicas, paralelo cuando se puede.
+- Manejar **estado entre pasos**: qué pasás, qué tirás, qué cacheás, qué nunca cacheás.
+- Reconocer los cinco patrones de **cadenas rotas** antes de que lleguen a producción.
+- Construir **routers** con default seguro, eligiendo entre reglas, LLM o cascada según el contexto.
+- Diseñar **cascadas de modelos** (chico filtra, grande responde) para escalar bajando costo.
+- Implementar **agent loops** con stop conditions reales: max_steps, loop_detection, errores que vuelven al modelo.
+- Comunicarle al agente sus **presupuestos** (steps, tokens, dinero) para que avise antes de chocar.
+- Definir **políticas de retry y backoff** por tipo de error, con dead-letter accionable.
+- Diseñar **degradación graceful**: el sistema sigue siendo útil cuando una pieza interna falla.
+- Diseñar **mini-RAG** honesto que reconoce sus huecos en vez de alucinar.
+- Instrumentar **trazas y spans** con cost, status y redaction, para debuggear sin re-ejecutar.
+- Escribir **eval sets** intencionales: control + edge + adversarial, todos con justificación.
+- Escribir **LLM-judges** debugeables con anchors y rationale.
+- Comparar versiones de tu cadena con **A/B testing** real, no con "antes y después" contaminado.
+
+**Lo que recorriste en el onboarding completo:**
+
+- Track 1. La anatomía del prompt. <Character name="vega" /> y <Character name="echo" />.
+- Track 2. Conversaciones que llegan a algún lado. <Character name="vega" />, <Character name="forge" />, <Character name="echo" />.
+- Track 3. Tools que el agente realmente usa. <Character name="forge" />.
+- Track 4. Sistemas multi-step con evals. <Character name="orbit" />, <Character name="echo" />, <Character name="atlas" />.
+
+<Character name="atlas" /> firma el onboarding. Quedás como **crewmate de pleno derecho**. no en pruebas. La crew te puede confiar diseño de sistemas reales.
+
+> El onboarding termina. El trabajo empieza. Lo que armaste son las herramientas. Lo que viene depende de para qué las usás.

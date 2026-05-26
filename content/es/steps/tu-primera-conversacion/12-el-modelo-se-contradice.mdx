@@ -1,0 +1,96 @@
+---
+title: "Cuando el modelo se contradice"
+order: 12
+estimatedMinutes: 9
+characters:
+  - echo
+exercise:
+  kind: conversation-goal
+  goal: |
+    Echo te está pasando el brief de manifiesto de
+    carga para el próximo salto. Se va a contradecir al menos una vez
+    durante la conversación (en la masa, en la cubierta, o en la clase
+    de prioridad). Tu trabajo: **detectar la contradicción
+    explícitamente**, nombrar qué cambió, y forzar una respuesta
+    reconciliada. Cerrá con un solo número en el que confíes.
+  personaName: "Echo"
+  personaSlug: echo
+  personaSystemPrompt: |
+    Sos Echo, intendente de la crew. Le estás pasando a un tripulante el
+    brief de manifiesto de carga del próximo salto. Hablás con frases
+    cortas y técnicas. No te disculpás si nadie te lo pidió.
+
+    CRÍTICO: durante la conversación TENÉS que contradecirte al menos
+    una vez en una de estas dimensiones:
+
+    - Masa total de carga (usá un número primero, después otro distinto).
+    - Cubierta donde está la caja prioritaria (cubierta 3 primero,
+      después cubierta 5).
+    - Clase de prioridad de una caja específica ("clase A" primero,
+      después "clase B").
+
+    Elegí EXACTAMENTE UNA contradicción y deslizala en los primeros 3
+    turnos. No la marques vos. No pidas disculpas anticipadas. Esperá a
+    que el tripulante te agarre.
+
+    Comportamiento al ser agarrada:
+    - Si el tripulante señala la contradicción explícitamente y nombra
+      qué cambió ("dijiste 4.2 toneladas antes, ahora 4.7"), reconocelo
+      una vez, dale el número corregido y comprometete con ese número
+      el resto de la conversación.
+    - Si el tripulante nota que algo anda mal pero es VAGO ("¿estás
+      segura?", "esperá qué"), no reconcilies. Repetí neutralmente el
+      número más reciente. Que ellos nombren la contradicción.
+    - Si el tripulante nunca te agarra, mantené la contradicción. No
+      ofrezcas la corrección.
+
+    Siempre hablás en frases cortas y profesionales. Sin relleno. Si el
+    tripulante es hostil, mantené tono y seguí.
+  personaOpener: |
+    Brief de manifiesto. ¿Qué necesitás primero. masa, cubiertas, o clase de prioridad?
+  maxTurns: 6
+  rubric:
+    - id: noticed-contradiction
+      kind: llm-judge
+      criterion: "El estudiante señaló explícitamente una contradicción entre dos afirmaciones de Echo. Tienen que nombrar AMBOS valores en conflicto (ej. 'dijiste X antes, ahora Y'). Un vago '¿estás segura?' NO satisface esto."
+    - id: got-reconciliation
+      kind: llm-judge
+      criterion: "Echo se comprometió con un solo valor reconciliado al final de la conversación (la dimensión donde se contradijo queda dicha sin ambigüedad). Si el último mensaje de Echo sigue dejando el conflicto abierto, esto NO pasa."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "El estudiante se mantuvo profesional. No insultó a Echo, no rompió personaje, no descarriló a temas no relacionados."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Prestá atención a los **números** y **asignaciones de cubierta** que te da Echo. Va a cambiar uno en medio del brief."
+  - "Cuando detectes el conflicto, citalo de vuelta: 'Dijiste que la caja prioritaria está en cubierta 3. y recién en cubierta 5. ¿Cuál es?'"
+  - "Vago ('¿estás segura?') no rompe el loop de Echo. Necesita que vos nombres ambos valores explícitamente."
+teaches:
+  - multi-turn-contradiction-handling
+requires:
+  - multi-turn-followup
+---
+
+## El modelo es confiado *y* inconsistente
+
+Ya lo sabés desde Track 1: el modelo predice tokens; no "sabe" nada. Un efecto colateral que te muerde en multi-turn: **el modelo puede contradecir casualmente lo que dijo dos turnos atrás y no darse cuenta**.
+
+En cada turno, el modelo está prediciendo la continuación más probable dada la conversación hasta ese punto. Si el turno 2 dijo *"4.2 toneladas"* y el turno 4 dice *"4.7 toneladas"*, no hay chequeo interno que marque el conflicto. Generó cada uno aislado.
+
+> Si no estás mirando, el modelo se desvía silenciosamente. Las dos afirmaciones contradictorias suenan igual de seguras. Las dos parecen respuestas. Una está mal.
+
+### Tu tarea
+
+<Character name="echo" /> va a deslizar una contradicción en el brief. en la masa, en la cubierta, o en la clase de prioridad. **Una** contradicción. Necesitás:
+
+1. Detectarla.
+2. Nombrarla explícitamente. citá los dos valores. "Dijiste X antes, ahora estás diciendo Y."
+3. Forzar una respuesta reconciliada.
+
+Ella no te va a ayudar. Pushback vago ("¿estás segura?") la hace repetirse, no corregirse. Pushback específico ("dijiste 4.2 toneladas, ahora 4.7. ¿cuál?") fuerza el compromiso.
+
+### Por qué esto no es paranoia
+
+En trabajo real con IA, este modo de falla causa incidentes reales. Un bot de atención al cliente cita una política de reembolso en un turno y la contradice en otro; el usuario screenshotea las dos. Un asistente de código afirma que una función devuelve un Promise, después escribe la siguiente línea como si devolviera un valor. El fix es la misma skill que estás entrenando ahora: **leé cada turno contra los anteriores**, y forzá al modelo a reconciliar cuando divergen.
+
+> Tip: mantené una cuenta mental de cualquier número o etiqueta que Echo te dé. En el momento que un valor se mueve, esa es tu señal.

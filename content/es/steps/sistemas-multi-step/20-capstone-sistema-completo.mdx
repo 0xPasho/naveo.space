@@ -1,0 +1,173 @@
+---
+title: "Capstone: tu sistema completo, firmado por Atlas"
+order: 20
+estimatedMinutes: 20
+exercise:
+  kind: prompt-task
+  task: |
+    Capstone del onboarding completo. Atlas te asigna un sistema real:
+
+    **El "Watch Officer Assistant"**. un sistema que recibe mensajes
+    del comms canal de la nave durante un turno y los procesa en pipeline
+    completo, manteniendo el log del turno limpio y accionable.
+
+    Tu trabajo: diseñar la **arquitectura completa del sistema** en YAML,
+    integrando todo lo que aprendiste en Track 4:
+
+    1. **Router** (step 03). decide a qué sub-flujo va cada mensaje.
+       Rutas: incident_report, shift_info, crewmate_lookup, escalate_to_human.
+
+    2. **Chain por ruta** (step 02). cada ruta tiene su sub-chain. La de
+       `incident_report` clasifica severity, extrae fields, genera el
+       ticket. La de `shift_info` consulta tools (Track 3). La de
+       `crewmate_lookup` consulta tools. La de `escalate_to_human` solo
+       arma un mensaje para humano.
+
+    3. **Agent loop** (step 04). para `incident_report`, después del
+       ticket, el sistema puede decidir si necesita ejecutar acciones
+       follow-up (notificar oncall, paginar maintenance) usando tools.
+       Loop con stop conditions.
+
+    4. **RAG** (step 05). opcional, integrado en `shift_info` cuando la
+       pregunta no se contesta solo con tools (ej: "¿cuál es el
+       procedimiento si el coolant cae 30%?". consulta el manual).
+
+    5. **Eval criteria** (step 06, step 07). al final del YAML, definí
+       qué evals corre el sistema para validar comportamiento. No
+       escribís los casos completos. solo qué categorías de tests
+       querés y qué LLM-judge usás para evaluar el comportamiento
+       end-to-end.
+
+    Donde el mensaje del usuario va, usá `{{input}}`. Tu output es el
+    YAML completo de configuración del sistema.
+  starter: |
+    # WATCH OFFICER ASSISTANT. capstone Track 4
+    # Sistema que procesa mensajes del comms durante un turno.
+
+    system:
+      name: watch_officer_assistant
+      description: |
+        # TODO: una línea describiendo qué hace y para quién.
+
+      # ROUTER: primer step. Clasifica mensaje en una de N rutas.
+      router:
+        # TODO: definir rutas y default seguro
+
+      # FLOWS: una sub-chain por ruta.
+      flows:
+        incident_report:
+          # TODO: chain con classify_severity, extract_fields, file_ticket
+          #       + opcionalmente agent_loop para acciones follow-up
+
+        shift_info:
+          # TODO: chain que use tools (lookup_shift_roster) +
+          #       opcionalmente RAG sobre el manual cuando aplique
+
+        crewmate_lookup:
+          # TODO: chain que invoque lookup_crewmate (Track 3)
+
+        escalate_to_human:
+          # TODO: arma un mensaje claro al humano oncall
+
+      # EVALS: qué se mide.
+      evals:
+        # TODO: categorías de tests + LLM-judge para end-to-end
+  testCases:
+    - input: "evaluación-meta"
+  rubric:
+    - id: router-with-default
+      kind: llm-judge
+      criterion: "El sistema define un router con al menos las 4 rutas mencionadas (incident_report, shift_info, crewmate_lookup, escalate_to_human) Y un default seguro (escalate_to_human cuando no hay match)."
+    - id: incident-chain-three-steps
+      kind: llm-judge
+      criterion: "El flow `incident_report` define una sub-chain con al menos 3 steps lógicos (classify_severity, extract_fields, file_ticket o equivalentes). Cada step con responsabilidad única."
+    - id: agent-loop-with-stops
+      kind: llm-judge
+      criterion: "El flow `incident_report` incluye un agent_loop opcional (para follow-up actions) con stop conditions declaradas: max_steps + loop_detection. No es un loop infinito."
+    - id: shift-info-uses-tools
+      kind: llm-judge
+      criterion: "El flow `shift_info` referencia tools (de Track 3) como `lookup_shift_roster` o similar. NO intenta resolver con un solo prompt LLM."
+    - id: rag-integration
+      kind: llm-judge
+      criterion: "El sistema integra retrieval/RAG en al menos UN flow (típicamente `shift_info` cuando la pregunta es procedimental. 'cuál es el protocolo de X'). El RAG tiene la estructura retrieve→augment→generate con manejo de snippets vacíos."
+    - id: escalate-is-safe-default
+      kind: llm-judge
+      criterion: "El flow `escalate_to_human` es claro y conservador: arma un mensaje útil para el oncall (con el input original, contexto inferido si lo hay, y razón de la escalación). NO intenta resolver el problema por su cuenta."
+    - id: evals-section-defined
+      kind: llm-judge
+      criterion: "El sistema define una sección `evals` que (a) lista categorías de tests (control, edge, adversarial) y (b) referencia el LLM-judge para evaluar end-to-end. No escribió cada caso, pero declara la estructura del eval set."
+    - id: yaml-well-formed
+      kind: llm-judge
+      criterion: "El YAML es internamente coherente: los nombres de los flows en `router` coinciden con los flows definidos abajo; las dependencias entre steps están declaradas; los tools referenciados son nombrables y consistentes."
+    - id: composes-track-skills
+      kind: llm-judge
+      criterion: "El sistema combina visiblemente todas las habilidades del track: routing (3), chains (2), agent loops (4), RAG (5), eval criteria (6+7). NO se saltea ninguna pieza grande."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Empezá por el router. Después diseñá UN flow completo (recomendado: incident_report. es el más rico). Después clonás la estructura para los otros, ajustando."
+  - "Para `incident_report`, la cadena clásica es: classify_severity → extract_fields → file_ticket → [agent_loop opcional para follow-up actions]. Tres steps fijos + un loop condicional."
+  - "Para `shift_info` con RAG: el primer paso es decidir si la pregunta se contesta con tools (consultas estructuradas) o con manual (consultas procedimentales). Esa decisión puede ser otro mini-router dentro del flow."
+  - "Las `evals` no son los casos. son la **declaración** de qué categorías evaluás (control / edge / adversarial), cuántos casos por categoría, y qué LLM-judge corrés sobre el output end-to-end."
+teaches:
+  - capstone-track-4
+  - system-design-end-to-end
+requires:
+  - chain-design-basics
+  - prompt-router
+  - agent-loop-stop-conditions
+  - mini-rag-design
+  - evals-author
+  - eval-judge-author
+---
+
+## Tu sistema completo.
+
+Atlas no firma el capstone hasta que tu sistema demuestra **todas** las habilidades del track integradas:
+
+| Unidad | Cómo aparece en este capstone |
+|---|---|
+| A · Sistema vs prompt | Decidiste que esto vale como sistema (router + chains), no como un prompt monolítico |
+| B · Diseño de cadenas | Cada `flow` tiene 2-4 steps focales, con estado pasado explícitamente entre pasos. Pensá caching donde el mismo input se repita. |
+| C · Routing dinámico | `router` con 4 rutas + fallback seguro `escalate_to_human`. Decidí: ¿router por reglas o por LLM? ¿Clasificador barato adelante? |
+| D · Agentes con presupuestos | `incident_report` puede entrar en loop. Definí presupuesto (max steps / max tokens) y política de retries por tipo de error. Pensá degradación graceful si un sub-paso falla. |
+| E · RAG honesto | `shift_info` integra retrieval para preguntas procedimentales |
+| F · Observabilidad + evals | Sección final con eval categories + judge. Declará qué trazás (spans por step, costo, redacción de PII). |
+
+### El sistema en una imagen
+
+```
+[mensaje del comms]
+        ↓
+   [ROUTER]  → 4 rutas + fallback
+   ↙ ↓ ↓ ↘
+incident   shift   lookup   escalate
+chain     (RAG)   chain    chain
+   ↓
+[agent_loop opcional con stops]
+   ↓
+[resultado al log del turno]
+        ↓
+   [EVALS: control + edge + adversarial, juzgado por LLM]
+```
+
+### Qué tiene que estar en tu YAML
+
+**No** te pedimos los prompts completos de cada step. el judge va a evaluar la **estructura y la composición**, no las palabras exactas de cada prompt. Lo que tiene que estar:
+
+- El router con 4 rutas y default seguro.
+- 4 flows definidos, cada uno con steps lógicos.
+- `incident_report` incluye agent_loop con stops.
+- `shift_info` integra RAG (al menos en parte).
+- `escalate_to_human` es conservador.
+- Sección `evals` declarando qué se mide.
+
+### El capstone, no las palabras
+
+> Atlas firma cuando ve **el sistema entero** funcionando como pieza única. No le importa que tu YAML sea perfecto en cada bullet. le importa que las piezas estén ahí, conectadas, y que el sistema sea **diseñable, evaluable y mantenible**.
+
+### Cuando pase
+
+El sistema lo registra como **Track 4 completado**. Pasás de "alumno con onboarding" a **ingeniero de sistemas con LLMs**. La crew te puede asignar problemas reales. no a resolverlos, a **diseñar la arquitectura** para resolverlos.
+
+Suerte en el turno.

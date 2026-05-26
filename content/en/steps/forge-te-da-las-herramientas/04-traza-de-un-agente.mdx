@@ -1,0 +1,52 @@
+---
+title: "The trace: how an agent decides"
+order: 4
+estimatedMinutes: 4
+demo:
+  id: tool-call-trace
+  props:
+    presenter: forge
+    intent: "Watch an agent decide, step by step"
+    transcript:
+      - role: user
+        content: |
+          Add 50 units of the M4 screw to inventory.
+      - role: assistant
+        content: |
+          Before modifying, I'll check current stock.
+      - role: tool_call
+        tool: list_inventory_items
+        args:
+          sku: "TOR-M4"
+      - role: tool_result
+        tool: list_inventory_items
+        result: |
+          [{"sku":"TOR-M4","name":"M4 screw","stock":12}]
+      - role: assistant
+        content: |
+          Current stock: 12 units. Adding the requested 50.
+      - role: tool_call
+        tool: add_inventory
+        args:
+          sku: "TOR-M4"
+          quantity: 50
+      - role: tool_result
+        tool: add_inventory
+        result: |
+          {"sku":"TOR-M4","stock":62,"ok":true}
+      - role: assistant
+        content: |
+          Done. Final TOR-M4 stock: 62 units.
+    forgeNotes:
+      - "It started with **list_inventory_items** because its description says 'verify stock before modifying'. Without that hint, it would have fired **add** directly and the final report would be made up."
+      - "**add_inventory** took two parameters (`sku` + `quantity`) thanks to the schema. The model never had to guess field names. the JSON assembled itself from the tool definition."
+---
+
+<Character name="Forge" /> shows you how a well-built agent **decides in what order to invoke its tools**. The gap between "useful agent" and "agent that breaks things" isn't the model. it's the description you gave each tool.
+
+Step through it turn by turn and watch for two things:
+
+1. **Why the model picked each tool at that moment**. no magic, it's reading the description.
+2. **How the result of the first tool informs the second**. the flow wasn't programmed; it emerged from context.
+
+At the end, Forge's reading tells you what decision happened at each turn. If the descriptions had been ambiguous, this trace would look very different.

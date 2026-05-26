@@ -1,0 +1,36 @@
+---
+title: "Auditoría firmada"
+order: 19
+estimatedMinutes: 1
+characters:
+  - atlas
+  - hex
+demo:
+  id: lesson-complete
+  props:
+    signedBy: atlas
+---
+
+## Auditoría firmada. <Character name="hex" /> reporta sin novedad. <Character name="atlas" /> sella el protocolo.
+
+> <Character name="hex" />: *"No encontré nada esta vez."* Esa es la única forma en que firma Atlas.
+
+Entraste a este track para aprender los modos de falla que causan incidentes reales. Salís con la disciplina para agarrarlos **antes** de que se desplieguen.
+
+**Lo que llevás a cada sistema que construyas a partir de acá:**
+
+- **Etiquetá el incidente antes de parchear.** Inyección, fuga, alucinación. cada uno tiene defensas distintas. tratar el modo de falla equivocado es perder tiempo.
+- **La inyección de prompts es estructural.** No la vencés con ingenio. etiquetás fronteras, re-establecés scope debajo del input no confiable, rechazás fuera-de-scope, loggeás patrones sospechosos. y validás en el output lo que pudo haber pasado por el input.
+- **Asumí que todo contenido externo es hostil.** Documentos, respuestas de tools, RAG. el usuario puede ser inocente y el atacante puede estar en el archivo. envolvé en tags, declará como dato, separá capacidades.
+- **Clasificación de datos.** Pública, operacional, PII, secreto. Solo las dos primeras llegan al modelo en claro. Lo demás vive en la bóveda, accedido por referencia. los secretos NUNCA están en el contexto del modelo.
+- **Detectá PII antes de que entre. Detectá fugas antes de que salga.** Capas: regex barato, modelo chico contextual, audit log. en el output, placeholders y refuso ante pedidos directos.
+- **Dibujá la frontera de confianza.** Cada flecha entre componentes es verde (confiable) o roja (no confiable). cada flecha roja necesita una capa de validación antes de cruzar.
+- **Tools chicas, capacidades scopeadas.** Una tool, una capacidad. El nivel de privilegio vive en el cableado, no en el `action` enum. Lo destructivo va con dry-run y confirmación en dos fases.
+- **Audit log que no te hunde.** Operacional plano, sensible hasheado, secretos y PII nunca. Si tu log filtrado le da al atacante algo nuevo, no es audit log. es segundo problema.
+- **Calibrá las mentiras confiadas.** Un modelo que devuelve `UNKNOWN` en lo que no puede verificar es un modelo que podés rutear por humanos, reintentos, o tools de fallback. Un modelo que siempre inventa no tiene presupuesto de confianza.
+- **Rate limit es defensa, no solo costo.** Por IP, por argumento sensible, por tokens-por-minuto. y siempre loggear cuando se dispara.
+- **Red-team antes de desplegar.** Impersonación de rol, marco hipotético, retrieval indirecto, rapport multi-turn. cada filtración que encontrás en el sandbox es una filtración que no desplegás.
+
+Tenés todos los tracks firmados. No es el final. es el piso sobre el que construís el resto de tu trabajo.
+
+> <Character name="atlas" />: *"Desplegaste un sistema que alguien intentó romper y aguantó. Esa es la única review en la que confío."*

@@ -1,0 +1,123 @@
+---
+title: "Quick mission: prompt anatomy"
+intro: |
+  A prompt is not a loose paragraph. It has pieces: role, context, task, format. Name them and you can move them.
+station: vega
+teaches:
+  - prompt-anatomy-basics
+characters:
+  - vega
+scenes:
+  - kind: prompt-anatomy
+    task: |
+      Vega put together this prompt for a shift report assistant. Label
+      each piece: role, context, task, expected format.
+    parts:
+      - id: role
+        label: "Role (who the assistant is)"
+        text: "You are a shift analyst for the ship's watch, with 10 years on board."
+      - id: context
+        label: "Context (stable info it needs to know)"
+        text: "Incidents are tracked with IDs like INC-XXXX and have severity low, med, high, or critical."
+      - id: task
+        label: "Task (what to do in this request)"
+        text: "Summarize the events of the May 24 shift between 2:00 PM and 10:00 PM."
+      - id: format
+        label: "Format (how to return the output)"
+        text: "Return at most 3 bullets, each under 15 words."
+  - kind: slot-fill-dnd
+    task: |
+      You have five loose lines from a disassembled prompt. Sort each
+      into its piece: role, context, task, or format.
+    slots:
+      - id: role
+        label: "Role"
+      - id: context
+        label: "Context"
+      - id: task
+        label: "Task"
+      - id: format
+        label: "Format"
+    pieces:
+      - id: p1
+        label: "You are a shift coordinator with triage experience."
+        correctSlot: role
+      - id: p2
+        label: "Summarize the incidents from the last hour."
+        correctSlot: task
+      - id: p3
+        label: "Valid severities are low, med, high, critical."
+        correctSlot: context
+      - id: p4
+        label: "Return JSON with fields id, severity, summary."
+        correctSlot: format
+      - id: p5
+        label: "You are talking to an on-call engineer who already knows the system."
+        correctSlot: role
+  - kind: step-order-dnd
+    task: |
+      Order the prompt pieces in the order the model should read them,
+      top to bottom. The idea is to build context before handing over
+      the task.
+    steps:
+      - id: s1
+        label: "Role of the assistant."
+        detail: "Who it is and who it is talking to. Without this, the mode is generic."
+      - id: s2
+        label: "Domain context."
+        detail: "Stable data, formats, and IDs that repeat across requests."
+      - id: s3
+        label: "Concrete task."
+        detail: "What this particular request needs to do."
+      - id: s4
+        label: "Output format."
+        detail: "How you want the result so you can consume it downstream."
+  - kind: prompt-AB
+    question: |
+      Vega shows you two versions of the same request. Which one
+      separates the prompt pieces better and gives the model a clearer
+      shot?
+    optionA: |
+      ```
+      Summarize today's shift report in short bullets, you are an
+      experienced analyst and incidents look like INC-XXXX with
+      severity low to critical, at most 3 bullets.
+      ```
+    optionB: |
+      ```
+      Role: you are a shift analyst with experience.
+      Context: incidents IDs INC-XXXX, severity low/med/high/critical.
+      Task: summarize today's shift report.
+      Format: 3 bullets max, under 15 words each.
+      ```
+    correct: B
+    explanation: |
+      Option A packs everything into one sentence. The model has to
+      parse what is role, what is context, and what is the actual task.
+      The information is there, but tangled.
+
+      Option B separates with visible labels. The model reads "Role",
+      "Context", "Task", "Format" and builds the mode step by step. If
+      later you want to change only the format, you know exactly which
+      line to touch.
+
+      Rule: the prompt pieces are the same. What changes is how
+      visible you make them. More visible, easier to iterate.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this minimal prompt. Sometimes three pieces
+      are enough: role, task, format.
+    parts:
+      - id: role
+        label: "Role"
+        text: "You are a release-notes writer for a technical team."
+      - id: task
+        label: "Task"
+        text: "Turn this list of merged PRs into a readable changelog."
+      - id: format
+        label: "Format"
+        text: "Markdown with an h2 per area (feat, fix, chore) and bullets below."
+---
+
+Mission of the day: if you can name the pieces, you can move them.
+Role, context, task, format. Four drawers, not one big drawer.

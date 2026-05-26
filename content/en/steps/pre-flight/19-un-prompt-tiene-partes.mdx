@@ -1,0 +1,65 @@
+---
+title: "A prompt has parts"
+order: 19
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-anatomy
+  parts:
+    - id: rol
+      label: "Role and instruction"
+      text: "You are a ship's-log summarizer. Return a single English sentence describing what happened in the event."
+    - id: regla
+      label: "Rule"
+      text: "If the event is missing information, say so explicitly in the sentence instead of inventing."
+    - id: input
+      label: "Input"
+      text: |
+        Event:
+        {{input}}
+hints:
+  - "The **role and instruction** says who the model is and what it has to do."
+  - "The **rule** covers a special case or restriction. Remember lesson 18: explicitly asking it not to invent reduces hallucinations."
+  - "The **input** is the variable part that changes on every call. It usually has `{{something}}` or a name that gets replaced."
+teaches:
+  - prompt-anatomy-basics
+requires:
+  - llm-mental-model
+  - hallucination-mechanics
+  - function-io-basics
+---
+
+## A prompt has parts
+
+You've got all the mental pieces now. You know what an LLM is (lesson 14), how it predicts token by token, how it samples (17), how it hallucinates (18). You know what an input and an output are (13). You know that the input controls the output.
+
+One last piece before the capstone: **a prompt isn't a homogeneous block of text**. It has **parts**, each with a different job.
+
+### The three minimum parts
+
+Any useful prompt has at least:
+
+1. **Role and instruction.** Who the model is and what it has to do. *"You are a log summarizer. Return one sentence."*
+2. **Rule.** What NOT to do, special cases, restrictions. *"If information is missing, say so instead of inventing."*
+3. **Input.** The variable data that changes on each call. *"Event: {{input}}"*
+
+Track 1 will add two more parts (context, examples, structured format). For now these three are enough to get in the game.
+
+### Why this matters: each part is tuned on its own
+
+If your prompt doesn't work, you don't have to rewrite it whole. You identify **which part is failing**:
+
+- Is the output in the wrong language? → fix the **instruction**.
+- Is the model inventing data? → tighten the **rules** (lesson 18).
+- Is it returning nonsense? → check the **input** (are you actually sending what you think?).
+
+That ability to adjust one part without touching the others is the difference between "prompt engineering" and "wiggling the text around".
+
+### What you'll do in the capstone
+
+The next lesson (the last of pre-flight) asks you to write a prompt **from scratch** for a concrete task. That prompt will have exactly these three parts.
+
+Before you write it yourself, read it first. On the right is the full prompt, split into three pieces. Your job: put the correct label on each one.
+
+If you internalize this structure now, by the time you reach the capstone you'll know which part to tweak when a test case fails.

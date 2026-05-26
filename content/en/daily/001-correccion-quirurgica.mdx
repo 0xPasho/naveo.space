@@ -1,0 +1,133 @@
+---
+title: "Quick mission: surgical correction"
+intro: |
+  The model gave you something almost right. The trap: asking for changes without making it rewrite everything.
+station: vega
+teaches:
+  - surgical-correction-prompt
+  - specific-correction
+characters:
+  - echo
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Echo asked a model for a welcome email for a new shift. It came out
+      almost right, but the greeting is extra and the schedule is missing.
+      Which follow-up do you send?
+    optionA: |
+      ```
+      Make it more professional and regenerate the whole thing.
+      ```
+    optionB: |
+      ```
+      Keep everything as is. Only two changes:
+      1) Remove the opening greeting "Hi team".
+      2) Add a line with the schedule: 2:00 PM to 10:00 PM.
+      ```
+    correct: B
+    explanation: |
+      Option A is a rewrite dressed up as feedback. "More professional" is
+      vague, and "regenerate the whole thing" gives the model permission to
+      throw away parts that were already fine.
+
+      Option B is a surgical diff: it names what stays ("keep everything as
+      is"), lists the small changes, and makes them concrete. Result: the
+      model touches two lines and nothing else.
+
+      Practical rule: if you like 8 of 10 lines, do not ask for a rewrite.
+      Ask to edit the 2 that do not fit.
+  - kind: slot-fill-dnd
+    task: |
+      Sort each follow-up: is it a surgical diff (small change, leaves the
+      rest alone) or a rewrite (gives the model permission to scrap
+      everything)?
+    slots:
+      - id: diff
+        label: "Surgical diff"
+      - id: rewrite
+        label: "Rewrite"
+    pieces:
+      - id: p1
+        label: "Remove the opening greeting and leave the rest exactly as is."
+        correctSlot: diff
+      - id: p2
+        label: "Make it more professional."
+        correctSlot: rewrite
+      - id: p3
+        label: "Change the word 'urgent' to 'priority' in point 2."
+        correctSlot: diff
+      - id: p4
+        label: "Rewrite it from scratch with a different tone."
+        correctSlot: rewrite
+      - id: p5
+        label: "Keep the 3 bullets. Add a fourth one with the schedule."
+        correctSlot: diff
+  - kind: prompt-AB
+    question: |
+      Forge sent you a tool description for `send_invoice`. It is well
+      written, but it does not say the amount goes in cents. Which
+      follow-up do you send the model?
+    optionA: |
+      ```
+      In the current description, add a single line at the end:
+      "The `amount` field is in cents (199 = $1.99)."
+      Do not touch the rest.
+      ```
+    optionB: |
+      ```
+      Rewrite the description so the field formats are clearer.
+      ```
+    correct: A
+    explanation: |
+      Same pattern as scene 1. Option A is a diff: it says what line to
+      add, where, and clarifies "do not touch the rest". The model has no
+      room to improvise.
+
+      Option B sounds reasonable but is an invitation to rewrite. "Clearer
+      about formats" can mean ten different things, and the model will
+      reorder fields, change examples, and add sections you did not ask for.
+
+      When the output is 90 percent there, small edits always win. Full
+      rewrites are for when you started down the wrong path.
+  - kind: step-order-dnd
+    task: |
+      You have a model output that is almost right. Order the steps to
+      build a surgical correction prompt, from top to bottom.
+    steps:
+      - id: s1
+        label: "Read the full output and mark what you like."
+        detail: "If you start from what is broken, you will over-correct."
+      - id: s2
+        label: "Note the 2 or 3 concrete changes you want."
+        detail: "If it is more than 3, consider whether a rewrite is justified."
+      - id: s3
+        label: "Open the prompt with 'keep everything as is' or similar."
+        detail: "Anchor what stays before you ask for any change."
+      - id: s4
+        label: "List each change one by one, with what goes out and what goes in."
+        detail: "Change 1, change 2. Concrete. No metaphors."
+      - id: s5
+        label: "Close with 'leave the rest untouched'."
+        detail: "Reinforces the preservation rule at the end."
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this well-built correction prompt. Think of it
+      as "starting agreement, concrete changes, preservation rule".
+    parts:
+      - id: anchor
+        label: "Starting agreement (what stays)"
+        text: "I liked the email you generated. Keep the structure, the tone, and the bullets exactly as they are."
+      - id: change1
+        label: "Concrete change 1 (what goes out, what goes in)"
+        text: "Remove the opening greeting 'Hi team'. Do not replace it with anything, start straight from the first bullet."
+      - id: change2
+        label: "Concrete change 2 (what goes out, what goes in)"
+        text: "Add a standalone line at the end that reads: 'Shift schedule: 2:00 PM to 10:00 PM.'"
+      - id: lock
+        label: "Preservation rule (what does not get touched)"
+        text: "The rest of the email is not modified. Do not rewrite phrases, do not reorder bullets, do not change words I did not mention."
+---
+
+Mission of the day: two prompts, one pattern. When something is almost right,
+do not ask for "another version". Ask for the exact change.

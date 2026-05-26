@@ -1,0 +1,38 @@
+---
+title: "MCP signed"
+order: 26
+estimatedMinutes: 1
+demo:
+  id: lesson-complete
+  props:
+    signedBy: forge
+---
+
+## Track closed. Forge signs.
+
+You just made the biggest transition in the product: from **assistant that talks** to **agent that acts**. The crew no longer needs you just to coordinate. they need you to **build the tools the rest coordinate with**.
+
+**What you carry aboard from this track:**
+
+- Tell a tool from a prompt: a tool is real code the model decides to invoke; a prompt is words the model reads.
+- Decide **when to and when NOT to** make something a tool. a lot of "logic" the LLM solves on its own.
+- Write a **JSON Schema** for a tool. name, description, typed parameters, minimal required, enums, formats, bounds.
+- Pick **verb+noun names** the agent discovers fast.
+- Tell **required from optional** without over-blocking or leaving holes.
+- Design the **tool output** as a contract, just like the input.
+- Build **tool descriptions** the model actually uses: they say what it does, when YES, when NO, what it guarantees.
+- **Mark side-effects** in the description so the agent treats destructive tools carefully.
+- Implement **handlers that don't break the agent**. structured errors, not exceptions.
+- **Rich errors** with `code` + `message` + data so the agent self-corrects.
+- **Idempotency** with `idempotency_key` so retries don't double-charge.
+- **Logging and request_id** to reconstruct any invocation in production.
+- Chain **multiple tools** with composable shapes (one's output fits the next one's input).
+- Calibrate the **catalog size**. 5-15 tools, not 30.
+- **Cache** read-only tool results to cut cost and latency.
+- Maintain **state between calls** when the case demands it (cart, session, persistent context).
+- Check **authorization** in every handler. the agent is not admin.
+- Debug an MCP **the agent ignores**: read the spec from the LLM's side.
+
+<Character name="forge" /> signs the track. You moved from student to **tool author**. Track 4 (when it lands) enters the territory where you combine everything: agents with loops, chains, RAG, evals.
+
+For now, look at the toolkit you built. That's already product.

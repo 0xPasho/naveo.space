@@ -1,0 +1,132 @@
+---
+title: "Enums, min/max, formato: el schema valida por vos"
+order: 8
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: schedule_maintenance
+  toolPurpose: |
+    Programar una ventana de mantenimiento de un sistema de la nave.
+    El handler asume que el schema ya filtró los valores inválidos. Por
+    eso vos vas a apretar el schema todo lo posible para que el modelo NO
+    pueda mandar basura.
+
+    Parámetros:
+    - system: uno de "life_support", "comms", "propulsion", "navigation".
+    - severity: uno de "routine", "elevated", "critical".
+    - duration_minutes: entero entre 5 y 240.
+    - starts_at: string ISO 8601, fecha y hora ("2026-05-20T03:00:00Z").
+    - technician_alias: string de 2 a 12 caracteres, snake/dash/letras.
+  exampleInvocations:
+    - 'schedule_maintenance(system: "comms", severity: "routine", duration_minutes: 30, starts_at: "2026-05-20T03:00:00Z", technician_alias: "em") → {ok: true, window_id: "..."}'
+    - 'schedule_maintenance(system: "life_support", severity: "critical", duration_minutes: 120, starts_at: "2026-05-21T22:00:00Z", technician_alias: "bru") → {ok: true, window_id: "..."}'
+  starter: |
+    {
+      "name": "schedule_maintenance",
+      "description": "",
+      "parameters": {
+        "type": "object",
+        "properties": {
+
+        },
+        "required": []
+      }
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Schema es JSON válido"
+    - id: has-name
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"schedule_maintenance\""
+      criterion: "name = \"schedule_maintenance\""
+    - id: system-enum
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"system\"[\\s\\S]{0,300}\"enum\"\\s*:\\s*\\[[^\\]]*\"life_support\"[^\\]]*\"comms\"[^\\]]*\"propulsion\"[^\\]]*\"navigation\""
+      criterion: "system tiene enum con los 4 valores válidos"
+    - id: severity-enum
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"severity\"[\\s\\S]{0,300}\"enum\"\\s*:\\s*\\[[^\\]]*\"routine\"[^\\]]*\"elevated\"[^\\]]*\"critical\""
+      criterion: "severity tiene enum con los 3 valores válidos"
+    - id: duration-bounds
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"duration_minutes\"[\\s\\S]{0,400}\"minimum\"\\s*:\\s*5[\\s\\S]{0,200}\"maximum\"\\s*:\\s*240"
+      criterion: "duration_minutes tiene minimum: 5 y maximum: 240"
+    - id: starts-at-format
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"starts_at\"[\\s\\S]{0,300}(\"format\"\\s*:\\s*\"date-time\"|\"pattern\"\\s*:)"
+      criterion: "starts_at tiene format: date-time O pattern (regex ISO)"
+    - id: alias-pattern
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"technician_alias\"[\\s\\S]{0,400}(\"pattern\"\\s*:|\"minLength\"\\s*:\\s*2[\\s\\S]{0,200}\"maxLength\"\\s*:\\s*12)"
+      criterion: "technician_alias tiene pattern regex O al menos minLength/maxLength"
+    - id: all-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"required\"\\s*:\\s*\\[[^\\]]*\"system\"[^\\]]*\"severity\"[^\\]]*\"duration_minutes\"[^\\]]*\"starts_at\"[^\\]]*\"technician_alias\""
+      criterion: "Los 5 parámetros están en required"
+    - id: constraints-make-sense
+      kind: llm-judge
+      criterion: "Los constraints declarados no contradicen el caso de uso. enums tienen exactamente los valores listados (no extras como 'medium'); bounds numéricos son los pedidos (5-240, no 0-1000); el pattern del alias permite letras y guiones (no espacios). Cada constraint está justificado por el dominio."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Para constraints numéricos usá `minimum` y `maximum` en JSON Schema: `\"duration_minutes\": { \"type\": \"integer\", \"minimum\": 5, \"maximum\": 240 }`."
+  - "Para fecha ISO 8601 lo más portable es `\"format\": \"date-time\"`. Algunos validadores también aceptan un regex en `pattern`."
+  - "Para `technician_alias` con caracteres limitados: `\"pattern\": \"^[a-z][a-z0-9_-]{1,11}$\"` deja arrancar con letra y largo total 2-12."
+teaches:
+  - tool-schema-validation
+  - tool-schema-enum
+requires:
+  - tool-schema-multi-param
+---
+
+## El schema NO es solo documentación. también es validación.
+
+Cuando el modelo invoca un tool, el runtime puede:
+
+1. **Aceptar la invocación** si los argumentos pasan el schema, y dejar al handler trabajar.
+2. **Rechazarla y devolver un error de validación** si los argumentos violan algún constraint, y dejar que el modelo re-intente con valores válidos.
+
+El segundo flujo es **mucho más barato** que dejar que el handler reciba basura y la maneje. Por eso el schema ajustado paga doble: el modelo aprende los valores válidos del feedback, y tu handler se ahorra checks.
+
+### Los constraints que importan
+
+JSON Schema tiene más herramientas de las que se usan. Las que vas a usar el 95% del tiempo:
+
+| Caso | Constraint | Ejemplo |
+|---|---|---|
+| Valores discretos | `enum` | `"enum": ["sms", "comms", "email"]` |
+| Número en rango | `minimum`, `maximum` | `"minimum": 0, "maximum": 100` |
+| Entero (no float) | `type: "integer"` | usar en vez de `"number"` para contadores |
+| String con largo limitado | `minLength`, `maxLength` | `"maxLength": 280` (tweets) |
+| String con formato | `format` | `"format": "date-time"`, `"format": "email"`, `"format": "uri"` |
+| String con regex | `pattern` | `"pattern": "^[A-Z]{3}-\\d{4}$"` (códigos tipo "BAY-1234") |
+| Array no vacío | `minItems` | `"minItems": 1` |
+
+### Por qué importa: tres consecuencias
+
+1. **El modelo no inventa valores.** Sin enum, si pedís `severity`, va a probar "high", "alta", "urgent", "critical". Con enum, se queda en los 3 que vos definiste.
+2. **Los errores son útiles.** "value not in enum" es muy distinto a un handler que crashea con `Cannot read property of undefined`.
+3. **Tu description se vuelve más corta.** Cosas como "el formato es YYYY-MM-DD" dejan de ser texto que el modelo puede ignorar y pasan a ser un `format: date-time` que el sistema chequea.
+
+### Tu tarea
+
+A la derecha tenés `schedule_maintenance` vacío. Definí los 5 parámetros con los constraints correctos. El validador chequea cada constraint con regex; al final un llm-judge confirma que no contradigan el caso de uso.
+
+> Cuanto más apretado el schema, menos código defensivo en el handler. **El schema es la primera línea de defensa.**

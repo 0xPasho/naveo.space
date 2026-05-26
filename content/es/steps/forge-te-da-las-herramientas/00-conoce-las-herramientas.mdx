@@ -1,0 +1,21 @@
+---
+title: "El modelo necesita manos"
+order: 0
+estimatedMinutes: 2
+---
+
+## Hasta acá fueron palabras. Ahora vienen acciones.
+
+En los tracks anteriores aprendiste a **hacer entender** al modelo: estructurar prompts, sostener conversaciones, recuperarte de outputs malos. Todo eso es comunicación. Pero hay una clase enorme de problemas donde la respuesta no es decirte algo, es **hacer algo**: buscar un dato en una base, asignar un turno, mandar una notificación, consultar inventario.
+
+Para eso, el modelo necesita **herramientas**.
+
+> Un **tool** es una función que el modelo puede decidir invocar. Vos definís qué hace, cómo se llama, qué inputs recibe. El modelo decide cuándo usarlo basándose **exclusivamente** en lo que vos escribiste sobre él.
+
+<Character name="forge" /> es la ingeniera de la crew. la que construye las herramientas. En este track te va a enseñar las tres habilidades que separan un MCP que el modelo usa de uno que ignora:
+
+1. **Definir el schema**. qué entradas acepta y qué garantiza.
+2. **Escribir la descripción**. cuándo el modelo debería elegirla.
+3. **Implementar el handler**. qué pasa cuando se invoca, incluyendo los casos raros.
+
+Empezás en el siguiente paso. Forge tiene cosas que necesita automatizar y vos vas a construirle el toolkit.

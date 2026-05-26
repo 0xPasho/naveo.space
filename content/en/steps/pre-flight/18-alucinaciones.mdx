@@ -1,0 +1,113 @@
+---
+title: "Hallucinations: when and why"
+order: 18
+estimatedMinutes: 6
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    You ask the model: *"What was the identification code of the Apollo 11
+    commander?"*
+
+    It confidently answers: *"Commander Neil Armstrong's identification
+    code was NASA-A1-001."*
+
+    You verify: Armstrong existed and commanded Apollo 11. But
+    "identification code NASA-A1-001" appears in no real record. NASA
+    didn't use that system. What happened?
+  optionA: |
+    **The model had contaminated data during training.** You have to
+    trust but verify, because sometimes "it gets things wrong".
+  optionB: |
+    **The model predicted the most likely continuation**, not the true
+    answer. *"Commander Neil Armstrong's identification code was NASA-..."*
+    is a sentence that **sounds** true because it follows the pattern of
+    how people talk about NASA. The model didn't look anything up. It
+    made up something plausible.
+  correct: B
+  explanation: |
+    Hallucination isn't a model bug. It's exactly what the model is
+    designed to do: predict the most likely continuation. When you ask it
+    something whose specific answer isn't well-established in its data,
+    the model doesn't say "I don't know". It completes with whatever
+    **would sound** correct.
+
+    It sounds so natural because it uses real patterns (the structure of
+    how NASA codes get cited), just with invented values. The form is
+    perfect. The content is fiction.
+
+    Three factors trigger it:
+
+    1. The question asks for something **specific** (a code, a citation, a number).
+    2. The topic seems **known** (the model knows a lot about Apollo 11 in general).
+    3. It has **no incentive to say "I don't know"**, so it completes.
+
+    Mitigation: explicitly tell it that "I don't know" is allowed, give
+    it real sources (RAG, tools), and verify anything critical
+    separately.
+hints:
+  - "The model doesn't look up or verify anything. It predicts probable tokens, nothing more."
+  - "If the answer is specific and sounds technical but you can't find it in any record, suspect it."
+  - "Think back to lesson 14: the model picks the most probable token given what's before. If what's before is *'the NASA code was ...'*, it completes with something that **looks like** a NASA code."
+teaches:
+  - hallucination-mechanics
+requires:
+  - llm-mental-model
+  - temperature-sampling
+---
+
+## The model lies with confidence
+
+In lesson 14 we mentioned this in passing. Now let's go deeper: **hallucination** is when the model tells you something false with the same confidence as something true.
+
+### Why it happens: the mechanism
+
+The model predicts the most likely continuation. If you ask it something whose answer isn't well-established in its data, it doesn't return *"I don't know"*. It returns **whatever would sound correct**.
+
+Example:
+
+```
+Question: What was the serial number of the first crewed rocket to the Moon?
+Answer:   The Saturn V for Apollo 11 had serial number SA-506.
+```
+
+`SA-506` *sounds* like a NASA serial number. It's plausible. It's specific. And in this case, it's **correct**.
+
+```
+Question: What was the identification code of the Apollo 11 commander?
+Answer:   Commander Neil Armstrong's identification code was NASA-A1-001.
+```
+
+`NASA-A1-001` also *sounds* like a NASA code. It's plausible. It's specific. And it's **completely made up**. NASA didn't issue "identification codes" like that.
+
+The model doesn't know the difference between the two answers. To it, both are plausible completions following the pattern of "how one would talk about NASA".
+
+### Three factors that trigger it
+
+1. **The question asks for something specific** (number, date, proper noun, code). The model has to produce something concrete, and completes with whatever seems appropriate.
+2. **The topic seems "known"**. If the model knows a lot about the general area, it gains confidence to complete even things it doesn't specifically know.
+3. **It has no incentive to say "I don't know"**. Its training rewards completing well, not honesty about uncertainty.
+
+### What it looks like in production
+
+Classic cases:
+
+- Citations to academic papers that don't exist, with plausible authors and titles.
+- Library functions that look like they exist but don't.
+- Products from real companies that were never released.
+- Citations to invented laws or regulations with the correct format.
+
+They all share something: **the form is perfect, the content is fiction**.
+
+### Mitigations
+
+No silver bullet, but tactics that reduce the frequency:
+
+1. **Explicitly tell it that "I don't know" is allowed.** In the prompt: *"If you're not sure, say 'I don't have that information' instead of inventing."* It works surprisingly well.
+2. **For verifiable facts, give it sources (RAG) or tools.** Give the model access to real documents or to search. Have it retrieve before generating.
+3. **Verify what's critical separately.** For anything that matters (legal, medical, financial), don't accept the model's output without checking it against an authoritative source.
+
+> This is exactly the trap of the capstone (lesson 20). The third test case asks you to summarize a log without naming the crewmate (because the log doesn't name them). If your prompt isn't explicit, the model will "complete" with a plausible name. **That's hallucination.** Remember what you learned here when you get there.
+
+On the right, two descriptions of what happened. Which one actually captures the mechanism?

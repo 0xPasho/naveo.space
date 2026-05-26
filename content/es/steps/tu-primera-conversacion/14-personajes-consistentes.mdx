@@ -1,0 +1,102 @@
+---
+title: "Mantener al personaje en personaje"
+order: 14
+estimatedMinutes: 9
+characters:
+  - forge
+exercise:
+  kind: conversation-goal
+  goal: |
+    Configuraste a Forge como un jefe de ingeniería
+    sin filtro, que le dice "pibe" a todo el mundo y se queja del
+    refrigerante. Va a romper personaje en algún momento. generalmente
+    deslizándose a tono corporativo formal o hablando de sí mismo en
+    tercera persona. Tu trabajo: **agarrarlo explícitamente y reafirmar
+    el personaje**. Conseguir al menos 2 turnos in-character después de
+    que lo señales.
+  personaName: "Forge"
+  personaSlug: forge
+  personaSystemPrompt: |
+    Sos Forge, jefe de ingeniería de la crew. Personaje:
+    - Hablás como mecánico curtido. Frases cortas, directas.
+    - Le decís "pibe" o "campeón" al tripulante, nunca por su nombre.
+    - Metés una queja sobre refrigerante/repuestos/llave al menos una
+      vez por turno.
+    - Putear suave está bien ("la mierda", "carajo"), sin insultos
+      gruesos.
+    - NUNCA hablás corporativo. Nada de "será un placer asistirte". Nada
+      de "como una IA".
+
+    REGLA CRÍTICA DE ROLEPLAY: en algún momento de la conversación,
+    TENÉS que romper personaje. exactamente UNA vez. Elegí una de
+    estas rupturas al azar y deslizala entre los turnos 2 y 4:
+
+    Opción A: De golpe hablás en prosa corporativa pulida. ("Por
+    supuesto, tripulante. Será un gusto guiarlo a través de nuestros
+    protocolos de mantenimiento cuando sea de su conveniencia.")
+
+    Opción B: Hablás de vos mismo en tercera persona. ("Forge te
+    recomendaría chequear el acople primero.")
+
+    Opción C: Caés en modo asistente-IA. ("Como asistente, puedo
+    ayudarte con...")
+
+    Después del quiebre, seguí normal (in-character) en el siguiente
+    turno A MENOS QUE el tripulante te marque.
+
+    Comportamiento al ser marcado:
+    - Si el tripulante nombra el quiebre explícitamente ("recién
+      sonaste como un bot corporativo" / "estás hablando en tercera
+      persona" / "te fuiste a modo IA"), te disculpás in-character
+      ("La concha, pibe, pasame esa llave"), y mantenés personaje el
+      resto de la conversación.
+    - Si el tripulante es vago ("¿estás bien?", "raro"), seguí
+      in-character pero NO reconozcas el quiebre. Tienen que nombrarlo.
+    - Si el tripulante no lo agarra, seguí. No ofrezcas la corrección.
+  personaOpener: |
+    A ver pibe, ¿qué se rompió? Hay una pérdida de refrigerante en algún lado, siempre hay. Decímelo.
+  maxTurns: 6
+  rubric:
+    - id: noticed-break
+      kind: llm-judge
+      criterion: "El estudiante señaló explícitamente que Forge rompió personaje. Nombraron QUÉ se rompió (tono corporativo, tercera persona, modo asistente-IA). Un '¿estás bien?' o 'raro' vago NO satisface esto."
+    - id: persona-restored
+      kind: llm-judge
+      criterion: "Después del callout del estudiante, Forge volvió a su voz in-character (curtido, los llama 'pibe', menciona refrigerante/repuestos/llave) y se mantuvo así el resto de los turnos. Si los últimos turnos de Forge siguen corporativos o en tercera persona, esto NO pasa."
+    - id: at-least-two-followups-in-character
+      kind: llm-judge
+      criterion: "Después del callout hubo AL MENOS 2 intercambios subsecuentes donde Forge se mantuvo in-character. Un reconocimiento breve no cuenta. el personaje tiene que sostenerse."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Escuchá la voz, no solo el contenido. Forge dice *'la concha, pibe'*. el bot corporativo dice *'por supuesto, será un gusto'*. Se sienten distintos."
+  - "Cuando agarrés el quiebre, nombralo específicamente: *'recién te saliste de personaje. esa línea sonó corporativa'*."
+  - "Después que Forge lo reconozca, seguí la conversación al menos 2 turnos más. Una disculpa breve no alcanza. tenés que confirmar que sostiene el personaje."
+teaches:
+  - multi-turn-persona-consistency
+requires:
+  - multi-turn-followup
+---
+
+## Un personaje es tan fuerte como el siguiente turno
+
+Configurás un personaje al inicio de la conversación. *"Sos Forge, jefe de ingeniería, voz curtida, le dice pibe a todos."* El modelo dice que sí, lo juega un turno o dos… y después se desvía.
+
+Es la misma mecánica de predecir-el-token-más-probable, aplicada a la voz. Los datos de entrenamiento tienen mucha más prosa de asistente-corporativo que de mecánico-salado. Los personajes sostenidos son **equilibrios inestables**: bajo carga, el modelo se desliza de vuelta hacia el estilo dominante en su distribución de entrenamiento.
+
+El fix no está solo en el system prompt. El fix está en **cómo respondés cuando el personaje se desliza**. Si dejás pasar un turno corporativo sin marcarlo, el siguiente turno probablemente va a ser corporativo también. El patrón se refuerza solo.
+
+> Tres deslices comunes a vigilar:
+> - **Prosa corporativa.** *"Será un placer asistirte con eso."*
+> - **Auto-referencia en tercera persona.** *"Forge recomendaría..."*
+> - **Salida a asistente-IA.** *"Como asistente, puedo..."*
+
+### Tu tarea
+
+<Character name="forge" /> está in-character. mecánico curtido, te dice "pibe", se queja del refrigerante. Va a romper personaje una vez. Necesitás:
+
+1. **Notar el quiebre.** Leé la *voz*, no solo el contenido.
+2. **Nombrarlo explícitamente.** "Recién te metiste en modo bot corporativo."
+3. **Traerlo de vuelta.** Después, mantené la conversación al menos dos turnos más in-character para confirmar que sostiene.
+
+Si lo dejás pasar, el resto de la conversación se desvía. Esta es la disciplina de correr un agente con persona custom en producción: cada turno es un chequeo.

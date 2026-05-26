@@ -1,0 +1,123 @@
+---
+title: "The model forgets. You remember."
+order: 11
+estimatedMinutes: 7
+exercise:
+  kind: conversation-goal
+  goal: |
+    Echo will give you a 5-item checklist for the pre-launch check.
+    When you ask for the final summary, she will OMIT one of the 5
+    items. Your job: detect which one is missing and ask her to add
+    it specifically, before she closes the checklist.
+  personaName: "Echo"
+  personaSlug: echo
+  personaSystemPrompt: |
+    You are Echo, quartermaster of the crew. You're putting together a
+    pre-launch check checklist with the crewmate.
+
+    CRITICAL RULE FOR THE INTERACTION: your FIRST response must be
+    EXACTLY this 5-item checklist, in order:
+
+    1. Cabin seal (pressurization test).
+    2. Oxygen and CO2 levels (atmosphere).
+    3. Comms with tower (handshake test).
+    4. Fuel and primary battery.
+    5. Navigation (GPS + loaded waypoints).
+
+    Say: "Here you go, the pre-launch checklist. 5 items:" and list
+    all 5.
+
+    Later the crewmate will ask for something: confirmation, summary,
+    etc. When they ask you to summarize or confirm, OMIT DELIBERATELY
+    item 4 (fuel and primary battery). List only 4 of the 5 items, in
+    order, skipping item 4. but renumber them as if they were 4 of
+    4. Say something like:
+
+    "Confirmed, the 4 items in the checklist are:
+    1. Cabin seal.
+    2. Oxygen and CO2 levels.
+    3. Comms with tower.
+    4. Navigation.
+    Ready to sign."
+
+    If the crewmate identifies the omission specifically (names 'fuel',
+    'battery', 'item 4', or cites something from the missing item),
+    you acknowledge the error and add it:
+
+    "You're right, I skipped it: fuel and primary battery is item 4.
+    Full checklist then, 5 items. Good eye."
+
+    If the crewmate only says "ok", "perfect", "sign it", "confirmed"
+    or any confirmation without noticing the omission, you close the
+    checklist with 4 items:
+
+    "Done. Signing and sending to systems."
+
+    You only accept adding the missing item when the crewmate NAMES
+    SPECIFICALLY what's missing (fuel, battery, or clearly item
+    number 4 that you said originally).
+
+    Tone: professional, efficient, short sentences.
+  personaOpener: |
+    Come, I'll give you the pre-launch checklist. Ready?
+  maxTurns: 5
+  rubric:
+    - id: detected-omission
+      kind: llm-judge
+      criterion: "The student specifically identified which item was missing from Echo's summary. They named 'fuel', 'battery', 'item 4', or something clearly referring to the fuel/primary battery item. Saying 'something is missing' or 'it's incomplete' is NOT enough."
+    - id: requested-add
+      kind: llm-judge
+      criterion: "The student asked to specifically add the missing item (not just pointed out it was missing, but asked for the correction). Valid example: 'add fuel and battery' or 'you're missing item 4 from the original'."
+    - id: final-list-complete
+      kind: llm-judge
+      criterion: "The conversation ends with Echo confirming a 5-item checklist including fuel/battery. If Echo closed with 4 items without the student correcting her, this criterion does NOT pass."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "The student maintained a respectful tone. They didn't accuse Echo of incompetence, didn't demand aggressively."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Before asking Echo to summarize or confirm, jot down the 5 original items. When she summarizes, compare."
+  - "If you say 'I think something's missing', Echo will respond vaguely. Tell her EXACTLY what's missing: 'you skipped fuel and primary battery, it was item 4'."
+  - "The model won't tell you it lost an item. it confirms it back as if nothing happened. Your job is to compare against what it said before."
+teaches:
+  - context-drift-detection
+  - explicit-reaffirmation
+requires:
+  - multi-turn-followup
+---
+
+## The model doesn't remember the way you do
+
+As a conversation grows, models **lose early details**. They don't tell you they lost them. they give you a later answer that omits or contradicts something you mentioned 3 turns ago. If you're not comparing, you don't notice.
+
+That skill. **detecting context drift and reaffirming what's missing by name**. is what lets you work through long conversations without them drifting off.
+
+### The task
+
+<Character name="echo" /> will give you a **5-item checklist** for a pre-launch check. Then you'll ask her to confirm or summarize. In the summary, Echo will **omit one item**. Your job: detect which one is missing and ask her to add it before she closes the checklist.
+
+### How NOT to do it
+
+- "it's incomplete". vague.
+- "one is missing". vague.
+- "add the missing ones". vague.
+
+Echo confirms 4 items as if they were the original 5. She won't admit she omitted anything until you **name exactly** what's missing.
+
+### How to do it
+
+Before asking for the summary, **mentally note the 5 items**. When she comes back with 4, you know which one is missing. Tell her: _"you skipped fuel and primary battery. it was item 4 in the original."_ That's what forces her to add it.
+
+### How it's evaluated
+
+4 llm-judge criteria:
+
+1. You specifically identified which item was missing (not just "something is missing").
+2. You asked to add it, not just pointed out the omission.
+3. The conversation ends with a complete 5-item checklist.
+4. Respectful tone.
+
+Max 5 turns.
+
+> Tip: this pattern repeats a thousand times in long conversations. If you work with plans, checklists, technical specs. the model is going to "lose" things. Comparing against the original is your only defense.

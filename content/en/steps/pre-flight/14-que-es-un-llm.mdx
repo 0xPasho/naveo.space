@@ -1,0 +1,101 @@
+---
+title: "What an LLM actually does"
+order: 14
+estimatedMinutes: 6
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    You ask the model: *"What's the capital of France?"* and it answers
+    *"Paris."* Which best describes what just happened inside the model?
+  optionA: |
+    **It looked up "Paris" in a database of country capitals**, pulled the
+    answer, and returned it.
+  optionB: |
+    **It predicted the most likely next word, token by token**, until it
+    had built the sentence *"The capital of France is Paris."* It does not
+    "know" Paris. it computed that *"Paris"* was the highest-probability
+    continuation.
+  correct: B
+  explanation: |
+    There is no lookup table inside the model. There is a huge function
+    that, given the prior tokens, outputs a probability distribution over
+    the next token. It picks one, appends it, repeats. "Paris" came out
+    because in the training data the phrase *"The capital of France is..."*
+    is followed by *"Paris"* far more often than by *"Lyon"* or *"Berlin"*.
+    This is why **how you phrase the prompt** changes the answer: you're
+    changing the probabilities of the next tokens. A different role, a
+    different example, a different output format → different probabilities
+    → different answer.
+teaches:
+  - llm-mental-model
+requires:
+  - variables-basics
+---
+
+## The model doesn't "know". It **predicts**.
+
+This is the single most important idea on the ship. Get it now and the rest of the curriculum stops feeling like magic.
+
+A large language model. LLM, what people mean when they say "the AI". is **a function that takes the tokens you've already written and outputs the most likely next token.** That's it. Then it appends that token, and predicts the next one. Then the next one. Until it stops.
+
+It does not look anything up. It does not check a fact. It does not consult Wikipedia. It computes: *given everything before this point, what's the most probable next word?*
+
+> A token is roughly a word or a piece of a word. "Paris" is one token. "unbelievable" is three. Don't worry about the exact count. what matters is the **left-to-right, one-at-a-time** generation.
+
+### Watch it run, one token at a time
+
+You ask the model to complete:
+
+```
+The capital of France is ___
+```
+
+Inside, the model computes a probability for every possible next token:
+
+```
+candidates:
+  Paris      93%   ← picked
+  Lyon        2%
+  Marseille   1%
+  Berlin      1%
+```
+
+It picks *Paris* and appends it. Then it predicts again, starting from the **longer** sentence:
+
+```
+"The capital of France is Paris" → next token
+
+candidates:
+  .          62%   ← picked
+  ,          18%
+  and         8%
+```
+
+It closes with a period. Sentence done. **The model never had the answer precomputed**. it built it token by token, in a loop:
+
+1. Look at everything written so far.
+2. Compute the distribution over the next token.
+3. Pick one.
+4. Go back to step 1.
+
+That's why if you change how the sentence starts. different role, different example, different format. you change the probabilities of the **first token** and the whole answer drifts somewhere else.
+
+### Why this matters for prompting
+
+If the answer is the most probable continuation, then **how you set up the start of the sentence controls what comes out**.
+
+- Ask vaguely → vague continuation.
+- Show two example pairs → the third pair follows the pattern.
+- Say *"Respond only with JSON"* → the probabilities pile up behind `{`.
+
+You are not "telling the model what to do" in a literal sense. You are **shaping the probabilities so that the answer you want becomes the most likely thing to come next**. That's the whole game.
+
+### One catch: confident lies
+
+Because the model is predicting, not looking up, it can be **wildly confident about something untrue**. It learned that *"My phone number is..."* is usually followed by digits. So if you ask it for someone's phone number, it'll cheerfully invent digits.
+
+That's called **hallucination**. We'll spend a lot of time on it in Track 2. For now, just know: *the model is a probability machine, not a truth machine*.
+
+On the right, the binary call. Pick the one that matches what's actually happening.

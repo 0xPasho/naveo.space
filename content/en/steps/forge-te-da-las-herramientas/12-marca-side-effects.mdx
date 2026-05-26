@@ -1,0 +1,77 @@
+---
+title: "Mark read vs side-effect: the agent acts differently"
+order: 12
+estimatedMinutes: 8
+exercise:
+  kind: tool-description
+  toolName: send_broadcast
+  context: |
+    {
+      "name": "send_broadcast",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["all_decks", "engineering", "medical", "bridge"]
+          },
+          "message": { "type": "string", "maxLength": 280 },
+          "priority": {
+            "type": "string",
+            "enum": ["info", "warning", "alert"]
+          }
+        },
+        "required": ["channel", "message", "priority"]
+      }
+    }
+  starter: |
+    Sends a message on a channel.
+  requiredPhrases:
+    - "side effect"
+    - "not reversible"
+    - "confirm with the user"
+hints:
+  - "This tool SENDS a message to humans. Any call means someone will see a notification. That's a side effect, and the agent has to know."
+  - "Mention the three ideas: (a) it's an external side effect, (b) it's not reversible (you can't 'unnotify'), (c) before invoking it's worth confirming the content and channel with the user."
+  - "For alert/priority, add guidance: 'use alert only when there's imminent risk'. The model respects that guidance if it's written."
+teaches:
+  - tool-side-effect-marking
+requires:
+  - tool-description-craft
+---
+
+## "What the tool does" isn't just what it returns
+
+Two mental categories the agent needs to recognize:
+
+- **Read-only tools.** Query state, don't modify it. Invoking them a thousand times is the same as once. `lookup_crewmate`, `list_inventory_items`, `get_shift_status`. Low risk: when in doubt, the agent can over-invoke without harm.
+
+- **Side-effect tools.** Modify state, send notifications, spend money, create things that need to be cleaned up later. `assign_shift`, `transfer_credits`, `send_broadcast`, `delete_user`. High risk: the agent has to **know they're destructive** or costly so it handles them carefully (confirm beforehand, don't retry blindly).
+
+The problem: **the model can't infer which is which from the name alone**. `send_broadcast` seems obvious to you, but "send" to the model can be as innocent as `send_query` (a query) or as serious as `send_payment` (irreversible). The difference you have to **write in the description**.
+
+### What your description needs if the tool has side effects
+
+1. **Say explicitly "side effect" / "mutates state" / "sends to humans".** That phrase is the signal the model uses to treat the call more carefully.
+
+2. **Say whether it's reversible.** "This action is not reversible." changes the agent's behavior: instead of invoking on the first prompt, it'll confirm.
+
+3. **Suggest confirming with the user before invoking.** "Before invoking, confirm with the user the content and the channel." is an instruction the model respects. you saw it in Track 2 with DecisionFlow.
+
+4. **Limit the triggers.** "Do not use as a response to hypothetical questions or queries. Only when the user explicitly asks for a broadcast." closes the door to wrong invocations.
+
+### Your task
+
+On the right you have `send_broadcast` with the full schema. Only the description is missing. Convince the agent that this **is not just another tool**.
+
+The validator looks for three key phrases:
+
+- **"side effect"**. captures that it has an external effect.
+- **"not reversible"**. captures that it can't be undone.
+- **"confirm with the user"**. captures the instruction to ask for explicit OK.
+
+### Bonus case: the "dry-run" as alternative
+
+A technique that pays off: for tools with serious effects, offer a **dry-run flag**. E.g. `send_broadcast(..., dry_run: true)` returns what would be sent, without sending. The agent can use it to check before committing. Mention this in the description and the agent will take advantage of it.
+
+> Track 3 rule that translates to production: **every destructive tool must be obvious from the description**. If you need to read the handler code to know it's destructive, you already lost.

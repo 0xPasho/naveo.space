@@ -1,0 +1,134 @@
+---
+title: "Misión exprés: corrección quirúrgica"
+intro: |
+  El modelo te dio algo casi bien. La trampa: pedir cambios sin que reescriba todo.
+station: vega
+teaches:
+  - surgical-correction-prompt
+  - specific-correction
+characters:
+  - echo
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Echo le pidió a un modelo un email de bienvenida para un nuevo turno.
+      Salió casi bien, solo sobra el saludo y falta mencionar el horario.
+      ¿Qué follow-up le mandás?
+    optionA: |
+      ```
+      Hacelo más profesional y volvé a generarlo entero.
+      ```
+    optionB: |
+      ```
+      Dejá todo igual. Solo dos cambios:
+      1) Sacá el saludo inicial "Hola team".
+      2) Agregá una línea con el horario: 14:00 a 22:00.
+      ```
+    correct: B
+    explanation: |
+      El A es una reescritura disfrazada de feedback. "Más profesional" es
+      vago, y "volvé a generarlo entero" le da permiso al modelo de tirar
+      cosas que ya estaban bien.
+
+      El B es un diff quirúrgico: nombra lo que se queda ("dejá todo igual"),
+      enumera los cambios chicos y los hace concretos. Resultado: el modelo
+      toca dos líneas y nada más.
+
+      Regla práctica: si te gustan 8 de 10 líneas, no pidas reescribir.
+      Pedí editar las 2 que sobran.
+  - kind: slot-fill-dnd
+    task: |
+      Clasificá cada follow-up: ¿es un diff quirúrgico (toca poco, deja el
+      resto) o una reescritura (le da permiso al modelo de tirar todo)?
+    slots:
+      - id: diff
+        label: "Diff quirúrgico"
+      - id: rewrite
+        label: "Reescritura"
+    pieces:
+      - id: p1
+        label: "Sacá el saludo inicial y dejá el resto exactamente igual."
+        correctSlot: diff
+      - id: p2
+        label: "Hacelo más profesional."
+        correctSlot: rewrite
+      - id: p3
+        label: "Cambiá la palabra 'urgente' por 'prioritario' en el punto 2."
+        correctSlot: diff
+      - id: p4
+        label: "Reescribilo de cero con otro tono."
+        correctSlot: rewrite
+      - id: p5
+        label: "Mantené los 3 bullets. Agregá un cuarto que diga el horario."
+        correctSlot: diff
+  - kind: prompt-AB
+    question: |
+      Forge te pasó una descripción de tool para `send_invoice`. Está bien
+      escrita, pero falta aclarar que el monto va en centavos. ¿Qué follow-up
+      le mandás al modelo?
+    optionA: |
+      ```
+      En la descripción actual, agregá una sola línea al final:
+      "El campo `amount` se expresa en centavos (199 = $1.99)."
+      No toques el resto.
+      ```
+    optionB: |
+      ```
+      Reescribí la descripción para que sea más clara sobre los formatos
+      de los campos.
+      ```
+    correct: A
+    explanation: |
+      Mismo patrón que la escena 1. El A es un diff: dice qué línea agregar,
+      dónde, y aclara "no toques el resto". El modelo no tiene espacio para
+      improvisar.
+
+      El B suena razonable pero es una invitación a la reescritura. "Más
+      clara sobre los formatos" puede significar diez cosas distintas y el
+      modelo va a reordenar campos, cambiar ejemplos, sumar secciones que
+      no pediste.
+
+      Cuando el output está al 90 por ciento, la edición chica gana siempre.
+      La reescritura es para cuando arrancaste por mal camino.
+  - kind: step-order-dnd
+    task: |
+      Tenés un output del modelo que está casi bien. Ordená los pasos para
+      armar un correction prompt quirúrgico, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Leé el output entero y marcá lo que te gusta."
+        detail: "Si arrancás por lo que falla, vas a sobrecorregir."
+      - id: s2
+        label: "Anotá los 2 o 3 cambios concretos que querés."
+        detail: "Si son más de 3, pensá si vale la pena reescribir."
+      - id: s3
+        label: "Empezá el prompt con 'dejá todo igual' o equivalente."
+        detail: "Le anclás al modelo qué se preserva antes de pedir el cambio."
+      - id: s4
+        label: "Listá cada cambio uno por uno, con qué sale y qué entra."
+        detail: "Cambio 1, cambio 2. Concretos. Sin metáforas."
+      - id: s5
+        label: "Cerrá con 'el resto no se toca'."
+        detail: "Refuerza la regla de preservación al final."
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este correction prompt bien armado. Pensalo
+      como "acuerdo de partida, cambios concretos, regla de preservación".
+    parts:
+      - id: anchor
+        label: "Acuerdo de partida (lo que se queda)"
+        text: "Me gustó el email que generaste. Dejá la estructura, el tono y los bullets exactamente como están."
+      - id: change1
+        label: "Cambio concreto 1 (qué sale, qué entra)"
+        text: "Sacá el saludo inicial 'Hola team'. No lo reemplaces por nada, arrancá directo con el primer bullet."
+      - id: change2
+        label: "Cambio concreto 2 (qué sale, qué entra)"
+        text: "Agregá al final una línea suelta que diga: 'Horario del turno: 14:00 a 22:00.'"
+      - id: lock
+        label: "Regla de preservación (lo que no se toca)"
+        text: "El resto del email no se modifica. No reescribas frases, no reordenes bullets, no cambies palabras que no mencioné."
+---
+
+Misión del día: dos prompts, un patrón. Cuando algo está casi bien, no pidas
+"otra versión". Pedí el cambio exacto.

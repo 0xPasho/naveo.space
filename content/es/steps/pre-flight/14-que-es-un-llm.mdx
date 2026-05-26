@@ -1,0 +1,100 @@
+---
+title: "Qué hace realmente un LLM"
+order: 14
+estimatedMinutes: 6
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Le preguntás al modelo: *"¿Cuál es la capital de Francia?"* y responde
+    *"París."* ¿Qué describe mejor lo que pasó adentro del modelo?
+  optionA: |
+    **Buscó "París" en una base de datos de capitales**, recuperó la
+    respuesta y la devolvió.
+  optionB: |
+    **Predijo la palabra más probable, token por token**, hasta armar la
+    frase *"La capital de Francia es París."* No "sabe" París. calculó
+    que *"París"* era la continuación con probabilidad más alta.
+  correct: B
+  explanation: |
+    No hay tabla de lookup adentro del modelo. Hay una función enorme que,
+    dados los tokens previos, devuelve una distribución de probabilidad
+    sobre el siguiente token. Elige uno, lo agrega, repite. "París" salió
+    porque en los datos de entrenamiento la frase *"La capital de Francia
+    es..."* es seguida por *"París"* muchísimo más seguido que por *"Lyon"*
+    o *"Berlín"*. Por eso **cómo redactás el prompt** cambia la respuesta:
+    estás cambiando las probabilidades de los próximos tokens. Distinto rol,
+    distinto ejemplo, distinto formato → distintas probabilidades → distinta
+    respuesta.
+teaches:
+  - llm-mental-model
+requires:
+  - variables-basics
+---
+
+## El modelo no "sabe". **Predice.**
+
+Esta es la idea más importante de toda la nave. Internalizala ahora y el resto del curriculum deja de sentirse mágico.
+
+Un large language model. LLM, lo que la gente llama "la IA". es **una función que toma los tokens que ya escribiste y devuelve el siguiente token más probable.** Listo. Después lo agrega, y predice el siguiente. Y el siguiente. Hasta que para.
+
+No busca nada. No verifica un hecho. No consulta Wikipedia. Calcula: *dado todo lo previo, ¿cuál es la palabra más probable a continuación?*
+
+> Un token es aproximadamente una palabra o un pedazo de palabra. "París" es un token. "inconcebible" son tres. No te preocupes por el conteo exacto. lo que importa es la generación **de izquierda a derecha, uno por vez**.
+
+### Vamos a verlo: el modelo paso a paso
+
+Le pedís al modelo que complete:
+
+```
+La capital de Francia es ___
+```
+
+Adentro, el modelo calcula la probabilidad de cada token posible:
+
+```
+candidatos:
+  París      93%   ← elegido
+  Lyon        2%
+  Marsella    1%
+  Berlín      1%
+```
+
+Elige *París* y lo agrega al final. Ahora vuelve a predecir, partiendo de la frase **más larga**:
+
+```
+"La capital de Francia es París" → próximo token
+
+candidatos:
+  .          62%   ← elegido
+  ,          18%
+  y           8%
+```
+
+Cierra con un punto. Frase armada. **El modelo nunca tuvo la respuesta precomputada**. la fabricó token por token, en un loop:
+
+1. Mirar todo lo que va escrito.
+2. Calcular la distribución del próximo token.
+3. Elegir uno.
+4. Volver al paso 1.
+
+Por eso si cambiás cómo arrancás la frase. distinto rol, distinto ejemplo, distinto formato. cambian las probabilidades **del primer token** y la respuesta entera se desvía.
+
+### Por qué importa para promptear
+
+Si la respuesta es la continuación más probable, entonces **cómo armás el inicio de la frase controla qué sale**.
+
+- Preguntá vago → continuación vaga.
+- Mostrá dos pares de ejemplo → el tercer par sigue el patrón.
+- Decí *"Respondé solo con JSON"* → las probabilidades se acumulan detrás de `{`.
+
+No le estás "diciendo al modelo qué hacer" en sentido literal. Estás **moldeando las probabilidades para que la respuesta que querés sea lo más probable que venga después**. Ese es todo el juego.
+
+### Un pero: mentiras con confianza
+
+Como el modelo predice y no busca, puede estar **brutalmente seguro de algo falso**. Aprendió que *"Mi número de teléfono es..."* suele seguir con dígitos. Entonces si le pedís el teléfono de alguien, inventa dígitos con toda la confianza del mundo.
+
+Eso se llama **alucinación**. Vamos a pasar bastante tiempo con esto en Track 2. Por ahora alcanza con saber: *el modelo es una máquina de probabilidades, no una máquina de verdad*.
+
+A la derecha, la llamada binaria. Elegí la que describe lo que realmente pasa.

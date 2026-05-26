@@ -1,0 +1,88 @@
+---
+title: "When does the LLM call a tool?"
+order: 3
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Two versions of the description of the **same tool** (`lookup_crewmate`).
+    One makes the model invoke it when it should and only when it should.
+    The other is ambiguous and will be invoked badly. or not invoked when
+    it's needed. Which one is the good one?
+  optionA: |
+    {
+      "name": "lookup_crewmate",
+      "description": "Looks up a crewmate.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "alias": { "type": "string" }
+        },
+        "required": ["alias"]
+      }
+    }
+  optionB: |
+    {
+      "name": "lookup_crewmate",
+      "description": "Returns the registered information for a crewmate (full name, role and contact method) by alias. Use when the user asks about a specific crewmate identifying them by alias. Do NOT use to list multiple crewmates at once, or to create or modify a record.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "description": "The crewmate's alias (a short string used aboard, e.g. 'Em', 'Bru', 'Ly')."
+          }
+        },
+        "required": ["alias"]
+      }
+    }
+  correct: B
+  explanation: |
+    The model does NOT execute the tool. it only decides whether to
+    invoke it. That decision is based **exclusively** on what you wrote
+    in `description`.
+
+    Option A says "Looks up a crewmate." Too vague: does it look up by
+    alias or by name? Does it return one or several? Does it modify or
+    just read? The model has to guess. sometimes it'll call the tool
+    when it shouldn't (generic questions about people), sometimes it
+    won't when it should (because "look up" sounds so broad that the
+    model prefers to answer from memory).
+
+    Option B names:
+    - **What it returns** (name, role, contact).
+    - **When to use it** (questions about a specific crewmate by alias).
+    - **When NOT to use it** (listing, creating, modifying).
+
+    All three. The most important rule of Track 3: **your tool
+    description is the only contract the model reads. If it's not in
+    the description, it doesn't exist for the model.**
+hints:
+  - "The model does NOT see the handler's code. It only sees `name`, `description`, `parameters`."
+  - "A good description includes: what it returns, when to use it, when NOT to use it."
+teaches:
+  - tool-description-precision
+requires:
+  - tool-schema-author-basics
+---
+
+## The model reads your description. That's all it has.
+
+The most counter-intuitive thing about tool use is this: **the model doesn't understand your tool by its name or its code**. It understands it through the description you wrote. And only through that.
+
+If the description says "Looks up a crewmate", the model has to guess:
+- Does it look up by alias? By name? By role?
+- Does it return one or many?
+- Is it read-only, or does it also modify?
+- What happens if it doesn't find anything?
+
+The model gets one of these guesses wrong and the tool ends up misused or ignored. The metric that matters is **precision + recall**:
+
+- **Recall**. does the model invoke the tool when it should? (If not, it's hallucinating answers that should come from the tool.)
+- **Precision**. does the model avoid invoking the tool when it shouldn't? (If not, it's calling functions unnecessarily, burning money and latency.)
+
+Both go up when the description is **specific and bounded**: it says when YES, when NO, and what it guarantees.
+
+> When a description says something the model couldn't infer from the name alone, it's adding value. When it repeats what the name already says, it's wasting space.
+
+Pick the correct option on the right.

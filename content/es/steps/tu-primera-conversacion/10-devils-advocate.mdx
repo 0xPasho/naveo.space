@@ -1,0 +1,88 @@
+---
+title: "Pedile que te lleve la contraria"
+order: 10
+estimatedMinutes: 5
+characters:
+  - hex
+exercise:
+  kind: prompt-AB
+  question: |
+    Le pediste al modelo un plan para reducir el consumo de oxígeno
+    durante una emergencia. Te devolvió un plan en 4 pasos que suena
+    bien. Antes de ejecutarlo, querés stress-testearlo. ¿Cuál
+    follow-up te trae el pushback real?
+  optionA: |
+    ```
+    ¿Estás seguro? Verificá el plan.
+    ```
+  optionB: |
+    ```
+    Ahora actuá como un ingeniero senior escéptico revisando este
+    plan. Listame 3 razones concretas por las que este plan podría
+    fallar en la práctica, y para cada una decime qué dato tendrías
+    que ver para descartar el riesgo.
+    ```
+  correct: B
+  explanation: |
+    El prompt A es la trampa más común del multi-turn. *"¿Estás
+    seguro?"* le da al modelo dos opciones: (a) ratificar lo que dijo
+    ("sí, estoy seguro, el plan es bueno"), o (b) reescribir
+    nerviosamente y cambiar detalles al azar. Ninguna de las dos te
+    da información nueva. Solo perdiste un turno.
+
+    El prompt B activa el modo **devil's advocate** de forma
+    estructurada. Tres componentes que lo hacen funcionar:
+
+    1. **Rol específico** ("ingeniero senior escéptico"). El modelo
+       tiene que ponerse en una postura distinta.
+    2. **Número fijo de hallazgos** ("3 razones"). Lo obliga a elegir
+       las más importantes, no a generar 15 nimias o ninguna.
+    3. **Próximo paso accionable** ("qué dato tendrías que ver"). No
+       solo critica. te da un test para cada crítica.
+
+    El output ahora es procesable: tres riesgos concretos + tres
+    chequeos puntuales. Vos podés decidir cuáles correr antes de
+    ejecutar el plan.
+
+    Esta técnica es una de las más subutilizadas del multi-turn.
+    cualquier plan, recomendación o decisión que el modelo te
+    proponga, antes de ejecutarla, hacela pasar por un turno de
+    devil's advocate. Si el plan sobrevive, vale más que el original.
+    Si no, evitaste un error en producción.
+teaches:
+  - devils-advocate-pattern
+requires:
+  - drafter-reviewer-loop
+---
+
+## El modelo nunca está "seguro" de nada útil
+
+Si le preguntás al modelo *"¿estás seguro?"* va a contestar una de dos cosas: "sí" o "déjame revisar". Las dos son ruido. El modelo no tiene un termostato interno de certeza. Está prediciendo el siguiente token.
+
+Lo que sí funciona: pedirle que **adopte una postura adversaria** y critique tu plan desde ahí.
+
+### El patrón devil's advocate
+
+```
+"Actuá como <rol escéptico específico>. Listame 3 razones
+concretas por las que esto podría fallar, y para cada una decime
+qué dato tendrías que ver para descartar el riesgo."
+```
+
+Tres elementos:
+
+1. **Rol** (no genérico). "Ingeniero senior escéptico", "auditor de seguridad", "cliente que tiene que firmar el contrato".
+2. **Número fijo** ("3"). Sin número, te trae 0 o 15.
+3. **Test asociado** ("qué dato verificar"). Convierte cada crítica en una acción.
+
+### Por qué subir el rigor antes de ejecutar
+
+Hay decisiones donde el costo de equivocarse es alto: una migración, una respuesta a un cliente importante, un cambio en producción. En esos casos, **un turno extra de devil's advocate cuesta poco y previene mucho**.
+
+> Variante con humanos: la misma pregunta funciona en una reunión. *"Antes de decidir, alguien que se ponga la del abogado del diablo y nos diga 3 razones por las que esto puede salir mal."* La gente buena en esto sube la calidad de cualquier decisión grupal.
+
+### Cuándo NO usarlo
+
+Para outputs descartables o de bajo riesgo (un mail interno, un resumen rápido), devil's advocate es overkill. Pagás el costo en decisiones importantes, no en cada turno.
+
+A la derecha, dos formas de stress-testear un plan del modelo. ¿Cuál te trae crítica accionable?

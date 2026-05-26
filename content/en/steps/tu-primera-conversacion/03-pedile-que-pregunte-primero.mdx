@@ -1,0 +1,79 @@
+---
+title: "Ask the model to ask you first"
+order: 3
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Vega has to put together a shift plan for you. She doesn't quite
+    know your role, your priority, or the resources you have. You can
+    open the conversation two ways. Which one saves more round-trip
+    turns?
+  optionA: |
+    ```
+    Vega, put together a shift plan for me today.
+    ```
+  optionB: |
+    ```
+    Vega, I'm going to ask you for a shift plan for today.
+
+    Before proposing anything, ask me 3 concrete questions you need
+    to put it together well (role, priority of the day, available
+    resources, or whatever). Number them. I'll answer and then you
+    propose.
+    ```
+  correct: B
+  explanation: |
+    Prompt A forces the model to **guess**. It will fabricate a
+    plausible plan for a generic crewmate. You'll have to throw out
+    half the plan on the next turn ("I'm not a mechanic", "that's not
+    my priority") and rebuild from scratch. Four turns of correction
+    before reaching the first useful plan.
+
+    Prompt B inverts the flow. The model asks for what it DOESN'T
+    know before it invents. You answer once with the truth, and the
+    first plan it proposes is already calibrated to your reality.
+
+    Same amount of information transmitted. what changes is **the
+    order**. If you let the model ask first, the rest of the
+    conversation starts on solid ground. If you let it guess first,
+    you burn the next turns correcting assumptions.
+
+    Practical trick: when you ask for something where you know inputs
+    are missing, request the questions up front. Numbered. Three is
+    the sweet spot. fewer doesn't gather enough, more and the model
+    starts fabricating filler questions.
+teaches:
+  - ask-model-to-clarify-first
+requires:
+  - multi-turn-followup
+---
+
+## Invert the flow: have it ask before it guesses
+
+The default first-turn trap: you ask for something, the model doesn't know what's missing, **it invents it**. Then you spend three turns correcting what it assumed wrong.
+
+<Character name="vega" /> and the rest of the crew work differently when you ask them right. Instead of opening with the deliverable, you first ask them **to ask you the questions they need**. Numbered, concrete.
+
+### Why it works
+
+The model doesn't know what it doesn't know. But if you force it to *enumerate* what it doesn't know before proposing, it names it out loud. And you answer those three things once. by the second turn, it has everything to assemble something useful without assuming.
+
+### The pattern
+
+```
+"I'm going to ask you for X. Before proposing anything, ask me 3
+concrete questions you need to put it together well. Number them."
+```
+
+Three is the practical number. Less and it gathers little. More and
+the model starts fabricating filler questions.
+
+> The same technique works with humans. When you're the one without
+> context, instead of firing off a blind proposal, ask three concrete
+> things first. It saves you the "no, actually..."
+
+On the right, two openings. Which one opens fewer doors for the
+model to invent?

@@ -1,0 +1,10 @@
+slug: pre-flight
+title: "Chequeo pre-vuelo"
+order: 1
+narrativeHook: |
+  Antes de pisar el puente con la crew, Vega te hace un chequeo completo.
+  Veintiún rituales cortos, seis unidades. El idioma que habla la nave
+  (pasos, decisiones, variables, funciones) y cómo piensa realmente el
+  modelo (tokens, contexto, muestreo, alucinaciones). ¿Ya programás?
+  Saltá al Track 1.
+estimatedMinutes: 105

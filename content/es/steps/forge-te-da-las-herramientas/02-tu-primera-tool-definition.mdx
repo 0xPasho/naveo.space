@@ -1,0 +1,98 @@
+---
+title: "Tu primera tool definition"
+order: 2
+estimatedMinutes: 8
+exercise:
+  kind: tool-schema-author
+  toolName: lookup_crewmate
+  toolPurpose: |
+    Buscar la información registrada de un crewmate de la nave a partir
+    de su alias (nombre corto que usan a bordo). Devuelve nombre completo,
+    puesto y método de contacto.
+  exampleInvocations:
+    - 'lookup_crewmate(alias: "Em") → {name: "María Pérez", role: "nurse", contact: "em@thecrew.io"}'
+    - 'lookup_crewmate(alias: "Bru") → {name: "Bruno López", role: "shift technician", contact: "bru@thecrew.io"}'
+  starter: |
+    {
+      "name": "lookup_crewmate",
+      "description": "",
+      "parameters": {
+        "type": "object",
+        "properties": {
+
+        },
+        "required": []
+      }
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "El schema es JSON válido"
+    - id: has-name
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"lookup_crewmate\""
+      criterion: "Tiene name = \"lookup_crewmate\""
+    - id: has-description
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"description\"\\s*:\\s*\"[^\"]{20,}\""
+      criterion: "Tiene una descripción de al menos 20 caracteres"
+    - id: has-alias-param
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"alias\""
+      criterion: "Define un parámetro 'alias'"
+    - id: alias-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"required\"\\s*:\\s*\\[[^\\]]*\"alias\""
+      criterion: "El parámetro 'alias' está en la lista de required"
+    - id: description-clarity
+      kind: llm-judge
+      criterion: "La descripción del tool explica claramente QUÉ devuelve (la info del crewmate: name/role/contact) y CUÁNDO usarlo (cuando el usuario pregunta por un crewmate por su alias). NO es vaga tipo 'busca un crewmate' a secas; es accionable."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "El campo `description` es lo que el modelo LEE para decidir cuándo invocar el tool. Tiene que decir CUÁNDO usarlo, no solo QUÉ hace."
+  - "Para `alias`, define una propiedad: `\"alias\": { \"type\": \"string\", \"description\": \"...\" }`. Y agregalo a `required`."
+  - "Una buena descripción: 'Devuelve la info del crewmate (nombre, puesto, contacto) registrada bajo ese alias. Usar cuando el usuario pregunta por un crewmate por su alias.' Concreta + cuándo usarla."
+teaches:
+  - tool-schema-author-basics
+requires:
+  - tool-vs-prompt
+---
+
+## Tu primera tool, escrita a mano
+
+Hasta acá viste schemas de tools desde el lado del consumidor. lo que el modelo recibe. Ahora vas a **escribir uno**.
+
+<Character name="forge" /> necesita un tool simple: dado el alias de un crewmate, devolver su info. Tu trabajo: escribir el **JSON Schema** que define ese tool.
+
+### Lo que tiene que llevar
+
+Un schema de tool válido tiene **tres campos no negociables**:
+
+1. **`name`**. identificador único del tool. Snake case, descriptivo.
+2. **`description`**. texto que el modelo LEE para decidir cuándo invocarlo. **Esta es la parte más importante.** Si la descripción es vaga, el modelo no usa el tool; o lo usa cuando no debería.
+3. **`parameters`**. JSON Schema describiendo los inputs. Cada parámetro lleva tipo, descripción, y se marca como `required` si el tool no funciona sin él.
+
+### El starter
+
+Te dejamos el esqueleto a la derecha. Tu trabajo:
+
+- Completar la `description` (mínimo 20 chars, accionable).
+- Definir el parámetro `alias` con tipo `string` y su propia descripción.
+- Marcar `alias` como required.
+
+> La descripción del tool es el equivalente al **rol** de un prompt: define cuándo entra en juego. Si la descripción no menciona el caso de uso, el modelo no va a saber elegirlo.
+
+### Cómo se evalúa
+
+5 criterios deterministas (JSON válido, name correcto, description con largo mínimo, parámetro alias definido, alias en required) + 1 llm-judge sobre claridad de la descripción.

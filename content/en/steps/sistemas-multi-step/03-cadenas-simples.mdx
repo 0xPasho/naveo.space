@@ -1,0 +1,123 @@
+---
+title: "Your first chain: three steps in YAML"
+order: 3
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: report_processing_chain
+  toolPurpose: |
+    Design a 3-step chain to process shift reports. Each step is a focal
+    prompt with input, output, and declared dependencies.
+
+    Required steps:
+    - classify_report: receives raw text, returns { category: "safety" | "maintenance" | "social" | "other" }.
+    - extract_fields: receives raw text + category, returns { fields: {...} } with category-specific fields.
+    - summarize: receives category + fields, returns { summary: "string" }.
+
+    Format: YAML with a `steps` array, each step with:
+    - id (unique string)
+    - prompt (text of the prompt for that stage)
+    - input (object declaring which keys it needs and where they come from)
+    - output_key (string. under what name to store the output in shared context)
+  exampleInvocations:
+    - 'chain.run("Bay 4: valve 7 keeps triggering an intermittent alarm since last night.") → runs the 3 steps in order and returns { category, fields, summary }'
+  starter: |
+    steps:
+      - id: classify_report
+        prompt: |
+          # TODO: prompt that classifies the report
+        input:
+          # TODO: which keys it needs and from where
+        output_key: # TODO
+
+      - id: extract_fields
+        prompt: |
+          # TODO
+        input:
+          # TODO
+        output_key: # TODO
+
+      - id: summarize
+        prompt: |
+          # TODO
+        input:
+          # TODO
+        output_key: # TODO
+  language: markdown
+  rubric:
+    - id: three-steps-defined
+      kind: llm-judge
+      criterion: "The YAML defines the 3 steps with the correct ids (classify_report, extract_fields, summarize), in that order."
+    - id: input-output-wiring
+      kind: llm-judge
+      criterion: "Dependencies are correctly declared: classify_report takes the raw report; extract_fields takes the raw report + the output of classify_report (the category); summarize takes the category + the previous step's fields. NO step depends on one that comes AFTER it."
+    - id: prompts-are-focal
+      kind: llm-judge
+      criterion: "Each step's prompt focuses ON A SINGLE thing. classify_report only classifies (doesn't extract extra data). extract_fields only extracts (doesn't classify or summarize). summarize only summarizes. The prompts DO NOT mix responsibilities."
+    - id: output-keys-unique
+      kind: llm-judge
+      criterion: "Each step declares a unique `output_key` (e.g. category, fields, summary). Following steps reference those keys explicitly in their `input`."
+    - id: classify-uses-enum
+      kind: llm-judge
+      criterion: "The classify_report prompt is strict: asks for category as exactly one of the 4 options (safety, maintenance, social, other) with no extra text. If the output can be free-form, the next step can't trust the value."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Think of each step as a pure function: given the declared input, always returns the declared output. No side effects, no access to info that isn't declared."
+  - "The classify_report prompt should end with something like 'Respond with ONE single word: safety, maintenance, social, or other.'. so the next step can branch on the value."
+  - "The extract_fields prompt receives the category as context. In its prompt you can branch: 'If category=safety, extract risk+location+severity. If category=maintenance, extract system+part+time. ...'"
+teaches:
+  - chain-design-basics
+requires:
+  - chain-vs-mono-prompt
+---
+
+## The first chain of the Track
+
+You're going to design the **configuration** for a 3-step chain. Not code you run. a **declarative artifact** (YAML) that a chain runtime can read and execute step by step.
+
+### The format
+
+Each step has four fields:
+
+```yaml
+- id: classify_report           # unique step identifier
+  prompt: |                     # the LLM prompt
+    You are a classifier...
+    Text: {{ report }}
+  input:                        # where to source the placeholders
+    report: chain.input.text
+  output_key: category          # under what name to store the result
+```
+
+The runtime executes the steps in order. After the first step, the context has `category` with the classifier's output. The second step can use it as `{{ category }}` in its prompt.
+
+### What your chain has to do
+
+Process reports like:
+
+> _"Bay 4: valve 7 keeps triggering an intermittent alarm since last night."_
+
+And return at the end:
+
+```json
+{
+  "category": "maintenance",
+  "fields": { "system": "bay 4 valve 7", "issue": "intermittent alarm", "time": "since last night" },
+  "summary": "Bay 4 valve 7 has intermittent alarm since last night."
+}
+```
+
+Three steps, each with a unique responsibility, all chained via explicit output_keys.
+
+### How it's evaluated
+
+5 LLM-judge criteria on:
+
+1. The 3 steps defined with correct ids.
+2. Dependencies correctly chained (no circular references).
+3. Each prompt is focal (single responsibility).
+4. Unique referenceable output keys.
+5. The classifier is strict (controlled output).
+
+> Designing a good chain is software engineering more than prompting. Think of each step as a pure function. Declared inputs, declared output, no surprises.

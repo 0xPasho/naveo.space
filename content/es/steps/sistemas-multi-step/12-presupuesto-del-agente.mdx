@@ -1,0 +1,124 @@
+---
+title: "Presupuesto del agente: tres techos"
+order: 12
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: prompt-task
+  task: |
+    Orbit te pide diseñar el **system prompt** del agente que armaste
+    en step 11, ahora con presupuestos explícitos comunicados al
+    modelo. El loop en código ya tiene los limits; ahora el AGENTE
+    tiene que saberlos y respetarlos para no chocarse contra ellos.
+
+    Tres techos que el agente debe entender y reportar:
+
+    - **max_steps**: 10 tool calls antes de tener que dar respuesta final.
+    - **max_tokens_used**: cuando vea que está cerca del presupuesto de tokens, debe condensar.
+    - **max_cost_usd**: cuando vea que está cerca del presupuesto de dinero, debe priorizar tools baratas.
+
+    El system prompt debe enseñarle al agente a:
+
+    1. Llevar la cuenta de en qué paso va (el runtime se lo inyecta como contexto).
+    2. **Avisarle al usuario** cuando esté cerca de algún techo, explicando qué va a pasar.
+    3. Dar respuesta parcial pero útil cuando alcance un techo, en vez de morir silenciosamente.
+
+    Donde el goal del usuario va, usá `{{input}}`. El runtime inyecta
+    cada turno una sección `<budget_status>` con steps_used, tokens_used,
+    cost_so_far, y los techos restantes.
+  starter: |
+    Eres un agente de operaciones a bordo. Tu trabajo: cumplir el objetivo
+    del usuario invocando tools del toolkit disponible.
+
+    <budget_rules>
+      Tenés tres techos:
+      1. # TODO: describí cómo manejar max_steps
+      2. # TODO: describí cómo manejar max_tokens
+      3. # TODO: describí cómo manejar max_cost_usd
+
+      En cada turno te llega <budget_status> con consumo y resto.
+      # TODO: regla de cuándo avisar al usuario que estás cerca del techo
+      # TODO: regla de qué hacer cuando alcanzás un techo
+    </budget_rules>
+
+    <output_format>
+      # TODO: cómo querés que el agente reporte estado parcial vs final
+    </output_format>
+
+    <goal>
+      {{input}}
+    </goal>
+  testCases:
+    - input: "Buscá el roster de turno noche del viernes y armá un resumen con los oncall."
+    - input: "Procesá los últimos 20 tickets, agrupalos por bay, y devolvé los 3 más urgentes."
+    - input: "Listá todos los crewmates con permiso de soldadura y verificá cuáles tienen el curso vigente."
+  rubric:
+    - id: defines-three-budgets
+      kind: llm-judge
+      criterion: "El system prompt define los tres techos (max_steps, max_tokens, max_cost_usd) y cómo el agente los debería interpretar. NO los menciona solo de pasada. cada uno tiene una regla concreta de comportamiento."
+    - id: reads-budget-status
+      kind: llm-judge
+      criterion: "El prompt instruye al agente a LEER <budget_status> en cada turno antes de decidir el próximo tool call. Sin esto, el agente no se entera del consumo."
+    - id: warns-user-near-limit
+      kind: llm-judge
+      criterion: "El prompt instruye al agente a avisarle al usuario cuando esté cerca (ej: 80%) de algún techo, explicando qué va a pasar (cortar, dar respuesta parcial, ofrecer continuar)."
+    - id: graceful-on-budget-hit
+      kind: llm-judge
+      criterion: "El prompt instruye al agente a dar **respuesta parcial útil** cuando alcanza un techo. NO muere silenciosamente. NO devuelve solo 'budget excedido'. Resume lo que sí logró y declara qué quedó pendiente."
+    - id: prioritizes-cheap-tools-near-cost-limit
+      kind: llm-judge
+      criterion: "El prompt instruye al agente, cuando esté cerca del techo de costo, a priorizar tools más baratas o resumidas en vez de las caras. Demuestra entendimiento del trade-off costo/completitud."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Los techos en código (step 11) protegen al sistema de bugs. Los techos en el system prompt protegen al usuario de **falta de transparencia**: el agente debe saber que tiene límites y comunicarlos."
+  - "Buen patrón: 'Si quedan menos de N steps, AVISÁ al usuario que vas a tener que cortar pronto, y proponé entregar lo que tenés o continuar en una próxima llamada'."
+  - "El presupuesto de costo es el más sutil. El agente puede invocar la versión 'barata' de una tool (ej: `lookup_summary` en vez de `lookup_full`) cuando ve que el presupuesto se acaba."
+teaches:
+  - agent-budgets
+requires:
+  - agent-loop-stop-conditions
+---
+
+## El agente sabe sus techos, no choca contra ellos
+
+En el step 11 implementaste los techos del lado del **runtime**: max_steps protege contra loops, loop_detection contra stuck, tool errors no terminan el loop. Eso protege al sistema de bugs del modelo.
+
+Pero falta la otra mitad: **el agente tiene que SABER sus techos** y comportarse en consecuencia. Si solo tiene los techos del runtime, cuando los choque va a parar **abruptamente**, sin avisar, dejando al usuario con una respuesta vacía.
+
+### Los tres techos clásicos
+
+1. **max_steps**. cuántas tool calls antes de tener que dar respuesta final. Típico: 10-15 para tareas operacionales, 30-50 para análisis profundos.
+2. **max_tokens_used**. cuántos tokens (in + out) puede consumir el agente acumuladamente. Protege contra context windows que se inflan paso a paso.
+3. **max_cost_usd**. cuánto dinero puede gastar el agente en esta sesión. El techo absoluto. Acá no hay negociación: cuando se acaba, se acaba.
+
+### El system prompt enseña al agente a usarlos
+
+El runtime inyecta cada turno una sección como:
+
+```xml
+<budget_status>
+  steps_used: 6 / 10
+  tokens_used: 8400 / 16000
+  cost_so_far: $0.018 / $0.05
+</budget_status>
+```
+
+El system prompt instruye al agente a:
+
+1. **Leer ese bloque** antes de decidir el próximo tool call.
+2. **Cuando esté al 80% de algún techo**, avisar al usuario: *"Quedan 2 pasos. Si querés que profundice en X, te alcanza para eso. Si querés cubrir todo, voy a tener que cortar antes."*
+3. **Cuando alcance un techo**, **dar respuesta parcial útil**: resumir lo que sí logró, declarar qué quedó pendiente, ofrecer continuar en otra llamada.
+
+### Qué evitar
+
+- **Morir silenciosamente.** El agente choca contra max_steps y devuelve `null` o un error críptico. El usuario no sabe qué pasó ni qué tiene del trabajo hecho.
+- **Devolver solo "budget excedido".** Tirar el error sin resumen es maltratar al usuario. Si hiciste 8 tool calls antes de cortar, esas 8 tienen información útil. Resumila.
+- **No leer el status.** El agente decide ciegamente paso a paso, ignora el bloque, y se sorprende cuando lo cortan. Si no lee, no actúa en consecuencia.
+
+> Un agente bien entrenado en presupuestos parece **considerado**: avisa, propone, condensa, y respeta los límites. Un agente sin presupuestos parece **inestable**: a veces termina perfecto, a veces deja al usuario colgado, y nunca podés saber cuál vas a obtener.
+
+### Tu task
+
+Escribí el system prompt del agente. Tres techos a manejar, una regla de aviso, una regla de respuesta parcial. El judge evalúa cinco criterios sobre tu prompt.

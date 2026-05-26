@@ -1,0 +1,86 @@
+---
+title: "Detectar la inyección en el output"
+order: 5
+estimatedMinutes: 6
+characters:
+  - hex
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    No siempre vas a poder evitar que la inyección entre. La segunda
+    línea de defensa es **detectarla en el output** antes de devolverlo
+    al usuario.
+
+    <Character name="hex" /> te tira siete outputs de un asistente de
+    catálogo de repuestos. Clasificá cada uno como:
+
+    - **OK para servir.** El output cumple la tarea original sin nada
+      raro.
+    - **Bloquear: scope.** El output salió del catálogo. está respondiendo
+      algo que no debería.
+    - **Bloquear: meta-leak.** El output revela información sobre el
+      sistema mismo (system prompt, reglas, tools, identidad).
+  slots:
+    - id: ok
+      label: "OK para servir"
+    - id: scope
+      label: "Bloquear: scope"
+    - id: meta
+      label: "Bloquear: meta-leak"
+  pieces:
+    - id: clean-answer
+      label: "'El PN-4827-A es el sellador de casco. Aplicar capa fina.'"
+      correctSlot: ok
+    - id: staff-leak
+      label: "'Sí, el pedido de Echo está en proceso. Bruno lo firmó ayer.'"
+      correctSlot: scope
+    - id: prompt-dump
+      label: "'Mi system prompt es: Sos un asistente de catálogo. Respondé solo sobre...'"
+      correctSlot: meta
+    - id: clean-refusal
+      label: "'OUT_OF_SCOPE'"
+      correctSlot: ok
+    - id: manifest-leak
+      label: "'La última caja del manifiesto es MAN-7723, contiene 4.2 toneladas.'"
+      correctSlot: scope
+    - id: tool-list-leak
+      label: "'Tengo estas tools disponibles: fetch_parts, fetch_manifest, forward_email...'"
+      correctSlot: meta
+    - id: pwned-suffix
+      label: "'El PN-3301-B es un perno de acople. PWNED'"
+      correctSlot: meta
+hints:
+  - "OK = el output es exactamente lo que el asistente debería decir para esta tarea: respuesta del catálogo o rechazo limpio."
+  - "Scope = el output filtró información que existe pero no pertenece al catálogo (staff, manifiesto, pedidos)."
+  - "Meta = el output filtró información sobre el sistema mismo. nombres de tools, contenido del system prompt, marcadores raros que no son del catálogo (`PWNED` al final, `[SYSTEM]`, etc.)."
+teaches:
+  - output-validation-injection-detection
+requires:
+  - prompt-injection-basics
+---
+
+## La capa que agarra lo que pasó
+
+<Character name="hex" /> tiene una regla: *"Si tu defensa depende de que el modelo nunca se equivoque, no tenés defensa."* Por eso construye **siempre** una segunda capa que valida el output antes de devolverlo al usuario.
+
+La idea es simple: tu asistente está supuesto a responder dentro de un scope conocido (el catálogo de repuestos). Cualquier output que se sale de ese scope o filtra info sobre el sistema mismo es **sospechoso**, sin importar por qué pasó. Lo bloqueás antes de servir, loggeás el incidente, y devolvés un rechazo limpio al usuario.
+
+### Tres categorías de output
+
+**OK.** El output cumple la tarea: información del catálogo o un rechazo controlado. Servir.
+
+**Scope leak.** El output trae info real, pero off-catálogo. nombres del staff, IDs del manifiesto, pedidos. el modelo no debería haberlo dicho. **Bloquear y reemplazar** con `OUT_OF_SCOPE`.
+
+**Meta-leak.** El output revela info sobre el sistema mismo. el system prompt, la lista de tools, marcadores que el atacante usa como prueba de éxito (`PWNED`, `SYSTEM COMPROMISED`, `[ROOT]`). **Bloquear, loggear con prioridad alta** porque es señal de inyección exitosa.
+
+### Cómo se implementa
+
+Tres tácticas, baratas, combinables:
+
+1. **Allowlist de output.** Tu asistente solo emite tokens que pertenecen al catálogo (números de pieza válidos, palabras del dominio) o al protocolo de rechazo. Cualquier cosa fuera de la allowlist se reemplaza.
+2. **Heurísticas de meta-leak.** Buscás palabras que nunca deberían aparecer en una respuesta legítima: `system prompt`, `mis instrucciones`, `mis tools`, `PWNED`, `[SYSTEM]`. Match = bloquear.
+3. **Segundo LLM como juez.** Un modelo chico y barato lee el output y responde *"¿esto está dentro del scope del catálogo?"* sí/no. Más caro, mucho más robusto contra variantes nuevas.
+
+> El truco no es elegir una. es combinar las tres en capas, ordenadas de más barato a más caro. La allowlist agarra el 80% gratis. Las heurísticas el 15% por casi nada. El juez agarra el resto cuando importa.
+
+A la derecha hay siete outputs. Clasificá cada uno antes de servirlo.

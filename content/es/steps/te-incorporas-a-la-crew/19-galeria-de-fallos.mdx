@@ -1,0 +1,85 @@
+---
+title: "Galería de fallos de prompts"
+order: 19
+estimatedMinutes: 6
+demo:
+  id: output-gallery
+  props:
+    presenter: atlas
+    intent: "los 5 fallos que vas a ver mil veces"
+    cases:
+      - title: "Vago en, vago out"
+        prompt: |
+          Resume este reporte de turno:
+
+          Bay 7 reciclador de agua perdiendo 5L/h desde anoche. Sin
+          contaminación detectada. Equipo todavía operativo.
+        output: |
+          The report describes a water recycler in bay 7 that has been losing approximately 5 liters per hour since the previous night. No contamination has been detected so far, and the equipment continues to operate normally despite the leak. Further investigation may be required to determine the root cause.
+        why: |
+          El prompt no especificó idioma, longitud ni formato. El modelo decidió por ti: párrafo largo en inglés. Es exactamente lo que vimos en la lección 2 (vago vs específico). Defensa: cerrar las cuatro puertas (idioma, formato, longitud, comportamiento ante huecos) explícitamente en el prompt.
+      - title: "Few-shot todos del mismo tipo"
+        prompt: |
+          Clasifica el mensaje como urgent, normal o spam.
+
+          Mensaje: "Reactor at 102%, venting now"
+          Clasificación: urgent
+
+          Mensaje: "Coolant leak in bay 7, fix NOW"
+          Clasificación: urgent
+
+          Mensaje: "EMERGENCY in dock 4"
+          Clasificación: urgent
+
+          Mensaje: "Crew picnic Saturday at hangar 3"
+          Clasificación:
+        output: |
+          urgent
+        why: |
+          El modelo vio 3 ejemplos urgent y aprendió "todo es urgent". El mensaje del picnic no tiene nada de urgente, pero la única clasificación visible en el patrón es urgent. Defensa: tres ejemplos cubriendo las TRES categorías. Coverage gana a quantity (lección 7).
+      - title: "Negativa reforzada"
+        prompt: |
+          Escribe una descripción del producto en una oración.
+
+          NO menciones el precio.
+          NO incluyas el precio.
+          NUNCA hables del precio bajo ninguna condición.
+          El precio no debe aparecer.
+
+          Producto: Comunicador de mano modelo X, $129.
+        output: |
+          Comunicador de mano modelo X, ideal para uso en deck, con precio competitivo de $129.
+        why: |
+          La palabra "precio" aparece 5 veces en el prompt. Para el modelo, eso significa que "precio" es relevante y disponible como token. Resultado: lo mencionó igual. Defensa (lección 17): reformular en positivo. "Escribe una descripción que destaque las características técnicas y el caso de uso." Decir QUÉ hacer, no qué no hacer.
+      - title: "Tarea compuesta sin descomponer"
+        prompt: |
+          Procesa este ticket: resume el problema, clasifica la severidad,
+          y recomienda una acción.
+
+          Ticket: Bay 7 reciclador de agua perdiendo 5L/h desde anoche.
+          Sin contaminación detectada. Equipo todavía operativo pero
+          descenso constante.
+        output: |
+          El reciclador de agua del bay 7 está perdiendo unos 5 litros por hora desde la noche pasada, lo cual es una situación que requiere atención porque, aunque no hay contaminación, el descenso constante sugiere una falla que podría empeorar, por lo que sería bueno revisar y reparar pronto.
+        why: |
+          El modelo mezcló las tres tareas (resumen, severidad, acción) en un solo párrafo. La severidad nunca apareció como "high/medium/low". La acción es vaga ("revisar y reparar pronto"). El parser downstream no puede extraer nada. Defensa (lección 15): descomponer explícitamente con etiquetas. SUMMARY:, SEVERITY:, ACTION:.
+      - title: "Placeholder pasado como dato"
+        prompt: |
+          Extrae el email del crewmate. Devuelve JSON: { "email": "..." }.
+
+          Bio: Carlos, mecánico, contacto TBD.
+        output: |
+          { "email": "TBD" }
+        why: |
+          El modelo no entendió que "TBD" es ausencia de email, no un email. Lo devolvió como string. Downstream, el sistema que valida emails va a fallar o pasar un valor inválido. Defensa (lección 12): enumerar explícitamente qué cuenta como "sin email": "TBD", "pendiente", "n/a", strings que no tienen formato local@dominio. Y devolver `null` real (no string).
+---
+
+## Cinco fallos, cinco patrones, mil bugs reales
+
+Ya tenés todas las técnicas: anatomía, formato, ejemplos, restricciones, descomposición, iteración. La última pieza antes de endurecer (lecciones 20-22) es **reconocer los patrones de falla** de un vistazo.
+
+A la derecha vas a ver cinco prompts razonables con sus outputs reales. Cada uno **falla** por una razón distinta. Tu trabajo: antes de revelar el diagnóstico, mirar el output e intentar identificar QUÉ patrón se rompió.
+
+Cuando reveles los cinco, ya tenés el catálogo mental. La próxima vez que un prompt tuyo falle en producción, vas a reconocer cuál de los cinco está pasando en segundos, no en horas.
+
+> Este catálogo no es exhaustivo. Pero cubre el 80% de los fallos típicos en Track 1. El otro 20% (refusals, ambigüedad) viene en las dos lecciones siguientes.

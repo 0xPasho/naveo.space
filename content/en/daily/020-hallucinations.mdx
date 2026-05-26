@@ -1,0 +1,154 @@
+---
+title: "Quick mission: when the model confabulates"
+intro: |
+  When the model does not know, it does not always say "I do not know". Sometimes it invents with an expert tone. Recognizing that is half the battle.
+station: vega
+teaches:
+  - hallucination-mitigation
+  - hallucination-mechanics
+characters:
+  - echo
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Echo asked the model "give me the changelog for version 3.2 of
+      my-internal-library". The model never saw that library, but it
+      returned a detailed, plausible changelog. What is the root
+      cause?
+    optionA: |
+      ```
+      The model has no internet access. We should enable browsing
+      or connect retrieval so it can read the real repo.
+      ```
+    optionB: |
+      ```
+      The prompt did not give the model permission to say "I do not
+      know". Without that exit, the model always picks the most
+      probable completion, and that completion is usually a
+      plausible changelog even if it is fiction.
+      ```
+    correct: B
+    explanation: |
+      Option A points to a solution (retrieval), not the cause. The
+      user's internal library is not on the internet, browsing will
+      not find it. The problem comes earlier.
+
+      Option B names the real cause: when the model has no
+      information, its default is not to stay quiet, it is to
+      complete with the statistically most likely answer. "Changelog
+      v3.2" has a very stable shape in its training data (versions,
+      bullets, "Added/Fixed/Changed"), so it produces something that
+      matches the shape, even if the content is invented.
+
+      Mitigation: explicitly say in the prompt "if you do not have
+      this info, reply 'I do not have it, I need the real README or
+      changelog'". You give it an exit, and the model prefers it to
+      inventing.
+  - kind: slot-fill-dnd
+    task: |
+      Sort each request: is it high risk for hallucination or low
+      risk?
+    slots:
+      - id: high
+        label: "High risk (likely hallucination)"
+      - id: low
+        label: "Low risk"
+    pieces:
+      - id: p1
+        label: "'What is the capital of France?' (common, stable information)."
+        correctSlot: low
+      - id: p2
+        label: "'Give me the support phone number for Acme Inc.' (specific, narrow, rare data)."
+        correctSlot: high
+      - id: p3
+        label: "'Summarize this paragraph I am passing you.' (concrete input, closed task)."
+        correctSlot: low
+      - id: p4
+        label: "'When did version 4.7 of the foobar library ship?' (precise date, little-known library)."
+        correctSlot: high
+      - id: p5
+        label: "'Translate this text from English to Spanish.' (transformation, no external facts needed)."
+        correctSlot: low
+      - id: p6
+        label: "'What exact quote did Einstein say about creativity?' (verbatim quote, strong bias to invent)."
+        correctSlot: high
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of a prompt designed to minimize
+      hallucinations. The four pieces: source scoping, an explicit
+      exit for "I do not know", a request for citations, and final
+      verification.
+    parts:
+      - id: scope
+        label: "Source scope (where it can pull info from)"
+        text: "Answer using ONLY the content of the attached document. Do not use general knowledge or inferences outside the document."
+      - id: idk
+        label: "Exit for 'I do not know' (explicit permission)"
+        text: "If the answer is not in the document, reply literally 'it is not in the attached document'. Do not invent or fill in."
+      - id: cite
+        label: "Request for citations (verifiable anchor)"
+        text: "Each claim includes in parentheses the verbatim citation from the document. If you cannot cite, you do not claim."
+      - id: verify
+        label: "Final verification"
+        text: "At the end, list the fragments of the document you used. We are going to check them before using the answer."
+  - kind: step-order-dnd
+    task: |
+      You have a model claim with no source that sounds suspicious
+      ("Acme has 12,000 employees in LATAM"). Order the steps to
+      verify it, from top to bottom.
+    steps:
+      - id: s1
+        label: "Mark the claim as unverified. Do not use it until confirmed."
+        detail: "Default is 'false until proven true', not the other way around."
+      - id: s2
+        label: "Ask the model for the exact source of that number."
+        detail: "If it answers 'general information' or 'estimate', that is not a source."
+      - id: s3
+        label: "Look for the primary source outside (company site, public report, real data)."
+        detail: "The model can confirm what it already invented. That is not validation."
+      - id: s4
+        label: "If the source confirms it, note the exact citation and link next to the claim."
+        detail: "Without a citation, the claim stays out of the output you will use."
+      - id: s5
+        label: "If the source does not exist or the number differs, drop the claim and adjust the prompt so it does not repeat it."
+        detail: "A confirmed hallucination changes your prompt, not just your answer."
+  - kind: prompt-AB
+    question: |
+      Vega builds a prompt that will consume data possibly unknown
+      to the model. She has two ways to ask for citations. Which one
+      minimizes hallucination more?
+    optionA: |
+      ```
+      After each answer, add the sources you used. Links preferred.
+      ```
+    optionB: |
+      ```
+      Before claiming each fact, cite in quotes the exact source
+      where it comes from (line in the document or link). If you
+      cannot cite, you cannot claim: answer "I do not have a source
+      for this". The citation check is PART of the answer, not an
+      add-on at the end.
+      ```
+    correct: B
+    explanation: |
+      Option A asks for citations afterward, as an appendix. The
+      problem: the model already produced the claim, the invented
+      sentence is already there. Then it fills the "sources" field
+      with something that sounds right, and you end up with
+      plausible text plus invented citations.
+
+      Option B reorders the flow: the citation is a prerequisite for
+      the claim. If the model cannot cite, it cannot claim. That
+      changes behavior because "I do not have a source" becomes
+      explicitly available and authorized. The model prefers to say
+      "I do not know" when that exit is legitimate.
+
+      Rule: asking for citations as an add-on is decorative. Asking
+      for them as a precondition of the claim is the real
+      mitigation.
+---
+
+Mission of the day: the model hallucinates when you ask for what it does
+not know and give it no exit. Tell it "you can say I do not know", ask
+for sources before claims, and verify the critical ones outside.

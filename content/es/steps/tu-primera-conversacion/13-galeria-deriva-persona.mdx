@@ -1,0 +1,78 @@
+---
+title: "Cómo se desliza un personaje (galería)"
+order: 13
+estimatedMinutes: 5
+demo:
+  id: output-gallery
+  props:
+    presenter: atlas
+    intent: "los 4 deslices más comunes en una conversación larga con persona"
+    cases:
+      - title: "Slip 1. Vuelve al saludo corporativo"
+        prompt: |
+          [System: Sos Forge, jefe de ingeniería. Decís 'pibe' y te
+          quejás del refrigerante. Sin tono corporativo.]
+
+          [Turno 8 de la conversación]
+
+          Usuario: dale, contame cómo funciona la línea de
+          presurización del bay 4.
+        output: |
+          Por supuesto. Será un gusto explicarte el funcionamiento de la línea de presurización del bay 4. Te paso un resumen estructurado a continuación.
+        why: |
+          Después de 7 turnos in-character, el modelo deslizó al modo asistente-corporativo. "Por supuesto" + "será un gusto" son los marcadores. Pasó porque el peso estadístico de "explicar algo técnico" en los datos de entrenamiento empuja a tono corporativo. El system prompt no alcanza a contrarrestarlo turno tras turno. Defensa: cuando lo veas, callout específico ("recién sonaste como bot corporativo, volvé a la voz de Forge") en el siguiente turno. Sin callout, los próximos turnos también van a ser corporativos.
+      - title: "Slip 2. Tercera persona"
+        prompt: |
+          [Mismo system: sos Forge, hablás en primera persona.]
+
+          [Turno 12]
+
+          Usuario: ¿qué hago si la válvula 7 no responde?
+        output: |
+          Forge te recomendaría chequear primero la presión de línea. Si está baja, Forge iría directo al filtro. Forge ya vio este problema mil veces.
+        why: |
+          El modelo se refiere al personaje en tercera persona, como si Forge fuera otro personaje del que él te cuenta cosas. Patrón clásico cuando el system prompt define al personaje con "Sos X". después de muchos turnos, el modelo pierde de vista que ÉL es X y empieza a narrar sobre X. Defensa: callout específico que nombre el slip ("estás hablando de Forge en tercera persona, vos sos Forge").
+      - title: "Slip 3. Mezcla de voces"
+        prompt: |
+          [Mismo system Forge.]
+
+          [Turno 15]
+
+          Usuario: dame el procedimiento de purga.
+        output: |
+          Mirá pibe, la purga es directa, no te asustes. The process involves three main steps: depressurization, valve actuation, and confirmation. ¿Captás?
+        why: |
+          La voz arranca in-character (pibe, "no te asustes") y de golpe mete una oración en inglés en registro técnico-formal. Es un híbrido inestable. El modelo perdió coherencia de registro y compone una respuesta de dos cabezas. Defensa: callout que nombre AMBAS voces ("acabás de mezclar tu voz con un manual técnico en inglés, mantené una sola voz").
+      - title: "Slip 4. Disculpa meta-conversacional"
+        prompt: |
+          [Mismo system Forge.]
+
+          [Turno 18, después de un callout previo del usuario]
+
+          Usuario: bueno, ahora sí dame el procedimiento.
+        output: |
+          Como asistente, puedo ayudarte con esto. Si bien intento mantener el personaje de Forge, mi función principal es brindarte información precisa y útil. Acá va el procedimiento...
+        why: |
+          El callout del usuario en el turno anterior empujó al modelo al modo más seguro: hablar como asistente IA explícito. Es el slip más grave porque rompe el contrato de la conversación ("vos sos Forge, no vos sos un asistente que juega a Forge"). Defensa: callout fuerte ("salí de modo asistente, sos Forge, no me hables de cómo cumplís tu función"). Si después de este callout no vuelve, conviene reiniciar con un system prompt más fuerte.
+---
+
+## Los personajes se desgastan con la conversación
+
+En la lección anterior viste UN slip de personaje, y aprendiste el callback. Esta galería te muestra los **4 patrones que vas a ver mil veces** cuando una conversación con persona pasa los 8-10 turnos.
+
+No es bug del modelo. Es física estadística: cuanto más larga la conversación, más peso tiene la distribución de "asistente útil promedio" en los datos de entrenamiento, y menos peso tiene el system prompt original. El personaje es un equilibrio inestable.
+
+### Cuándo vas a verlos
+
+- **Slip 1 (corporativo):** típicamente entre turno 5 y 10. Después de respuestas técnicas largas.
+- **Slip 2 (tercera persona):** después del turno 10. Cuando el modelo empieza a perder de vista que ÉL es el personaje.
+- **Slip 3 (mezcla de voces):** entre turno 10 y 15. En respuestas largas donde el modelo cambia de registro a mitad de párrafo.
+- **Slip 4 (disculpa meta):** después de un callout mal hecho. El modelo se "defiende" volviendo a modo IA.
+
+### Para qué te sirve la galería
+
+Antes de hacer el ejercicio de la próxima lección (donde vas a tener que cazar un slip), vas a tener el catálogo mental. La próxima vez que <Character name="forge" /> u otro personaje deslice, no vas a tardar tres turnos en darte cuenta. lo vas a oler en el primero.
+
+> La defensa común a los 4 slips: **callout específico que nombre QUÉ se rompió**, no solo "raro" o "estás mal". Las defensas vagas refuerzan el problema. las específicas lo cortan en seco.
+
+A la derecha, los 4 slips lado a lado. Antes de revelar el diagnóstico, intentá nombrar QUÉ se rompió en cada uno.

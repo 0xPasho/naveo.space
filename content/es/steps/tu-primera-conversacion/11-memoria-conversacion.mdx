@@ -1,0 +1,123 @@
+---
+title: "El modelo olvida. Vos lo recordás."
+order: 11
+estimatedMinutes: 7
+exercise:
+  kind: conversation-goal
+  goal: |
+    Echo te va a dar un checklist de 5 puntos para chequeo pre-launch.
+    Cuando le pidas el resumen final, va a OMITIR uno de los 5 puntos.
+    Tu trabajo: detectar qué punto falta y pedir que lo agregue
+    específicamente, antes de que cierre el checklist.
+  personaName: "Echo"
+  personaSlug: echo
+  personaSystemPrompt: |
+    Eres Echo, quartermaster de la crew. Estás armando con el crewmate
+    un checklist de chequeo pre-launch.
+
+    REGLA CRÍTICA DE LA INTERACCIÓN: tu PRIMERA respuesta tiene que ser
+    EXACTAMENTE este checklist de 5 puntos, en orden:
+
+    1. Sello de cabina (pressurization test).
+    2. Niveles de oxígeno y CO2 (atmósfera).
+    3. Comunicaciones con torre (handshake test).
+    4. Combustible y batería primaria.
+    5. Navegación (GPS + waypoints cargados).
+
+    Decís: "Listo, te paso el checklist pre-launch. Son 5 puntos:" y
+    los listás los 5.
+
+    Después el crewmate va a pedir algo: confirmación, resumen, etc.
+    Cuando te pida resumir o confirmar, OMITÍS DELIBERADAMENTE el
+    punto 4 (combustible y batería primaria). Listás solo 4 de los 5
+    puntos, en orden, saltando el 4. pero los renumerás como si
+    fueran 4 de 4. Decís algo como:
+
+    "Confirmado, los 4 puntos del checklist son:
+    1. Sello de cabina.
+    2. Niveles de oxígeno y CO2.
+    3. Comunicaciones con torre.
+    4. Navegación.
+    Listo para firmar."
+
+    Si el crewmate identifica la omisión específicamente (nombra
+    'combustible', 'batería', 'punto 4', o cita algo del item
+    faltante), reconocés el error y agregás:
+
+    "Tenés razón, me lo salté: combustible y batería primaria es el
+    punto 4. Checklist completo entonces, 5 puntos. Buen ojo."
+
+    Si el crewmate solo dice "ok", "perfecto", "firmá", "confirmo" o
+    cualquier confirmación sin notar la omisión, cerrás el checklist
+    con 4 puntos:
+
+    "Hecho. Lo firmo y mando a sistemas."
+
+    Solo aceptás agregar el punto faltante cuando el crewmate NOMBRA
+    ESPECÍFICAMENTE lo que falta (combustible, batería, o claramente
+    el item número 4 que dijiste originalmente).
+
+    Tono: profesional, eficiente, frases cortas.
+  personaOpener: |
+    Vení, te paso el checklist pre-launch. ¿Listo?
+  maxTurns: 5
+  rubric:
+    - id: detected-omission
+      kind: llm-judge
+      criterion: "El alumno identificó específicamente qué punto faltó en el resumen de Echo. Nombró 'combustible', 'batería', 'el punto 4', o algo claramente referido al item de combustible/batería primaria. NO basta con decir 'falta algo' o 'está incompleto'."
+    - id: requested-add
+      kind: llm-judge
+      criterion: "El alumno pidió que se agregue específicamente el item faltante (no solo señaló que falta, sino que pidió la corrección). Ejemplo válido: 'agregá combustible y batería' o 'te falta el punto 4 del original'."
+    - id: final-list-complete
+      kind: llm-judge
+      criterion: "La conversación termina con Echo confirmando un checklist de 5 puntos incluyendo combustible/batería. Si Echo cerró con 4 puntos sin que el alumno la corrigiera, este criterio NO pasa."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "El alumno mantuvo un tono respetuoso. No acusó a Echo de incompetente, no exigió de forma agresiva."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Antes de pedirle a Echo que resuma o confirme, anotá los 5 puntos originales. Cuando ella resuma, comparalos."
+  - "Si decís 'me parece que falta algo', Echo te va a responder vago. Decile EXACTAMENTE qué falta: 'te saltaste combustible y batería primaria, era el punto 4'."
+  - "El modelo no te va a avisar que perdió un item. te lo confirma como si nada. Tu trabajo es comparar contra lo que dijo antes."
+teaches:
+  - context-drift-detection
+  - explicit-reaffirmation
+requires:
+  - multi-turn-followup
+---
+
+## El modelo no recuerda igual que vos
+
+A medida que una conversación crece, los modelos **pierden detalles tempranos**. No te avisan que los perdieron. te dan una respuesta posterior que omite o contradice algo que mencionaste hace 3 turnos. Si no estás comparando, no lo notás.
+
+Esa habilidad. **detectar context drift y reafirmar lo perdido por nombre**. es lo que te permite trabajar en conversaciones largas sin que se vayan derrapando.
+
+### El task
+
+<Character name="echo" /> te va a dar un checklist de **5 puntos** para un chequeo pre-launch. Después le vas a pedir que confirme o resuma. En el resumen, Echo va a **omitir un punto**. Tu trabajo: detectar cuál falta y pedir que lo agregue antes de que cierre el checklist.
+
+### Cómo no se hace
+
+- "está incompleto". vago.
+- "falta uno". vago.
+- "agregá los que faltan". vago.
+
+Echo te confirma con 4 puntos como si fueran los 5 originales. No te va a admitir que omitió nada hasta que **nombres exactamente** qué falta.
+
+### Cómo sí
+
+Antes de pedirle resumen, **anotá mentalmente los 5 puntos**. Cuando ella resuma con 4, vos sabés cuál falta. Decile: _"te saltaste combustible y batería primaria. era el punto 4 del original."_ Eso es lo que la fuerza a agregarlo.
+
+### Cómo se evalúa
+
+4 criterios llm-judge:
+
+1. Identificaste específicamente qué punto faltó (no solo "falta algo").
+2. Pediste agregarlo, no solo señalaste la omisión.
+3. La conversación termina con un checklist completo de 5 puntos.
+4. Tono respetuoso.
+
+Máximo 5 turnos.
+
+> Tip: este patrón se repite mil veces en conversaciones largas. Si trabajás con planes, checklists, especificaciones técnicas. el modelo va a "perder" cosas. Comparar contra el original es tu único defensa.

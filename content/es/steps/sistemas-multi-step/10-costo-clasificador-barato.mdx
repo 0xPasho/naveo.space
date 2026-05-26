@@ -1,0 +1,125 @@
+---
+title: "Clasificador barato primero, respondedor caro al final"
+order: 10
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Tu sistema procesa 100.000 mensajes por día. La mayoría son
+    triviales (acks, "ok", emojis, "gracias"); una minoría (~5%)
+    requiere una respuesta real elaborada. Dos arquitecturas. ¿Cuál
+    ponés en producción?
+  optionA: |
+    UN SOLO PASO, MODELO GRANDE:
+
+    Todos los mensajes → modelo Grande (≈$0.015 por llamada, 500ms latency).
+
+    El modelo Grande decide si responde con un ack corto o una respuesta
+    elaborada. Una sola llamada por mensaje.
+
+    Costo diario: 100.000 × $0.015 = **$1500/día**.
+    Latencia promedio: 500ms.
+  optionB: |
+    DOS PASOS, BARATO + CARO:
+
+    Paso 1. Modelo Chico clasifica: "trivial" vs "needs_response"
+      ($0.0005 por llamada, 80ms).
+
+    Paso 2 (solo si needs_response):
+      Modelo Grande genera la respuesta elaborada
+      ($0.015 por llamada, 500ms).
+
+    Costo diario:
+      100.000 × $0.0005 (chico) + 5000 × $0.015 (grande)
+      = $50 + $75 = **$125/día**.
+
+    Latencia promedio: 80ms en el 95% de casos, 580ms en el 5% restante.
+  correct: B
+  explanation: |
+    **Cascada de modelos**. el patrón de optimización más universal en
+    sistemas LLM. La idea es simple: **el modelo más caro solo se
+    ejecuta cuando hace falta**. Un clasificador chico filtra el grueso
+    del tráfico y solo escala a un modelo grande los casos que valen
+    la pena.
+
+    En la cuenta del ejemplo, el ahorro es **12× menos costo** y
+    **mejor latencia promedio** (porque el 95% de mensajes se resuelven
+    en 80ms, no en 500ms). Es la diferencia entre $1500/día y $125/día
+    en infra. Multiplicado por 365, es $500K/año.
+
+    Cuándo aplica:
+
+    1. **Tráfico desbalanceado.** El 80%+ son casos triviales que un
+       modelo chico maneja perfecto.
+    2. **El clasificador es confiable.** Modelos chicos clasifican
+       "trivial vs no" muy bien. Si no, te equivocás escalando o
+       no-escalando, y el ahorro se evapora.
+    3. **El paso 1 puede equivocarse con costo bajo.** Si clasifica mal
+       un trivial como "needs_response", ejecutás el modelo grande de
+       más. No es catástrofe.
+
+    Cuándo NO aplica:
+
+    1. **Todo el tráfico requiere modelo grande.** Si el 90% pide
+       respuestas elaboradas, agregar un classifier es overhead inútil.
+    2. **El clasificador no logra ser barato.** Si el modelo chico
+       acierta solo 70% sobre "trivial vs no", vas a tener que escalar
+       casi todo y perdés la ventaja.
+hints:
+  - "Antes de optar por cascada, medí el % de tráfico que es realmente trivial. Si es <30%, la ganancia se diluye."
+  - "El truco es elegir el modelo chico correcto. Modelos chicos de 2025 son sorprendentemente buenos clasificando, pero malos generando. Eso encaja perfecto con el rol de 'filtro'."
+  - "Cascada se generaliza a N niveles: chico → mediano → grande. Pero cada nivel agrega latencia y complejidad. Empezá con 2 niveles. Solo crecé si los datos te lo piden."
+teaches:
+  - cost-optimization-cascade
+requires:
+  - prompt-router
+---
+
+## El truco más universal de optimización de costo
+
+Cuando un sistema procesa volumen, el costo del modelo se vuelve la línea más cara del balance. Las dos respuestas naive:
+
+1. **Usar siempre el modelo grande.** Calidad alta, costo desproporcionado.
+2. **Usar siempre el modelo chico.** Costo bajo, calidad insuficiente en los casos difíciles.
+
+Ninguna respuesta funciona en escala. La que sí: **cascada**. Modelo chico al principio para clasificar, modelo grande solo para los casos que lo necesitan.
+
+### Cómo se ve
+
+```
+    [mensaje]
+        ↓
+   [modelo CHICO]  → ¿es trivial?
+   ↙           ↘
+respuesta     [modelo GRANDE]
+trivial            ↓
+                respuesta
+                elaborada
+```
+
+El paso 1 procesa el 100% del tráfico, pero a 1/30 del costo del modelo grande. El paso 2 solo procesa el 5-20% que el chico marcó como "necesita ayuda". El costo agregado se reduce 5-15×, y la latencia promedio mejora porque la mayoría se resuelve en el paso 1.
+
+### Por qué funciona
+
+Los modelos chicos son **buenísimos clasificando** y **malísimos generando**. Esa asimetría es justo lo que necesitás:
+
+- **Clasificar** "trivial vs needs_response" es una decisión binaria. Modelo chico, prompt corto, 100 tokens, 80ms.
+- **Generar** una respuesta elaborada requiere capacidad real. Modelo grande, contexto largo, 500-2000ms.
+
+Ponés a cada modelo a hacer **lo que mejor sabe**. Y el grande deja de pagar peaje por las 95.000 invocaciones donde no aportaba.
+
+### Variantes que vas a ver
+
+- **Cascada de N niveles.** chico → mediano → grande. Cada nivel solo escala lo que no pudo resolver. Útil cuando hay tres bandas de complejidad claras.
+- **Cascada con confianza.** El paso 1 devuelve su decisión + un score. Si el score es alto, lo aceptás. Si es bajo, escalás al paso 2.
+- **Cascada por tarea.** Modelo chico para resúmenes, modelo grande solo para generación creativa. Diferentes modelos por tarea, no por dificultad.
+
+### El error a evitar
+
+> Si el clasificador es malo (acierta menos del 85%), perdés casi todo el ahorro: los falsos negativos pagan el modelo grande igual, y los falsos positivos bajan la calidad de las respuestas. Mediar el clasificador con un eval set antes de armar la cascada es **mandatorio**, no opcional.
+
+### Tu ejercicio
+
+A la derecha, dos arquitecturas para el mismo volumen. Una manda todo al modelo grande. La otra usa cascada. Elegí cuál ponés en producción.

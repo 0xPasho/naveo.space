@@ -1,0 +1,64 @@
+---
+title: "Cuándo cerrar la conversación"
+order: 18
+estimatedMinutes: 4
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Vas cuatro turnos en un brief con Echo. Te dio la masa del manifiesto
+    (4.2 toneladas), la cubierta de la caja prioritaria (3) y la clase de
+    prioridad (A). En el quinto turno empieza a **repetirse**. vuelve a
+    decir la cubierta, vuelve a decir la masa, no hay info nueva. ¿Qué
+    hacés?
+  optionA: |
+    **Seguí presionando por más.** Hacé otro follow-up. capaz que hay
+    algo que te perdiste. Las conversaciones se enriquecen mientras más
+    las sostenés.
+  optionB: |
+    **Confirmá lo que tenés y cerrá.** Repetí los tres valores que tenés,
+    pedile un sí/no de confirmación, y cerrá la conversación. Ya
+    extrajiste la señal. cada turno extra ahora es ruido (y costo).
+  correct: B
+  explanation: |
+    Cada turno cuesta **tokens y tiempo**. Una vez que el modelo se
+    repite, ya extrajiste la señal de la conversación. Presionar por más
+    en ese estado suele hacer una de dos cosas: (1) el modelo fabula
+    nuevo detalle para satisfacerte ("acá tenés 3 cajas más que no
+    preguntaste". ¿esas eran reales?), o (2) deriva a una contradicción
+    con lo que te dijo turnos antes. Las dos hacen tu output **peor**, no
+    mejor. La disciplina de un buen operador multi-turn es **saber
+    cuándo terminaste**, repetir el deliverable en un pase de
+    "confirmá los números", y cerrar. La misma regla aplica a un agente
+    de soporte, a un asistente de investigación, a un ayudante de
+    código. Una vez que se repite, terminaste. confirmá y salí.
+teaches:
+  - multi-turn-closing-discipline
+requires:
+  - multi-turn-followup
+---
+
+## Más turnos no es más valor
+
+Track 1 te enseñó a ser específico. La primera mitad de este track te enseñó a insistir cuando la respuesta es vaga. Ahora aprendés la skill inversa: **parar cuando ya tenés la respuesta**.
+
+Los principiantes alargan conversaciones porque cada turno *se siente* productivo. No lo es. Una vez que el modelo está repitiendo valores que ya te dio, pueden pasar tres cosas. ninguna buena:
+
+- **Fabulación.** El modelo inventa nuevos "hechos" para mantener viva la conversación. *"Ah y hay 3 cajas más en la cubierta 7 que deberías saber"*. ¿esas cajas existieron alguna vez? No. El modelo solo predijo que más números era la continuación más probable.
+- **Deriva a contradicción.** El modelo pierde el hilo de lo que te dijo antes. La masa que confirmó hace tres turnos pasa a ser otro número.
+- **Costo de tokens.** Cada turno es una llamada. En producción esa es tu factura.
+
+> Un operador multi-turn limpio cierra cada conversación exitosa de la misma manera: *"Para confirmar: X = 4.2 toneladas, Y = cubierta 3, Z = clase A. ¿Algo mal?"* Después cierra.
+
+### El patrón
+
+```
+1. Abrí con un pedido específico.
+2. Hacé follow-up en las dimensiones que vuelven vagas.
+3. Parate el momento que los turnos nuevos no producen info nueva.
+4. Repetí el deliverable. Pedí un sí/no de confirmación.
+5. Salí.
+```
+
+Elegí el movimiento correcto para la situación a la derecha.

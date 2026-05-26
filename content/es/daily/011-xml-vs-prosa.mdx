@@ -1,0 +1,165 @@
+---
+title: "Misión exprés: XML vs prosa"
+intro: |
+  Claude lee XML mejor que párrafos largos. Etiquetas claras separan piezas y reducen confusiones.
+station: vega
+teaches:
+  - xml-tags-claude
+characters:
+  - echo
+scenes:
+  - kind: prompt-AB
+    question: |
+      Echo te muestra dos formas de pasarle la misma información a
+      Claude: la entrada del usuario, un par de ejemplos, y la tarea.
+      ¿Cuál separa mejor las piezas?
+    optionA: |
+      ```
+      Te paso la entrada del usuario que es "el server se cayó", aca van
+      algunos ejemplos: server down -> alta, ticket abierto -> media, y
+      necesito que clasifiques la entrada en alta, media o baja.
+      ```
+    optionB: |
+      ```
+      <ejemplos>
+        <ej><in>server down</in><out>alta</out></ej>
+        <ej><in>ticket abierto</in><out>media</out></ej>
+      </ejemplos>
+
+      <entrada>el server se cayó</entrada>
+
+      <tarea>
+        Clasificá la entrada en alta, media o baja, basándote en los ejemplos.
+      </tarea>
+      ```
+    correct: B
+    explanation: |
+      El A es un párrafo donde todo se mezcla: la entrada del usuario,
+      los ejemplos, y la tarea final viven en la misma oración. El
+      modelo tiene que parsear qué es qué antes de pensar.
+
+      El B usa tags XML claros. Cada pieza queda en su caja. El modelo
+      lee `<entrada>` y sabe que eso es lo que tiene que clasificar,
+      no parte de los ejemplos.
+
+      Regla: cuando hay más de una pieza de información, separala con
+      tags. Claude está entrenado para respetar `<tags>` y los lee
+      mejor que negritas o guiones.
+  - kind: slot-fill-dnd
+    task: |
+      Estás migrando un prompt de prosa a XML. Clasificá cada idea:
+      ¿conviene meterla en una etiqueta XML propia, o queda mejor en
+      prosa dentro de la tarea?
+    slots:
+      - id: tag
+        label: "Mejor en su propia etiqueta XML"
+      - id: prose
+        label: "Mejor en prosa dentro de la tarea"
+    pieces:
+      - id: p1
+        label: "Tres ejemplos input-output."
+        correctSlot: tag
+      - id: p2
+        label: "Una aclaración tipo 'si no estás seguro, devolvé baja'."
+        correctSlot: prose
+      - id: p3
+        label: "El input del día que hay que procesar."
+        correctSlot: tag
+      - id: p4
+        label: "El schema JSON exacto de salida."
+        correctSlot: tag
+      - id: p5
+        label: "Una preferencia menor de estilo ('si podés, usá voz activa')."
+        correctSlot: prose
+      - id: p6
+        label: "La documentación de referencia del producto, 4 párrafos."
+        correctSlot: tag
+  - kind: prompt-tag-fill
+    template: |
+      <rol>
+        Sos {{rol}}, ayudando a un equipo de soporte.
+      </rol>
+
+      <contexto>
+        {{contexto}}
+      </contexto>
+
+      <ejemplos>
+        <ej><in>{{ejemplo_in}}</in><out>{{ejemplo_out}}</out></ej>
+      </ejemplos>
+
+      <entrada>
+        {{entrada}}
+      </entrada>
+
+      <tarea>
+        {{tarea}}
+      </tarea>
+    requiredTags:
+      - rol
+      - contexto
+      - ejemplos
+      - entrada
+      - tarea
+  - kind: prompt-AB
+    question: |
+      Echo arma un prompt largo con instrucciones, documentación de
+      producto y la pregunta del usuario. ¿Cuál estructura le da al
+      modelo menos chances de confundir piezas?
+    optionA: |
+      ```
+      Instrucciones: ayudá al cliente. Acá está la doc del producto:
+      el plan free tiene 100 requests/mes, el pro 10k, el enterprise
+      ilimitado. La pregunta del cliente: cuántos requests trae el pro?
+      Respondé corto.
+      ```
+    optionB: |
+      ```
+      <instrucciones>
+        Respondé al cliente en una sola línea, sin saludo.
+      </instrucciones>
+
+      <documentacion>
+        Plan free: 100 requests/mes.
+        Plan pro: 10.000 requests/mes.
+        Plan enterprise: ilimitado.
+      </documentacion>
+
+      <pregunta>
+        Cuántos requests trae el plan pro?
+      </pregunta>
+      ```
+    correct: B
+    explanation: |
+      El A funciona en prompts cortos, pero en cuanto el bloque de
+      documentación crece, el modelo empieza a confundir qué es
+      "instrucción" y qué es "contenido a usar". A veces te responde
+      sobre las instrucciones en vez de sobre la pregunta.
+
+      El B aísla cada pieza. La documentación es contenido a referenciar,
+      las instrucciones son comportamiento, la pregunta es lo que hay
+      que responder. Sin riesgo de mezcla.
+
+      Bonus operativo: si después necesitás cambiar solo la doc, tocás
+      una etiqueta. En el A tenés que reescribir el párrafo entero.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este prompt XML. Una vez que ves las
+      cajas, podés mover cada una sin romper las otras.
+    parts:
+      - id: role
+        label: "<rol> (quién es el asistente)"
+        text: "<rol>Sos clasificador de tickets para un equipo de soporte de SaaS.</rol>"
+      - id: examples
+        label: "<ejemplos> (few-shot fijo)"
+        text: "<ejemplos><ej><in>no puedo loguear</in><out>auth</out></ej><ej><in>el dashboard tarda mucho</in><out>performance</out></ej></ejemplos>"
+      - id: input
+        label: "<entrada> (lo que cambia hoy)"
+        text: "<entrada>se me borraron los datos del último import</entrada>"
+      - id: task
+        label: "<tarea> (instrucción operativa)"
+        text: "<tarea>Devolvé solo la categoría: auth, billing, performance, o data.</tarea>"
+---
+
+Misión del día: si tu prompt tiene más de una pieza, ponele tags.
+Claude las respeta y tu prompt se vuelve editable, no monolítico.

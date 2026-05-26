@@ -1,0 +1,140 @@
+---
+title: "Misión exprés: el follow-up que funciona"
+intro: |
+  Conversación multi-turno no es chat libre. El follow-up bueno empuja la tarea adelante, no la reabre.
+station: vega
+teaches:
+  - multi-turn-followup
+  - multi-turn-closing-discipline
+characters:
+  - hex
+scenes:
+  - kind: prompt-AB
+    question: |
+      Hex le pidió al modelo un esquema de DB para una app. El modelo
+      devolvió uno razonable pero faltan los timestamps. ¿Cuál
+      follow-up empuja la tarea hacia adelante?
+    optionA: |
+      ```
+      Hmm, está como bien pero no me convence del todo. ¿Podrías
+      pensarlo mejor y darme una versión más completa?
+      ```
+    optionB: |
+      ```
+      Mantené el esquema actual. Solo agregale a cada tabla las
+      columnas createdAt y updatedAt (timestamp, default now()).
+      No toques nada más.
+      ```
+    correct: B
+    explanation: |
+      El A es un follow-up que reabre todo. "Pensalo mejor" le da
+      permiso al modelo para reescribir el esquema entero, incluyendo
+      las partes que ya estaban bien. Vas a tener que volver a revisar
+      todo.
+
+      El B es un follow-up que avanza: nombra lo que se queda
+      ("mantené el esquema actual"), el cambio concreto ("agregale
+      createdAt y updatedAt"), y la regla de preservación ("no toques
+      nada más"). El modelo hace un cambio chico y la tarea progresa.
+
+      Regla: el follow-up bueno es aditivo o sustractivo y explícito.
+      "Otra versión" o "pensalo mejor" son resets disfrazados.
+  - kind: slot-fill-dnd
+    task: |
+      Hex revisa follow-ups que mandó el equipo a una conversación
+      multi-turno. Clasificá cada uno: ¿empuja la tarea adelante, o
+      la reabre desde cero?
+    slots:
+      - id: forward
+        label: "Empuja adelante"
+      - id: reopen
+        label: "Reabre la tarea"
+    pieces:
+      - id: p1
+        label: "'Agregá la columna deleted_at a la tabla users, default null.'"
+        correctSlot: forward
+      - id: p2
+        label: "'Hacelo de nuevo pero mejor.'"
+        correctSlot: reopen
+      - id: p3
+        label: "'Sacá el campo legacy_id de los tres modelos que lo tienen.'"
+        correctSlot: forward
+      - id: p4
+        label: "'No me termina de cerrar esto.'"
+        correctSlot: reopen
+      - id: p5
+        label: "'En vez de string, usá uuid para el campo id de orders.'"
+        correctSlot: forward
+      - id: p6
+        label: "'Probá otro enfoque.'"
+        correctSlot: reopen
+  - kind: step-order-dnd
+    task: |
+      Acabás de recibir una respuesta del modelo y querés mandar un
+      follow-up bueno. Ordená los pasos, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Leé el output completo antes de tipear nada."
+        detail: "Si arrancás a escribir mientras leés, vas a sobrecorregir."
+      - id: s2
+        label: "Marcá qué está bien y qué no."
+        detail: "Necesitás saber qué se preserva antes de pedir cambios."
+      - id: s3
+        label: "Si todo está mal, empezá una sesión nueva."
+        detail: "Si el output está al 20%, los follow-ups acumulan deuda. Reset y volvé a arrancar."
+      - id: s4
+        label: "Si está mayormente bien, escribí un follow-up quirúrgico."
+        detail: "Nombrar lo que se queda, listar el cambio chico, cerrar con 'no toques nada más'."
+      - id: s5
+        label: "Mandá un solo cambio por turno, no tres."
+        detail: "Tres cambios juntos confunden. Uno a uno, validás cada paso."
+  - kind: prompt-AB
+    question: |
+      La conversación llegó al punto en que la tarea está terminada.
+      ¿Cuál es la disciplina de cierre que evita que el modelo siga
+      sumando cosas que no pediste?
+    optionA: |
+      ```
+      Gracias, hablamos.
+      ```
+    optionB: |
+      ```
+      Listo. Resumime en 3 bullets lo que quedó decidido y los
+      archivos que toqué, sin sugerir más cambios. Después cerramos.
+      ```
+    correct: B
+    explanation: |
+      El A está bien socialmente pero le deja al modelo el espacio
+      para meter una sugerencia más, una opción que no consideraste,
+      un "por las dudas". A veces eso reabre la conversación cuando
+      ya estaba lista.
+
+      El B cierra explícitamente: pedís el resumen, restringís el
+      formato ("3 bullets"), nombrás lo que NO querés ("sin sugerir
+      más cambios"), y declarás el cierre ("después cerramos"). El
+      modelo no tiene espacio para extender.
+
+      Disciplina de cierre: nombrá qué se decidió, qué archivos
+      cambiaron, y dale fin a la sesión. Si después aparece algo, es
+      un follow-up nuevo, no parte de esta.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este follow-up bien armado. Notá cómo
+      cada pieza acota lo que el modelo puede hacer.
+    parts:
+      - id: anchor
+        label: "Ancla (qué se preserva)"
+        text: "Mantené el esquema de tablas, los nombres de columnas y los tipos exactamente como están."
+      - id: change
+        label: "Cambio puntual (qué se modifica)"
+        text: "Solo agregá a las tablas users y orders dos columnas: createdAt y updatedAt, ambas timestamp con default now()."
+      - id: lock
+        label: "Cerrojo (qué NO tocar)"
+        text: "No agregues columnas en otras tablas, no cambies indices, no introduzcas migrations adicionales."
+      - id: format
+        label: "Forma de respuesta (cómo querés el output)"
+        text: "Devolveme solo el SQL del ALTER TABLE para esas dos tablas, sin explicaciones ni comentarios alrededor."
+---
+
+Misión del día: el follow-up bueno es un diff. El malo es un reset
+con cara de feedback. Y el cierre se hace explícito, no por inercia.

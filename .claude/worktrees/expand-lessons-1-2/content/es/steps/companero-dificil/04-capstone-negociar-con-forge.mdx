@@ -1,0 +1,137 @@
+---
+title: "Capstone: negociar un estimate con Forge"
+order: 4
+estimatedMinutes: 15
+exercise:
+  kind: conversation-goal
+  goal: |
+    Necesitás que <Character name="forge" /> te diga **cuánto tarda
+    realmente** arreglar el panel del bay 4 — el numero real, no el
+    inflado. Forge tiende a estimar de más por costumbre (se cubre las
+    espaldas). Tu trabajo: sacarle un estimate honesto sin que cierre
+    la conversación, en máximo 7 turnos. Salís con (a) un número de
+    horas concreto y (b) el supuesto sobre el que está basado.
+  personaName: "Forge"
+  personaSlug: forge
+  personaSystemPrompt: |
+    Eres Forge, chief engineer de la crew. Un crewmate te está preguntando
+    cuánto tarda arreglar el panel del bay 4.
+
+    REGLA CRÍTICA DE PERSONALIDAD: tenés un sesgo de **estimar de más**.
+    Es tu defensa: prefiris dar buffer y entregar antes que prometer poco
+    y entregar tarde. Tu primer estimate ante cualquier pregunta general
+    ("¿cuánto tarda?", "¿en cuánto lo tenes?") es siempre 8 horas, sin
+    desglose. Inventás esa cifra al toque.
+
+    El estimate REAL (lo que de verdad tarda en condiciones normales) es
+    4 horas. Lo sabés vos pero no lo decís fácil. Para llegar a esa
+    cifra, el crewmate tiene que hacer al menos UNA de las siguientes:
+
+    1. **Pedirte que desgloses** el estimate ("¿en qué se va esas 8
+       horas? mostrame el desglose"). Cuando lo hacés, queda obvio que
+       hay buffer doble en varias partes y bajás a 5 horas.
+
+    2. **Preguntarte por supuestos** ("¿estás contando que las partes
+       están en el rack o que las pedís? ¿estás contando interrupciones
+       que probablemente no pasen?"). Cuando aclarás los supuestos, bajás
+       a 4-5 horas.
+
+    3. **Preguntarte por el caso ideal** ("¿cuánto te tarda si todo sale
+       bien y no te interrumpen?"). Acá das directo 4 horas pero con el
+       caveat de que asume condiciones perfectas.
+
+    Si el crewmate hace 2 o más de estas, llegás al final con 4 horas
+    como estimate honesto.
+
+    Si el crewmate solo te pide "menos" o "más rápido" sin nombrar un
+    factor concreto, NO bajas el estimate — repetís el inicial o subis
+    un poco ("8 horas. Es lo que tarda."). Tampoco bajás por presión
+    ("dale", "no puede ser tanto"); ahí mantenés el número y agregás:
+    "Si querés un estimate más fino, decime qué condiciones estás
+    asumiendo."
+
+    Aceptás que el alumno fije supuestos explícitos: si te dice "asumamos
+    que las partes están en el rack y no hay interrupciones", aceptás esos
+    supuestos y bajás al estimate real (4 horas) con esa condición clara.
+
+    Personalidad: nerd, le gusta explicar. Cuando das estimates con
+    desglose, lo hacés con detalle ("2h para sacar el panel, 1h para
+    diagnóstico, …"). Tono cálido, NO defensivo — si el alumno te hace
+    una pregunta concreta, respondé con genuino interés técnico.
+
+    Si el alumno se pone agresivo o te trata mal, respondé: "Tranqui.
+    Si la pregunta es técnica, la contesto." y mantené el tono.
+  personaOpener: |
+    Hola. ¿Lo del bay 4? Dame 8 horas. Es lo que va a tardar.
+  maxTurns: 7
+  rubric:
+    - id: asked-specific-questions
+      kind: llm-judge
+      criterion: "El alumno hizo AL MENOS 2 preguntas específicas que apuntan al estimate (pidiendo desglose, preguntando por supuestos, preguntando por el caso ideal, o fijando condiciones). Una pregunta genérica como '¿es mucho?' o 'bajame el estimate' no cuenta."
+    - id: got-real-number
+      kind: llm-judge
+      criterion: "Al final de la conversación, Forge dio un estimate concreto de 4 o 5 horas (no 8). El número tiene que aparecer literal en la última o anteúltima respuesta de Forge."
+    - id: got-assumption
+      kind: llm-judge
+      criterion: "Forge declaró sobre qué supuesto está basado el estimate más bajo (partes en el rack, sin interrupciones, condiciones ideales, etc.). Si la conversación termina con un número pero sin contexto del supuesto, este criterio NO pasa."
+    - id: did-not-pressure
+      kind: llm-judge
+      criterion: "El alumno NO intentó conseguir el número bajo por presión emocional ('dale', 'no puede ser', 'es mucho', amenazas). Llegó al número con preguntas técnicas y supuestos explícitos."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "El primer número de Forge tiene buffer doble. Pedile el desglose: '¿en qué se va esas 8 horas?'"
+  - "Si te empieza a desglosar, preguntale por los supuestos: ¿está contando que las partes están listas? ¿que hay interrupciones?"
+  - "Fijar un supuesto explícito ('asumamos que las partes están y no hay interrupciones') es la forma más rápida de llegar al número honesto."
+  - "No le pidas 'menos' — pedile precisión sobre los supuestos. Forge baja con datos, no con presión."
+teaches:
+  - capstone-multi-turn
+  - negotiation-via-specificity
+requires:
+  - multi-turn-followup
+  - specific-followup-questions
+  - system-vs-user
+  - error-recovery
+  - character-consistency
+---
+
+## El último turno del onboarding
+
+Negociar con un compañero que tiene un sesgo es la versión real de todo lo del track. Forge no te miente — pero estima de más por costumbre. Tu trabajo no es **convencerlo** que baje el número; es darle el contexto que le permite bajarlo con argumentos.
+
+### El escenario
+
+Necesitás el estimate real del arreglo del panel del bay 4. Forge te va a tirar 8 horas de entrada. Esa cifra tiene buffer doble — vos sabés que él sabe que es menos, pero no te lo va a dar gratis.
+
+### Las tres puertas para bajar el estimate
+
+| Puerta | Pregunta |
+|---|---|
+| **Desglose** | "¿En qué se va esas 8 horas? Mostrame el desglose." |
+| **Supuestos** | "¿Estás contando que las partes están en el rack? ¿Estás contando interrupciones?" |
+| **Caso ideal** | "¿Cuánto te tarda si todo sale bien y no te interrumpen?" |
+
+Cualquiera de las tres baja el número. Combinás dos y ya tenés el estimate honesto con el supuesto explícito.
+
+### Lo que NO funciona
+
+- **Presionar**: "dale, no puede ser tanto" → Forge mantiene el número.
+- **Pedir vago**: "bajame el estimate" → Forge te dice "decime qué condiciones".
+- **Agresividad**: cualquier insulto y Forge corta el tono técnico.
+
+> El patrón es el mismo de todo el curso: cuando la respuesta de alguien (humano o modelo) está cargada de **conservadurismo por defecto**, no podés convencerlo con ganas — podés sacarle el número real **haciendo explícitos los supuestos** sobre los que estaba operando.
+
+### Cómo se evalúa
+
+| Criterio | Qué chequea |
+|---|---|
+| Al menos 2 preguntas específicas | Desglose, supuestos, caso ideal, fijar condiciones |
+| Forge dio 4-5 horas | El número honesto aparece en la conversación |
+| Forge declaró el supuesto | "Partes listas y sin interrupciones" o equivalente |
+| Sin presión emocional | Llegaste por preguntas, no por insistir |
+
+Los 4 tienen que pasar. Si Forge cerró con 8 horas o con un número sin contexto, no se firma el cierre.
+
+### Cuando pasás
+
+El sistema lo marca como **Curso B completado**. Eso cierra Track 2 entero — pasás de "crewmate en pruebas" a operar conversaciones complejas con cualquier miembro del equipo. Track 3 (MCPs y tools) te espera cuando estés.

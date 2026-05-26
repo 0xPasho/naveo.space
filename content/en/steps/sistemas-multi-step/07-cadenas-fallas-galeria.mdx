@@ -1,0 +1,94 @@
+---
+title: "Gallery of broken chains"
+order: 7
+estimatedMinutes: 6
+characters:
+  - orbit
+demo:
+  id: output-gallery
+  props:
+    presenter: orbit
+    intent: "five ways to break a chain that on paper looks fine"
+    cases:
+      - title: "Step 1 output isn't what step 2 expects"
+        prompt: |
+          classify_report:
+            "Return the category: safety, maintenance, social, or other."
+          → "The most likely category is maintenance, though it could be safety."
+
+          extract_fields:
+            "Received category = {category}. If safety, extract risk..."
+        output: |
+          extract_fields received category = "The most likely category is maintenance, though it could be safety."
+          → switch over the full string. no case matches. default branch → fields = {}.
+        why: |
+          Step 1 returned descriptive text instead of a single word. Step 2 branched over the whole string and matched NO case. Fix: step 1 prompt with strict rule. "Reply with ONLY one word: safety, maintenance, social, or other. No explanation, no punctuation." And deterministic validation of the output before passing it to the next step.
+      - title: "Cache with a changed prompt"
+        prompt: |
+          Day 1: prompt v1 caches outputs.
+            classify("Bay 4 leak") → "maintenance"
+          Day 2: you update the prompt to v2 (stricter).
+            classify("Bay 4 leak") → cache hit (v1) → "maintenance"
+          But v2 would have said "safety" (the new version escalates leaks).
+        output: |
+          Step 1 keeps returning "maintenance" because of a cache hit on the old entry.
+          All downstream steps branch as if it's maintenance.
+          The "leak" report in bay 4 ends up in the wrong flow and nobody escalates.
+        why: |
+          The cache key didn't include `prompt_version`. Changing the prompt didn't invalidate old entries. Fix (step 06): the cache key ALWAYS includes prompt version + schema version. Without that, every prompt change leaves old outputs being served from the cache for days.
+      - title: "Parallel steps competing for the same key"
+        prompt: |
+          extract_tech and extract_people run in parallel.
+          Both write to context with the key `extracted`:
+            extract_tech.output_key: extracted
+            extract_people.output_key: extracted
+        output: |
+          The slower one overwrites the faster one.
+          The downstream step receives ONLY one of the two extracts.
+          The chain ran 2 LLM calls, used only 1, and the bug is non-deterministic (depends on which finishes first).
+        why: |
+          Duplicate output keys on parallel steps = silent race. Fix: each parallel step writes to ITS OWN key (`extracted_tech`, `extracted_people`). The downstream step reads both explicitly. Here the "unique output_keys" discipline (step 03) stops being style and becomes survival.
+      - title: "Too much state passed, prompt choked"
+        prompt: |
+          The chain pushes ALL the context to every step. For step 5:
+
+          - original text (2500 tokens)
+          - classification (10 tokens)
+          - full fields (300 tokens)
+          - severity raw + rationale (400 tokens)
+          - debug logs from the previous 4 steps (1800 tokens)
+
+          → step 5 prompt = 5000+ tokens, of which 200 are the actual
+          instruction.
+        output: |
+          Step 5 produces vague answers, mixes data from step 1 with data from step 3, ignores the instruction at the end of the prompt.
+          (Classic "lost in the middle" symptom: the model loses the central instruction when context is noise.)
+        why: |
+          Passing all state to all steps seems prudent but chokes the model. Fix (step 05): each step explicitly declares the inputs it needs. Loading the context with data no step reads is gifting cost + degrading quality at the same time.
+      - title: "Without stop conditions, the chain never finishes"
+        prompt: |
+          The "recommend_action" step returns an optional agent_loop.
+          Without max_steps, without loop_detection, the agent decides it
+          needs more info and re-invokes itself:
+
+          turn 1: requests lookup_roster
+          turn 2: requests lookup_history
+          turn 3: requests lookup_roster (again, same args)
+          turn 4: requests lookup_history (again)
+          ...
+          turn 47: still requesting things
+        output: |
+          The system keeps consuming tokens and money until you kill it manually or the rate limit cuts you off. The user never receives a reply.
+        why: |
+          Any chain that invokes a loop (even "only when needed") needs explicit stop conditions. max_steps, loop_detection, error budget. You'll see it in detail in steps 11 and 12, but the rule is born here: any branch that recurses without a cap is an incident waiting to happen.
+---
+
+## Five patterns, five chains that break in production
+
+You've seen how to design a chain: focal steps, declared dependencies, unique output keys. Now <Character name="orbit" /> shows you **how they break** in production when any of those principles slack.
+
+On the right, five designs that on paper look fine. Each one **fails** for a different reason, and all the reasons appear in real systems. Your job: before revealing the diagnosis, look at the pattern and try to recognize which of the track's principles is being violated.
+
+When you reveal all five, you'll have the mental catalog to audit your own chain before shipping it.
+
+> This catalog isn't exhaustive. But it covers 80% of typical failures in chains and agents. The other 20% (poorly calibrated eval problems, prompt drift over time) come in the track's final unit.

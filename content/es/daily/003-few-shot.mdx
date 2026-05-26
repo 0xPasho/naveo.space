@@ -1,0 +1,162 @@
+---
+title: "Misión exprés: few-shot gana a más explicación"
+intro: |
+  Cuando el modelo no entiende, los ejemplos enseñan más rápido que párrafos de teoría.
+station: vega
+teaches:
+  - few-shot-basics
+  - few-shot-selection
+characters:
+  - orbit
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Orbit está clasificando mensajes entrantes en `urgente`, `normal`,
+      `spam`. El modelo confunde `urgente` con `normal`. Tenés que mejorar
+      el prompt. ¿Qué le agregás?
+    optionA: |
+      ```
+      Para clasificar mejor, considerá que urgente es cualquier mensaje
+      donde el remitente expresa una necesidad inmediata, alta prioridad,
+      o pérdida potencial si no se atiende rápido. Normal es todo lo
+      demás que no es spam. Spam es promocional o no solicitado.
+      ```
+    optionB: |
+      ```
+      Ejemplos:
+
+      Mensaje: "El servidor se cayó, lo necesitamos arriba ya."
+      Categoría: urgente
+
+      Mensaje: "Cuando puedas, revisá el ticket #123."
+      Categoría: normal
+
+      Mensaje: "Ganaste un iPhone, hacé click acá."
+      Categoría: spam
+      ```
+    correct: B
+    explanation: |
+      Más explicación abstracta rara vez resuelve confusiones de
+      clasificación. El modelo ya entiende las palabras "urgente" y
+      "normal" en castellano. El problema no es vocabulario, es dónde
+      poner el corte entre las dos.
+
+      Tres ejemplos concretos definen ese corte mucho mejor que una
+      definición. "El servidor se cayó" anclá `urgente`; "cuando puedas"
+      anclá `normal`. El modelo ahora tiene puntos de referencia.
+
+      Regla práctica del few-shot: 3 ejemplos > 3 párrafos. Si el modelo
+      sigue equivocándose, no escribas otro párrafo. Sumá un ejemplo más,
+      idealmente del caso borderline que falla.
+  - kind: step-order-dnd
+    task: |
+      Ordená los pasos para construir un prompt few-shot bueno desde cero.
+      Empezá por arriba, terminá abajo.
+    steps:
+      - id: s1
+        label: "Definí los labels posibles (ej: urgente / normal / spam)."
+        detail: "Sin esto, no sabés qué categorías tenés que cubrir con ejemplos."
+      - id: s2
+        label: "Escribí 1 ejemplo claro por label."
+        detail: "El caso más representativo de cada categoría. Sin trampas."
+      - id: s3
+        label: "Cubrí casos borderline donde el modelo se va a confundir."
+        detail: "Los pares parecidos que cruzan la frontera entre dos labels."
+      - id: s4
+        label: "Cerrá con el input nuevo a clasificar, sin la respuesta."
+        detail: "El modelo completa siguiendo el patrón de los ejemplos."
+  - kind: prompt-anatomy
+    task: |
+      Vega armó este prompt few-shot para detectar si una reseña habla del
+      producto o del servicio. Etiquetá cada parte: la instrucción, los
+      ejemplos positivos, el ejemplo negativo y el input nuevo.
+    parts:
+      - id: instruction
+        label: "Instrucción (qué hacer)"
+        text: "Clasificá cada reseña en `producto` (habla del item) o `servicio` (habla del envío o atención)."
+      - id: positive
+        label: "Ejemplo positivo (caso claro, label evidente)"
+        text: "Reseña: 'La cafetera filtra muy lento, el agua casi no pasa.' -> producto"
+      - id: negative
+        label: "Ejemplo de contraste (caso opuesto, otro label)"
+        text: "Reseña: 'Llegó 4 dias tarde y la caja estaba abierta.' -> servicio"
+      - id: input
+        label: "Input nuevo (el caso a clasificar, sin respuesta)"
+        text: "Reseña: 'El soporte tardó 2 semanas en responder mi mail.' -> "
+  - kind: prompt-AB
+    question: |
+      Tenés que clasificar emails entrantes en `factura`, `consulta`,
+      `queja` y `otro`. Te alcanza con 1 ejemplo por categoría, o
+      conviene cubrir 3 a 5 casos distintos?
+    optionA: |
+      ```
+      Ejemplo:
+      
+      Email: "Adjunto factura 0042 por servicios de mayo."
+      Categoría: factura
+      
+      Email nuevo: {{input}}
+      Categoría:
+      ```
+    optionB: |
+      ```
+      Ejemplos:
+      
+      Email: "Adjunto factura 0042 por servicios de mayo." -> factura
+      Email: "Cuánto sale el plan anual?" -> consulta
+      Email: "El producto llegó roto, exijo devolución." -> queja
+      Email: "Pago atrasado, mandamos comprobante el lunes." -> factura
+      Email: "Hola, alguien me contesta?" -> otro
+      
+      Email nuevo: {{input}}
+      Categoría:
+      ```
+    correct: B
+    explanation: |
+      Con un ejemplo por categoría el modelo aprende el caso central,
+      pero no tiene referencias para los bordes. ¿Un email que menciona
+      una factura pero en realidad es una queja? ¿Una pregunta que
+      podría ser consulta o queja? Sin ejemplos de esos casos, se la
+      tiene que inventar.
+      
+      Con 3 a 5 ejemplos que cubran casos distintos, el modelo ve la
+      variación: "pago atrasado" también es factura, "alguien me
+      contesta?" es otro y no queja. La frontera entre labels se vuelve
+      explícita.
+      
+      Más ejemplos no siempre es mejor: si los 5 que sumás son casi
+      idénticos, no enseñás nada nuevo. La regla útil es cubrir los
+      casos distintos, no llenar espacio con repetidos.
+  - kind: slot-fill-dnd
+    task: |
+      Estás armando un few-shot para clasificar reseñas como `producto`
+      o `servicio`. Clasificá cada ejemplo: ¿suma al prompt o lo
+      ensucia?
+    slots:
+      - id: good
+        label: "Buen ejemplo few-shot"
+      - id: bad
+        label: "Mal ejemplo few-shot"
+    pieces:
+      - id: p1
+        label: "Reseña: 'Llegó tarde y rota.' -> servicio. Cubre dos quejas distintas en una sola línea, label claro."
+        correctSlot: good
+      - id: p2
+        label: "Reseña: 'La cafetera filtra lento.' -> servicio. Habla del item, pero el label dice servicio."
+        correctSlot: bad
+      - id: p3
+        label: "Reseña: 'No me llegó el envío.' -> servicio. Caso borderline limpio, label correcto."
+        correctSlot: good
+      - id: p4
+        label: "Reseña: 'Llegó tarde.' -> servicio. Y otro: 'Llegó tarde de nuevo.' -> servicio. Y otro casi igual."
+        correctSlot: bad
+      - id: p5
+        label: "Reseña: 'El soporte tarda en responder.' -> servicio. Distinto al de envíos, mismo label, refuerza el patrón."
+        correctSlot: good
+      - id: p6
+        label: "Reseña: 'Está bueno.' -> producto. Demasiado corto y ambiguo, podría ser servicio."
+        correctSlot: bad
+---
+
+Misión del día: cuando el modelo no entiende, no escribas más. Mostrá más.

@@ -1,0 +1,118 @@
+---
+title: "Quick mission: vague vs clear"
+intro: |
+  Same ask, two shapes. One gives the model something to grip, the other leaves it guessing. The whole difference is clarity.
+station: vega
+characters:
+  - atlas
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Atlas wants to thank the crew after closing a tough shift. Which
+      of these two prompts will produce something usable?
+    optionA: |
+      ```
+      Write me something nice.
+      ```
+    optionB: |
+      ```
+      Write a 3-line message to thank the crew after closing a tough
+      shift. Warm tone, no empty phrases, mention that they held under
+      pressure.
+      ```
+    correct: B
+    explanation: |
+      "Something nice" tells the model nothing. Nice for whom? Long or
+      short? In what tone? You will get a generic text that could fit
+      anyone, which means it fits no one.
+
+      Option B pins three things: length (3 lines), audience (the crew
+      after a tough shift), and tone (warm, no empty phrases). That
+      trims the model's answer space and forces it to aim.
+
+      Notice: clear is not longer for the sake of it, it is longer
+      because it takes decisions off the model's plate.
+  - kind: slot-fill-dnd
+    task: |
+      Atlas sends you five requests. Decide which ones are clear (the
+      model can start) and which are vague (the model has to guess).
+    slots:
+      - id: clear
+        label: "Clear"
+      - id: vague
+        label: "Vague"
+    pieces:
+      - id: r1
+        label: "Summarize this."
+        correctSlot: vague
+      - id: r2
+        label: "Summarize this in 3 bullets of one line each."
+        correctSlot: clear
+      - id: r3
+        label: "Make it better."
+        correctSlot: vague
+      - id: r4
+        label: "Translate this text to English keeping the informal tone."
+        correctSlot: clear
+      - id: r5
+        label: "Give me ideas."
+        correctSlot: vague
+  - kind: prompt-tag-fill
+    template: |
+      You are {{role}}. Your task is {{task}}. Respond in {{format}}.
+    requiredTags:
+      - role
+      - task
+      - format
+  - kind: step-order-dnd
+    task: |
+      You have a vague prompt and want to make it clear. Order the
+      steps in the sequence that makes sense to follow.
+    steps:
+      - id: s1
+        label: "Identify what is missing."
+        detail: "Is it role, context, format, or all of them together?"
+      - id: s2
+        label: "Add context."
+        detail: "Which domain, which audience, which constraints exist."
+      - id: s3
+        label: "Specify the format."
+        detail: "Length, structure, language, tone."
+      - id: s4
+        label: "Add an example if needed."
+        detail: "One sample of the kind of output you expect."
+      - id: s5
+        label: "Run the prompt and read it cold."
+        detail: "If you cannot understand it without context, the model cannot either."
+  - kind: prompt-AB
+    question: |
+      You ask the model to write the same email in two different ways.
+      Which one will produce a more predictable result?
+    optionA: |
+      ```
+      Send me an email to tell the client the delivery is delayed.
+      ```
+    optionB: |
+      ```
+      Write an email telling the client the delivery is delayed by 48
+      hours. Professional tone, max 4 lines, offer a 10% discount as
+      compensation. Sign off with "Support Team".
+      ```
+    correct: B
+    explanation: |
+      The more specific, the more predictable the output. Option A can
+      give you a 10-line email, or a one-liner, or one with a made-up
+      discount, or no signature.
+
+      Option B pins what matters: concrete reason (48 hours), tone,
+      length (4 lines), a commercial gesture (10% discount), and a
+      sign-off. Run it ten times and you will get ten close variants.
+
+      Rule: every decision you do not make, the model will. Sometimes
+      it makes them badly.
+---
+
+Vague = the model decides for you. Clear = you decide what should
+come out. Take decisions off the model's plate and the results get
+more consistent.

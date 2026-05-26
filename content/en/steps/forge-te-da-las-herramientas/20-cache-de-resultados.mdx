@@ -1,0 +1,139 @@
+---
+title: "Caching results: free when the model asks twice"
+order: 20
+estimatedMinutes: 8
+exercise:
+  kind: tool-handler-implement
+  toolName: get_weather
+  toolSchema: |
+    {
+      "name": "get_weather",
+      "description": "Returns the current atmospheric conditions of a deck on the ship. Data changes slowly (~every 60 seconds). Read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "deck": { "type": "string", "enum": ["A", "B", "C", "engineering", "medical"] }
+        },
+        "required": ["deck"]
+      }
+    }
+  starter: |
+    // Handler for get_weather.
+    // Available:
+    //   atmosphericApi.read(deck) → {deck, temperature_c, humidity_pct, pressure_kpa, sampled_at}
+    //   atmosphericApi.read takes ~800ms and counts against the provider's rate limit.
+    //   logger.info(event, payload)
+    //
+    // The agent sometimes invokes `get_weather` 3 or 4 times in a row
+    // within a single turn while assembling a summary. Each call is
+    // 800ms of latency + 1 hit on the rate limit.
+    //
+    // Your job: add an in-memory cache with a reasonable TTL so that
+    // repeated calls for the same deck within 60 seconds reuse the last
+    // result.
+
+    async function handle({ deck }) {
+      const reading = await atmosphericApi.read(deck);
+      return { ok: true, data: reading, cached: false };
+    }
+  language: javascript
+  scenarios:
+    - description: "First call for deck='A'. Empty cache."
+      expected: "ok: true, data: {...}, cached: false. Calls the API."
+    - description: "Second call for deck='A' 10 seconds later. Cache hit."
+      expected: "ok: true, data: {same as before}, cached: true. Does NOT call the API."
+    - description: "Call for deck='B' 10 seconds later. Different deck, no collision."
+      expected: "ok: true, data: {new}, cached: false. Calls the API. (deck B has its own cache slot)."
+    - description: "Call for deck='A' 75 seconds later. Cache expired (TTL 60s)."
+      expected: "ok: true, data: {new}, cached: false. Re-calls the API."
+  rubric:
+    - id: cache-declared-outside
+      kind: llm-judge
+      criterion: "The cache (Map or object) is declared OUTSIDE the handle function so it persists between invocations."
+    - id: cache-key-per-deck
+      kind: llm-judge
+      criterion: "The cache is keyed by `deck`. Different decks do NOT share a cache entry. The cache key includes `deck` (or is exactly `deck`)."
+    - id: ttl-enforced
+      kind: llm-judge
+      criterion: "The cache has a TTL (typically 60 seconds). The handler checks the age of the entry before returning. If it exceeded the TTL, it re-calls the API."
+    - id: cached-flag-returned
+      kind: llm-judge
+      criterion: "The result includes `cached: true/false` so the agent and the logs know if it was a cache hit. Not cosmetic: in debugging, knowing if a response came from cache changes the diagnosis."
+    - id: still-calls-api-on-miss
+      kind: llm-judge
+      criterion: "On a cache miss (first call or expired TTL) it does call `atmosphericApi.read(deck)` and saves the result in cache with a timestamp."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Pattern: `const cache = new Map(); // deck → { data, fetchedAt }`. On each call: if there's an entry and `Date.now() - fetchedAt < TTL_MS`, return with cached:true. If not, fetch + save."
+  - "Typical TTL for slow-changing data: 30-300 seconds. For real-time data (crypto prices, stock): don't cache or use a few-second TTL."
+  - "The `cached: true` isn't decoration: the agent can tell the user 'data updated 30 seconds ago' if it came from cache, vs 'just fetched' if not."
+teaches:
+  - tool-caching
+requires:
+  - mcp-stateful-tools
+---
+
+## The agent asks the same thing all the time
+
+In a typical agent turn, the model may invoke the same tool **several times in a row** to assemble a summary, compare, or verify before acting:
+
+- "Let me check stock before modifying it." → `list_inventory_items()`
+- "OK, now I add 5 units." → `add_inventory()`
+- "Let's confirm the result." → `list_inventory_items()` (again)
+
+If your tool touches an external API, a slow DB, or a service with a rate limit, that **triple call** costs you money, latency, and sometimes it'll trip the rate limiter on you.
+
+The solution is an old, well-known pattern: **cache with TTL**. The novelty when applied to agent tools:
+
+- **The agent doesn't know the cache exists**, nor cares. To the agent, the tool just answers fast.
+- **The cache is transparent.** Same input, same output. The only thing that changes is the latency and a `cached: true` flag for diagnosis.
+- **TTL depends on the domain.** Weather data changes slowly (60s OK). Financial prices change fast (5s or none). Inventory stock: depends.
+
+### What to cache
+
+✓ **Read** tools (naturally idempotent). `get_X`, `list_X`, `lookup_X`.
+
+✓ Tools whose data **changes slowly**. Configuration, catalogs, reference data.
+
+✓ **Expensive** tools (high latency or per-call cost).
+
+### What NOT to cache
+
+✗ **Write** tools. Each call does something different. Doesn't make sense.
+
+✗ Tools whose data **changes fast**. If your TTL is longer than the actual change frequency, you return stale data as if it were fresh.
+
+✗ Tools with results **dependent on the user** without keying them separately. If you cache `get_my_bookings()` with key "default", everyone sees the first user's bookings. **The cache key has to include the context that distinguishes.**
+
+### Typical structure
+
+```js
+const cache = new Map(); // key → { data, fetchedAt }
+const TTL_MS = 60_000;
+
+async function handle({ deck }) {
+  const key = deck;
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < TTL_MS) {
+    return { ok: true, data: cached.data, cached: true };
+  }
+  const data = await atmosphericApi.read(deck);
+  cache.set(key, { data, fetchedAt: Date.now() });
+  return { ok: true, data, cached: false };
+}
+```
+
+### The `cached: true` is information too
+
+Returning the flag `cached: true` on hit lets the agent make interesting decisions:
+
+- _"Weather data for deck A (captured 25 seconds ago)"_ instead of stating it as if live.
+- In debugging, distinguish old behavior (cached) from current behavior.
+- If the agent needs fresh data (critical decision), it can bypass the cache. heads up: that's another pattern (force-refresh), optional but useful.
+
+### Your task
+
+On the right you have `get_weather` with no cache. Add it: in-memory cache with 60s TTL, keyed by deck, with the `cached` flag.
+
+> Good caching is one of the cheapest, highest-impact optimizations in real MCPs. One hour of work, one order of magnitude less in API cost.

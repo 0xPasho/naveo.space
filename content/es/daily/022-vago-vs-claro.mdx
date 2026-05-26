@@ -1,0 +1,119 @@
+---
+title: "Misión exprés: vago vs claro"
+intro: |
+  Mismo pedido, dos formas. Una le da al modelo de qué agarrarse, la otra lo deja inventando. La diferencia es pura claridad.
+station: vega
+characters:
+  - atlas
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Atlas quiere felicitar a la crew después de cerrar un turno
+      pesado. ¿Cuál de estos dos prompts le va a devolver algo usable?
+    optionA: |
+      ```
+      Escribime algo lindo.
+      ```
+    optionB: |
+      ```
+      Escribí un mensaje de 3 líneas para felicitar a la crew después
+      de cerrar un turno difícil. Tono cálido, sin frases vacías,
+      mencioná que aguantaron presión.
+      ```
+    correct: B
+    explanation: |
+      "Algo lindo" no le dice nada al modelo. ¿Lindo para quién? ¿Largo
+      o corto? ¿En qué tono? Va a salir un texto genérico que podría
+      servir para cualquiera, o sea para nadie.
+
+      El B fija tres cosas: largo (3 líneas), audiencia (la crew después
+      de un turno difícil) y tono (cálido, sin frases vacías). Eso le
+      recorta el espacio de respuesta al modelo y lo obliga a apuntar.
+
+      Fijate: lo claro no es más largo porque sí, es más largo porque
+      saca decisiones de encima del modelo.
+  - kind: slot-fill-dnd
+    task: |
+      Atlas te pasa cinco pedidos. Decidí cuáles son claros (el modelo
+      puede arrancar) y cuáles son vagos (el modelo va a tener que
+      adivinar).
+    slots:
+      - id: clear
+        label: "Claro"
+      - id: vague
+        label: "Vago"
+    pieces:
+      - id: r1
+        label: "Resumime esto."
+        correctSlot: vague
+      - id: r2
+        label: "Resumime esto en 3 bullets de una línea cada uno."
+        correctSlot: clear
+      - id: r3
+        label: "Hacelo mejor."
+        correctSlot: vague
+      - id: r4
+        label: "Traducí este texto al inglés manteniendo el tono informal."
+        correctSlot: clear
+      - id: r5
+        label: "Dame ideas."
+        correctSlot: vague
+  - kind: prompt-tag-fill
+    template: |
+      Sos {{role}}. Tu tarea es {{task}}. Respondé en {{format}}.
+    requiredTags:
+      - role
+      - task
+      - format
+  - kind: step-order-dnd
+    task: |
+      Tenés un prompt vago y querés volverlo claro. Ordená los pasos en
+      la secuencia que tiene sentido seguir.
+    steps:
+      - id: s1
+        label: "Identificá qué falta."
+        detail: "¿Falta rol, contexto, formato, o todo eso junto?"
+      - id: s2
+        label: "Agregá contexto."
+        detail: "Qué dominio, qué audiencia, qué restricciones existen."
+      - id: s3
+        label: "Especificá el formato."
+        detail: "Largo, estructura, idioma, tono."
+      - id: s4
+        label: "Sumá un ejemplo si hace falta."
+        detail: "Una sola muestra del tipo de salida que esperás."
+      - id: s5
+        label: "Probá el prompt y leelo en frío."
+        detail: "Si vos no lo entenderías sin contexto, el modelo tampoco."
+  - kind: prompt-AB
+    question: |
+      Le pedís al modelo que escriba el mismo email en dos formas
+      distintas. ¿Cuál va a producir un resultado más predecible?
+    optionA: |
+      ```
+      Mandame un email para avisar al cliente que se demora la entrega.
+      ```
+    optionB: |
+      ```
+      Escribí un email para avisar al cliente que la entrega se demora
+      48 horas. Tono profesional, máximo 4 líneas, ofrecé descuento del
+      10% como compensación. Cerrá con firma "Equipo de Soporte".
+      ```
+    correct: B
+    explanation: |
+      Cuanto más específico, más predecible la salida. El A te puede
+      devolver un email de 10 líneas, o de una, o con un descuento
+      inventado, o sin firma.
+
+      El B fija lo que importa: motivo concreto (48 horas), tono, largo
+      (4 líneas), gesto comercial (descuento 10%) y cierre. Si lo
+      corrés diez veces, vas a obtener diez variaciones cercanas.
+
+      Regla: cada decisión que no tomás vos, la toma el modelo. Y a
+      veces la toma mal.
+---
+
+Vago = el modelo decide por vos. Claro = vos decidís qué tiene que
+salir. Sacale decisiones al modelo y vas a obtener resultados más
+parejos.

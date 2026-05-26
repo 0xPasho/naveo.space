@@ -1,0 +1,126 @@
+---
+title: "Steer tone turn by turn"
+order: 5
+estimatedMinutes: 9
+exercise:
+  kind: conversation-goal
+  goal: |
+    Orbit will draft an announcement for the whole crew about a new
+    safety procedure. The first version will come back formal and
+    bureaucratic. Your job: using specific follow-ups about TONE (not
+    about content), bring it down to a professional but clear
+    announcement, without jargon or "dear crewmates". Get there in 3
+    or 4 turns without asking for a full rewrite.
+  personaName: "Orbit"
+  personaSlug: orbit
+  personaSystemPrompt: |
+    You are Orbit, communications officer for the crew. Your job is
+    writing announcements and internal memos.
+
+    CRITICAL STYLE RULE: your FIRST response to ANY drafting request
+    must come back in formal, bureaucratic tone, full of phrases like
+    "Dear crewmates", "you are hereby informed", "we kindly request",
+    "thanking you in advance". Long sentences, passive voice, pompous
+    header. This is your default and you do NOT change it without a
+    specific request.
+
+    If the crewmate asks for tone adjustments, you apply them in
+    LAYERS, one per turn, based on how specific the request is.
+    Behavior:
+
+    1. If the request is VAGUE ("make it more casual", "more natural",
+       "less formal") → you drop ONE notch (remove "dear crewmates"
+       but leave other formalisms). You don't jump multiple notches
+       at once.
+
+    2. If the request names a SPECIFIC tone characteristic ("no 'dear
+       crewmates'", "active voice", "short sentences", "no 'we
+       kindly request'"), you apply that specific change and keep the
+       rest of the style. You do NOT rewrite everything.
+
+    3. If the request combines multiple specific dimensions in one
+       message ("active voice + short sentences + no formalisms"),
+       you apply all three and deliver a professional but direct
+       version.
+
+    4. If the request is contradictory ("more casual but more
+       serious"), you ask to clarify ONE dimension at a time.
+
+    NEVER rewrite the whole announcement on your own initiative.
+    ALWAYS preserve the content (what's being announced) and ONLY
+    adjust how it's said.
+
+    The announcement is about: "new check procedure for airlock
+    closure at shift change: two signatures required instead of one,
+    starting next shift." Do NOT change this content.
+
+    Orbit's base tone: professional, efficient, respectful.
+  personaOpener: |
+    Here's the draft for the airlock procedure announcement. Ready?
+  maxTurns: 6
+  rubric:
+    - id: tone-not-content
+      kind: llm-judge
+      criterion: "The student's follow-ups were about TONE or STYLE (not about changing the content of the announcement: the double-signature airlock procedure must remain the topic). If the student changed the topic or added/removed information, this criterion does NOT pass."
+    - id: specific-tone-asks
+      kind: llm-judge
+      criterion: "At least ONE of the student's follow-ups named a SPECIFIC tone characteristic (e.g.: 'no dear crewmates', 'active voice', 'short sentences', 'drop the formalisms', 'no we kindly request', 'direct'). Purely vague requests like 'more casual', 'better', 'more natural' do NOT satisfy this criterion on their own."
+    - id: gradual-progression
+      kind: llm-judge
+      criterion: "The student did NOT ask Orbit to rewrite the whole thing from scratch (no phrases like 'rewrite it from scratch' or 'start over'). Progress was through incremental adjustments, keeping the announcement content."
+    - id: final-version-improved
+      kind: llm-judge
+      criterion: "The final version Orbit delivers is notably more direct than the first: doesn't open with 'dear crewmates', doesn't use 'we kindly request' or 'thanking you in advance', and the content (double signature at airlock closure starting next shift) is preserved."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "If you say 'make it more natural', Orbit only drops ONE notch. To get to a clean announcement quickly, name what to drop: 'no dear crewmates', 'no we kindly request', 'active voice'."
+  - "Don't say 'rewrite from scratch'. That loses the content. Ask for specific changes and leave the content intact."
+  - "You can combine several specific adjustments in one turn: 'drop the formalisms, active voice, short sentences'. That jumps three levels at once."
+teaches:
+  - steer-tone-gradually
+requires:
+  - multi-turn-followup
+  - surgical-correction-prompt
+---
+
+## Tone also gets steered in layers
+
+When you ask the model to change **what** (content), it's relatively easy: you name the data point, it changes it. When you ask it to change **how** (tone, style, register) things drift more. "Make it more casual" doesn't mean the same thing to you as it does to the model.
+
+<Character name="orbit" /> is the communicator. Her default is formal and bureaucratic. *"Dear crewmates, you are hereby informed..."*. You're going to redirect her to a professional but direct tone. **without changing the content of the announcement**.
+
+### The specific-tone rule
+
+| Vague (one notch at a time) | Specific (direct jump) |
+|---|---|
+| "more casual" | "no 'dear crewmates', active voice" |
+| "more natural" | "short sentences, no formalisms" |
+| "better" | "no 'we kindly request' or 'thanking you in advance'" |
+
+Vague requests make the model drop **one notch** from the dominant style. Specific requests put it where you want in a single turn.
+
+### What you DON'T want
+
+- **"Rewrite from scratch, cooler."** Loses the content along the way. If the original announcement said "double signature starting next shift", the rewrite can change the date, the signatures, everything.
+- **"More casual."** Drops just "dear crewmates" and leaves "we kindly request".
+- **"Change all of it."** Bye content.
+
+### What you do want
+
+- **"Drop 'dear crewmates' and 'we kindly request'. Active voice. Short sentences. Same content."**
+
+Four pointed instructions, one protective line at the end. One turn, three levels of change.
+
+### How it's evaluated
+
+4 criteria:
+
+1. Your follow-ups were about tone, not content (the announcement still is about double signature).
+2. At least one of your asks named a specific tone characteristic.
+3. You didn't ask for a full rewrite from scratch.
+4. The final version is clearly more direct and preserves the content.
+
+Max 6 turns.
+
+> Tip: think of tone as a dial with many clicks. A vague request = one click. A specific request that names 3 things = 3 clicks at once. When you know where you want to land, ask for the 3 clicks together.

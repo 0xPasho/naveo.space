@@ -1,0 +1,109 @@
+---
+title: "Combined conditions: AND / OR / NOT"
+order: 6
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    The ship has this rule for firing the engines:
+
+    <DecisionFlow condition="airlock closed AND fuel > 50%?" ifLabel="IF" elseLabel="ELSE" ifAction="fire engines" elseAction="wait" />
+
+    Four different status checks. Which option applies the rule correctly
+    to all four?
+
+    1. Airlock closed, fuel 73%
+    2. Airlock open, fuel 90%
+    3. Airlock closed, fuel 45%
+    4. Airlock closed, fuel 51%
+  optionA: |
+    1. fire engines
+    2. wait
+    3. **fire engines**
+    4. fire engines
+  optionB: |
+    1. fire engines
+    2. wait
+    3. **wait**
+    4. fire engines
+  correct: B
+  explanation: |
+    The `AND` operator requires **both** sides to be true. The rule
+    `airlock closed AND fuel > 50%` only fires when both conditions hold.
+
+    Case 3 (closed + 45%) is what separates the two options. The airlock
+    is closed (left side true) **but** fuel is 45%, which is not greater
+    than 50% (right side false). One side false is enough to make the
+    whole `AND` return false. The engines don't fire.
+
+    Option A gets this wrong because it treats `AND` like `OR`. That
+    confusion (`AND` vs `OR`) is one of the most common sources of bugs
+    in any system, not just on the ship.
+hints:
+  - "The `AND` operator requires both sides to be true. If even one side is false, the whole `AND` is false."
+  - "Take case 3 (closed + 45%). The airlock side passes. Does the fuel side also pass `> 50%`?"
+  - "The only difference between the two options is in case 3."
+teaches:
+  - boolean-operators
+requires:
+  - conditionals-basics
+  - comparison-operators
+---
+
+## One decision, several conditions
+
+So far the conditions have been simple: one yes/no question. The reality is that most decisions on the ship **combine** two or more checks.
+
+Three operators handle the combinations:
+
+| Operator | Means | Is true when |
+| --- | --- | --- |
+| `AND` | both | both sides are true |
+| `OR` | either | at least one side is true |
+| `NOT` | invert | the original side is false |
+
+### AND: both sides have to be green
+
+```
+IF airlock closed AND fuel > 50%:
+  fire engines
+ELSE:
+  wait
+```
+
+To fire, **both** conditions have to be true. If the airlock is open you don't fire, no matter how much fuel you have. If you have 30% you don't fire, no matter how closed the airlock is.
+
+### OR: one is enough
+
+```
+IF door forced OR motion sensor active:
+  alert security
+ELSE:
+  silence
+```
+
+To alert, **either** one is enough. It's a more sensitive system, designed for *"I don't want any case to slip past me"*.
+
+### NOT: flipping a condition
+
+```
+IF NOT crew_on_board:
+  abort launch
+```
+
+Read it as *"if there's NO crew on board, abort"*. `NOT` takes a true condition and turns it false (and vice versa).
+
+### The most common bug: confusing AND with OR
+
+`AND` and `OR` look three letters apart but **they build opposite behaviors**.
+
+- `door closed AND alarm active`: very specific. Everything has to happen.
+- `door closed OR alarm active`: very loose. As long as something happens.
+
+If you confuse one for the other, one of two things happens: either the system **never fires** (you expected `OR` and wrote `AND`), or it **fires constantly** (you expected `AND` and wrote `OR`). Both ruin your day.
+
+> When you assemble a prompt you'll write this in plain English: *"if the bio has an email **and** a phone, return them. If **only** the email is there, return the email. If there's **none**, return null."* Same pattern, same operators.
+
+On the right, one compound rule and four checks. In which option did the ship correctly decide what to do for each?

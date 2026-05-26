@@ -1,0 +1,111 @@
+---
+title: "Loggear la conversación para debuggearla"
+order: 17
+estimatedMinutes: 5
+characters:
+  - hex
+exercise:
+  kind: prompt-AB
+  question: |
+    Estás iterando un agente que conversa con usuarios. A veces el
+    output del turno 6 está mal y no sabés por qué. ¿Qué información
+    necesitás capturar de cada conversación para poder diagnosticar
+    el problema después?
+  optionA: |
+    ```
+    Solo guardar el último mensaje del usuario y el último output del
+    modelo. Si algo sale mal, mirás esos dos y listo.
+    ```
+  optionB: |
+    ```
+    Guardar la conversación COMPLETA turno por turno, incluyendo:
+    - System prompt usado
+    - Cada mensaje user/assistant con timestamp
+    - Parámetros del modelo (temperature, model name, max_tokens)
+    - ID de conversación que correlacione todos los turnos
+    ```
+  correct: B
+  explanation: |
+    Solo guardar los últimos dos mensajes (A) es el equivalente a
+    debuggear un crash mirando solo la última línea del stack trace.
+    No te alcanza. El bug en el turno 6 muy probablemente nació en el
+    turno 2 (una asunción mal hecha, un dato que faltó, una
+    respuesta vaga que el modelo arrastró).
+
+    Sin la conversación completa NO podés:
+
+    - **Reproducir el bug.** Sin la historia, no podés correr el mismo
+      input de nuevo y ver si pasa lo mismo.
+    - **Identificar el turno raíz.** El error visible está en el turno
+      6, pero la causa está antes. Necesitás el track completo.
+    - **Comparar versiones de prompt.** Cuando cambies el system
+      prompt, querés comparar conversaciones del antes/después.
+    - **Auditar.** Para producción, vas a necesitar un log cuando un
+      usuario se queje.
+
+    Los 4 elementos del prompt B son el mínimo:
+
+    1. **System prompt** (cambia entre deploys, hay que saber cuál se
+       usó).
+    2. **Mensajes con timestamps** (orden + latencia).
+    3. **Parámetros del modelo** (mismo prompt + distinta temperature
+       = distinta salida).
+    4. **ID de conversación** (correlaciona todos los turnos de una
+       sesión).
+
+    Si vas a llevar un proyecto con LLMs a producción, el logger
+    estructurado de conversaciones es la pieza de infra menos
+    glamorosa y más crítica. Cada bug que reportás contra el modelo
+    necesita esos 4 elementos para ser diagnosticable.
+teaches:
+  - conversation-logging
+requires:
+  - multi-turn-followup
+---
+
+## El bug del turno 6 nació en el turno 2
+
+Cuando una conversación con LLM falla, **casi nunca falla en el turno donde lo notás**. El output malo del turno 6 suele venir arrastrado de algo que pasó turnos antes: una asunción mal hecha, una pregunta vaga, una respuesta floja que nadie cuestionó.
+
+Para poder diagnosticar, necesitás ver la conversación entera. Y para ver la conversación entera, tenés que haberla **loggeado bien desde el principio**.
+
+### Los 4 elementos mínimos del log
+
+```
+{
+  "conversation_id": "...",
+  "system_prompt": "<full text>",
+  "model": "claude-opus-4-7",
+  "params": { "temperature": 0.7, "max_tokens": 2048 },
+  "turns": [
+    { "role": "user", "ts": "...", "content": "..." },
+    { "role": "assistant", "ts": "...", "content": "..." }
+  ]
+}
+```
+
+### Por qué cada elemento importa
+
+- **conversation_id:** sin ID compartido, no podés filtrar los turnos de UNA conversación específica entre millones.
+- **system_prompt:** si cambiás el system prompt en un deploy y un usuario reporta un bug, necesitás saber qué system estaba activo cuando pasó.
+- **model + params:** la misma conversación con temperature 0.3 vs 0.9 puede dar outputs muy distintos. El modelo cambia entre versiones; el log tiene que saber cuál se usó.
+- **turns con timestamps:** orden de ejecución + latencia entre turnos (útil para detectar slowdowns o timeouts).
+
+### Lo que NO sirve
+
+| Anti-patrón | Por qué falla |
+|---|---|
+| Solo loggear el último turno | No reproducís el bug. |
+| Loggear sin conversation_id | Imposible reconstruir la sesión. |
+| Loggear sin system_prompt | Cuando cambia, perdés la historia. |
+| Loggear con prints en consola | Se pierden, no se buscan, no se filtran. |
+
+> Tip avanzado: si tu app deja al usuario corregir/editar mensajes anteriores (como ChatGPT), tu log tiene que capturar **cada versión** del mensaje, no solo la última. Si no, vas a tener conversaciones donde "el usuario dijo X" y el modelo respondió a "Y" sin que entiendas por qué.
+
+### Cuándo importa
+
+- **Si solo estás explorando un chat**, no necesitás esto. screenshots alcanzan.
+- **Si vas a poner un agente en producción**, este logger es infra obligatoria.
+- **Si estás iterando un system prompt y comparando versiones**, vas a agradecer haberlo armado desde el día 1.
+
+A la derecha, dos formas de loggear conversaciones. ¿Cuál te permite debuggear el bug del turno 6?

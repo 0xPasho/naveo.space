@@ -1,0 +1,101 @@
+---
+title: "No te conformes con la primera respuesta"
+order: 1
+estimatedMinutes: 10
+exercise:
+  kind: conversation-goal
+  goal: |
+    Pídele a Vega que te explique cómo se firma un parte de turno en la
+    crew. No aceptes una respuesta vaga: hacé al menos 2 follow-ups hasta
+    tener los pasos exactos en orden (al menos 3 pasos concretos).
+  personaName: "Vega"
+  personaSlug: vega
+  personaSystemPrompt: |
+    Eres Vega, primera oficial de la crew. Estás hablando con un nuevo
+    crewmate que recién se incorporó.
+
+    REGLA DE PERSONALIDAD CRÍTICA: cuando un nuevo crewmate te pide
+    explicaciones de procesos, das **información mínima al principio**.
+    Tu primera respuesta sobre cualquier proceso debe ser corta y vaga
+    ("básicamente subes el parte y ya"). Esto NO es porque seas mala
+    onda — es porque queres que aprendan a hacer follow-up questions.
+
+    Solo das los pasos completos y en orden si el alumno te insiste con
+    al menos 2 preguntas específicas (ej: "¿qué pasa si...?", "¿en qué
+    orden?", "¿qué información tiene que llevar?").
+
+    Cuando finalmente das los pasos, tienen que ser concretos:
+    1. Abrir el parte en el sistema (terminal /parte/nuevo).
+    2. Anotar evento por evento con timestamp UTC.
+    3. Asignar prioridad (urgent/normal/spam).
+    4. Firmar al final con tu alias.
+    5. Confirmar con el supervisor de turno.
+
+    Habla de forma profesional y cálida, frases cortas, sin slang fuerte.
+    Si el alumno te falta el respeto, mantén el tono neutral pero corta
+    la conversación con "Vení cuando tengas algo concreto que preguntar."
+  personaOpener: |
+    Hola. ¿En qué te puedo ayudar?
+  maxTurns: 6
+  rubric:
+    - id: at-least-two-followups
+      kind: llm-judge
+      criterion: "El alumno hizo AL MENOS 2 follow-up questions específicas después de la primera respuesta de Vega (ej. preguntando por orden, por edge cases, por detalles concretos). Una sola pregunta inicial no cuenta."
+    - id: got-concrete-steps
+      kind: llm-judge
+      criterion: "Al final de la conversación, Vega le dio al alumno los pasos concretos (al menos 3 pasos numerados o claramente diferenciados) para firmar el parte. Si la conversación termina con respuestas vagas, este criterio NO pasa."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "El alumno mantuvo un tono profesional y respetuoso. No insultó, no exigió de forma agresiva, no rompió el rol."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Vega da info corta a propósito. Hacé una pregunta específica para forzar el siguiente nivel de detalle."
+  - "Buenas preguntas: '¿en qué orden?', '¿qué pasa si me equivoco?', '¿qué tengo que tener listo antes?', '¿quién lo recibe?'"
+  - "Vas bien si después de tus 2-3 mensajes Vega ya te dio una lista numerada de pasos."
+teaches:
+  - multi-turn-followup
+requires:
+  - prompt-task-basics
+---
+
+## La primera respuesta nunca es la respuesta
+
+En los Tracks anteriores entrenaste un instinto: **un prompt bien hecho
+trae el output correcto**. Cierto cuando podés expresar todo lo que
+necesitás en un solo mensaje. Cuando no podés — y eso pasa más seguido
+de lo que creés — necesitás otra habilidad: **hacer follow-up
+questions**.
+
+<Character name="vega" /> te va a dar respuestas a propósito vagas la
+primera vez. No es por mala onda — está testeando si sabés preguntar
+mejor cuando la respuesta no te alcanza.
+
+### Tu objetivo
+
+Conseguir que Vega te explique **los pasos concretos** para firmar un
+parte de turno en la crew. Si te quedás con su primera respuesta
+("básicamente subes el parte y ya"), fallás. Tenés que insistir con
+preguntas específicas hasta tener una **lista en orden**.
+
+### Cómo funciona el ejercicio
+
+1. La conversación arranca cuando Vega te saluda.
+2. Escribís tu mensaje, le das **Enviar**, ella te responde.
+3. Repetís hasta que sientas que tenés lo que necesitás (máximo 6 turnos).
+4. Cuando estés listo, **Comprobar** dispara la evaluación de toda la
+   conversación contra los 3 criterios:
+   - Al menos 2 follow-ups después de la primera respuesta.
+   - Vega te dio los pasos concretos.
+   - Mantuviste tono respetuoso.
+
+### Buenas y malas preguntas
+
+| Vaga (no funciona) | Específica (sí funciona) |
+|---|---|
+| "explicame mejor" | "¿en qué orden hago esos pasos?" |
+| "hay más?" | "¿qué información tiene que ir adentro del parte?" |
+| "podés ser más claro" | "¿qué pasa si me equivoco después de firmar?" |
+
+> Consejo: cuando alguien te da una respuesta vaga, identificá QUÉ falta
+> (orden, condición, actor, formato) y preguntá específicamente por eso.

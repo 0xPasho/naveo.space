@@ -1,0 +1,121 @@
+---
+title: "Retries and backoff: what you retry, what you don't"
+order: 13
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: prompt-task
+  task: |
+    Orbit asks you to write a **retry policy** as a JSON object that
+    describes which failure types the system retries, how many times,
+    with what backoff, and which ones NEVER get retried.
+
+    Your system invokes tools that can fail in five ways:
+
+    1. `network_timeout` (connection to the provider expired)
+    2. `rate_limit_exceeded` (the provider throttled you)
+    3. `invalid_response_format` (the model returned malformed JSON)
+    4. `unauthorized` (auth failed)
+    5. `business_validation_failed` (e.g. trying to charge an expired card)
+
+    For each one, decide whether to retry, how many times, with what
+    backoff (constant, linear, exponential), and what the final
+    dead-letter is if all retries fail.
+
+    Expected format: JSON where each key is the error code and the
+    value is `{retry: boolean, max_attempts: int, backoff: "constant" | "linear" | "exponential", initial_delay_ms: int, dead_letter: string}`.
+  starter: |
+    {
+      "network_timeout": {
+        "retry": true,
+        "max_attempts": 3,
+        "backoff": "exponential",
+        "initial_delay_ms": 500,
+        "dead_letter": "queue_for_manual_review"
+      }
+      // TODO: rate_limit_exceeded
+      // TODO: invalid_response_format
+      // TODO: unauthorized
+      // TODO: business_validation_failed
+    }
+  testCases:
+    - input: "meta-evaluation"
+  rubric:
+    - id: covers-all-five
+      kind: llm-judge
+      criterion: "The JSON covers all 5 error codes. Each one with its full policy: retry, max_attempts, backoff, initial_delay_ms, dead_letter."
+    - id: transient-uses-exponential
+      kind: llm-judge
+      criterion: "For network_timeout and rate_limit_exceeded (transient failures), the backoff is exponential (not constant). And rate_limit_exceeded uses a higher initial_delay_ms (≥2000ms) to give the provider room. Retrying fast amplifies the problem."
+    - id: invalid-format-retry-with-strict
+      kind: llm-judge
+      criterion: "For invalid_response_format, the agent retries MAX 1-2 times. Retrying many doesn't help. the model will fail anyway. The policy should include 'retry with stricter system prompt' or derive to dead_letter quickly."
+    - id: unauthorized-no-retry
+      kind: llm-judge
+      criterion: "For unauthorized, retry=false or max_attempts=1. Credentials don't fix themselves; retrying without changing anything is gifting latency. Dead letter: alert operator, not the retry queue."
+    - id: business-validation-never-retry
+      kind: llm-judge
+      criterion: "For business_validation_failed, retry=false. Retrying a business operation that failed validation is a BUG: you either charge twice, create two tickets, or duplicate any action. Dead letter: notify user, not silent retry."
+    - id: dead-letter-meaningful
+      kind: llm-judge
+      criterion: "Each dead_letter describes a concrete action (queue_for_manual_review, alert_oncall, notify_user, fail_visible_to_user). Not simply 'fail' or 'error'. Knowing WHAT happens when you retry everything and it still fails is half the value of the policy."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Mental rule: **transient = retry exponential; permanent = never retry; ambiguous = retry few times and escalate**."
+  - "Exponential backoff: 500ms, 1000ms, 2000ms, 4000ms... Each failure doubles the delay. Gives the downstream system air and reduces thundering herd when many clients retry at once."
+  - "Dead letter isn't 'the bug never reaches you'. it's 'the bug reaches a place where you can act on it': a queue you review, an alert, a notification to the user."
+teaches:
+  - retry-strategies
+requires:
+  - agent-loop-stop-conditions
+---
+
+## Not every error retries the same way
+
+When a tool fails, your agent has three options: retry, escalate, or dead-letter. Picking wrong leads you to one of three classic bugs:
+
+- **Retry everything**: you amplify an outage (all clients hammering the down provider), spend budget on guaranteed errors, or duplicate operations (charges, tickets, emails).
+- **Retry nothing**: every network hiccup is a visible failure. Your system looks fragile when it only needed one retry.
+- **Retry without policy**: sometimes 1 time, sometimes 10, sometimes forever. Unpredictable behavior, impossible observability.
+
+The solution: **explicit policy per error type**.
+
+### The three error classes
+
+| Class | Examples | Retry |
+|---|---|---|
+| **Transient** | network timeout, 503, rate limit | YES, with exponential backoff |
+| **Permanent** | unauthorized, 404 not found, schema mismatch | NO. Escalate or dead-letter |
+| **Business** | expired card, out of stock, invalid data | NO. Notify the user |
+
+### Exponential backoff
+
+Standard formula: `delay = initial_delay × 2^attempt + jitter`.
+
+- Attempt 1 fails → wait 500ms.
+- Attempt 2 fails → wait 1000ms.
+- Attempt 3 fails → wait 2000ms.
+- Attempt 4 fails → dead letter.
+
+**Jitter** (a small random) avoids "thundering herd": if 1000 clients fail at the same time and all retry exactly at 500ms, you worsen the outage. With jitter, retries spread out.
+
+### Retry budget
+
+For large systems, you add a **retry budget per session**: max 5 total retries for the whole agent session, not per error. Without this, a cascade of transient errors can generate hundreds of retries and burn through your quota.
+
+### Dead letter: the second parachute
+
+When retries fail, what happens? That's the half of the policy people forget:
+
+- **queue_for_manual_review**: the case goes to a queue a human reviews. Good for rare errors.
+- **alert_oncall**: notifies oncall in real time. Good for broken auth and permissions.
+- **notify_user**: the user sees the error explicitly and can act. Good for business.
+- **fail_visible**: the operation fails and the trace stays in logs. Good when the downstream system handles recovery.
+
+> A policy without dead-letter is half a policy. Design both sides: what you retry, and what happens when even retrying doesn't fix it.
+
+### Your task
+
+Write the full policy JSON for the 5 error codes. The judge evaluates that each one has the correct strategy and an actionable dead-letter.

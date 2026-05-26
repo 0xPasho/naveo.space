@@ -1,0 +1,90 @@
+---
+title: "Paralelo vs secuencial: cuándo abanicar"
+order: 4
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: step-order-dnd
+  task: |
+    Te llega un parte de turno y querés generar el **digest del capitán**:
+    título, severidad, partes técnicas, recomendación, y plan de
+    follow-up. <Character name="orbit" /> ya identificó qué pasos pueden
+    correr en paralelo (no dependen entre sí) y cuáles SI dependen.
+    Arrastrá los pasos al orden de ejecución correcto.
+
+    Asumí un runtime que ejecuta secuencialmente: cada paso espera a
+    que termine el anterior. Las **dependencias reales** marcan el
+    orden mínimo; el resto podés agruparlas como "lote paralelo"
+    representado por su orden de aparición.
+  steps:
+    - id: classify
+      label: "1. classify_incident"
+      detail: "Clasifica el tipo. TODO lo demás depende de este output."
+    - id: extract-tech
+      label: "2. extract_tech_fields (paralelo con #3 y #4)"
+      detail: "Saca campos técnicos del incidente. Solo necesita texto + categoría."
+    - id: extract-people
+      label: "3. extract_people (paralelo con #2 y #4)"
+      detail: "Saca crewmates involucrados. Solo necesita texto + categoría."
+    - id: severity
+      label: "4. score_severity (paralelo con #2 y #3)"
+      detail: "Devuelve high/medium/low. Solo necesita texto + categoría."
+    - id: recommend
+      label: "5. recommend_action"
+      detail: "Necesita los tres outputs anteriores (tech, people, severity)."
+    - id: digest
+      label: "6. compose_digest"
+      detail: "Junta todo en el digest final del capitán."
+hints:
+  - "Si dos pasos solo dependen del mismo input upstream y no se cruzan entre sí, son **paralelizables**. No hay razón para que el segundo espere al primero."
+  - "El cuello de botella siempre es el último paso que depende de los anteriores. Acá: `recommend_action` no arranca hasta que los tres paralelos terminen."
+  - "Paralelizar reduce latencia, no costo. Tres llamadas siguen siendo tres llamadas. Pero el usuario las ve como una sola."
+teaches:
+  - parallel-vs-sequential-chains
+requires:
+  - chain-design-basics
+---
+
+## No todas las cadenas son una línea recta
+
+Hasta ahora pensaste en cadenas como una secuencia: A → B → C → D. Eso funciona cuando cada paso **realmente** depende del anterior. Pero muchas veces los pasos del medio son **independientes entre sí**, todos comen del mismo upstream y devuelven al mismo downstream.
+
+Cuando eso pasa, ejecutarlos en serie es **regalar latencia**. La cadena se convierte en un grafo: un fan-out (abanico) que paraleliza el medio, y un fan-in (cierre) que junta todo.
+
+### Cuándo paralelizar
+
+Tres condiciones, todas necesarias:
+
+1. **Los pasos no se leen entre sí.** El output de B no entra a C, ni viceversa.
+2. **Todos dependen del mismo upstream.** Ej: todos esperan que `classify` termine, ninguno espera a otro paralelo.
+3. **El runtime lo soporta.** Async, threads, workers. cualquier orquestador moderno te lo permite.
+
+Si las tres se cumplen, el medio del grafo se ejecuta como un **lote paralelo**. Tres llamadas LLM al mismo tiempo. Latencia total = el más lento de los tres, no la suma.
+
+### Cuándo NO paralelizar
+
+- **Si los outputs interactúan.** B necesita el resultado de A. obvio secuencial.
+- **Si el orden importa para la auditoría.** A veces querés que el log muestre los pasos en un orden estable, no en orden de llegada de async.
+- **Si el rate limit del proveedor te penaliza.** Tres llamadas paralelas pueden saturar tu cuota mientras tres secuenciales no. Conocé tus límites.
+
+### Forma del grafo
+
+```
+            [classify]
+                ↓
+        ┌───────┼───────┐
+        ↓       ↓       ↓
+    [tech]  [people]  [severity]   ← paralelo, todos esperan classify
+        └───────┼───────┘
+                ↓
+          [recommend]                ← fan-in: espera a los 3 anteriores
+                ↓
+           [digest]                  ← cierre
+```
+
+> Pensar en cadenas como **grafos**, no como listas, es lo que separa al diseñador novato del experto. La lista es un caso especial del grafo (cuando hay un solo camino). El grafo te da paralelismo gratis cuando las dependencias lo permiten.
+
+### Tu ejercicio
+
+A la derecha: seis pasos del digest del capitán. Algunos son paralelos (lo dice su detail), otros no. Ordenalos respetando las dependencias reales. Cuando dos pasos pueden correr a la vez, ponelos consecutivos en el orden indicado por sus números. El runtime los va a lanzar juntos.

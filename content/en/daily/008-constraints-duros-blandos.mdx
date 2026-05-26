@@ -1,0 +1,162 @@
+---
+title: "Quick mission: hard vs soft constraints"
+intro: |
+  "The model CANNOT" is not the same as "the model prefers". Knowing when to apply which changes the output.
+station: vega
+teaches:
+  - length-constraints
+  - strict-output-format
+characters:
+  - orbit
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Orbit asks for help with a prompt: the summary has to fit in a
+      push notification of at most 50 words. Which of the two
+      formulations gives the output they need?
+    optionA: |
+      ```
+      Try to be brief and concise. The summary is for a push
+      notification, so keep it short.
+      ```
+    optionB: |
+      ```
+      MAX 50 words. Cut rather than go over. If it does not fit in 50,
+      drop secondary details. Return only the summary, do not count
+      words at the end.
+      ```
+    correct: B
+    explanation: |
+      Option A is a soft constraint: "try", "concise", "short". The
+      model will read that as a suggestion and may return anywhere from
+      30 to 120 words depending on content. Some fit in the
+      notification, others do not.
+
+      Option B is hard: it gives the exact number, says what to do if it
+      does not fit ("cut rather than go over", "drop secondary
+      details"), and prevents a common side effect ("do not count words
+      at the end" stops the model from appending "Total: 47 words"
+      below).
+
+      Rule: if the constraint is operational (it fits or it does not),
+      it has to be hard. If it is a preference (shorter is better, but
+      nothing breaks if it is long), it can be soft.
+  - kind: slot-fill-dnd
+    task: |
+      Sort each rule: is it a hard constraint (operational, breaking it
+      breaks something) or soft (preference, breaking it breaks nothing
+      serious)?
+    slots:
+      - id: hard
+        label: "Hard constraint"
+      - id: soft
+        label: "Soft constraint"
+    pieces:
+      - id: p1
+        label: "The JSON must have exactly the fields id, name, status."
+        correctSlot: hard
+      - id: p2
+        label: "We prefer an empathetic tone, but adapt to context."
+        correctSlot: soft
+      - id: p3
+        label: "Never show prices without the currency symbol."
+        correctSlot: hard
+      - id: p4
+        label: "If possible, avoid repeating the same word twice."
+        correctSlot: soft
+      - id: p5
+        label: "Do not include personal customer data under any circumstances."
+        correctSlot: hard
+      - id: p6
+        label: "Try to use bullets for long lists."
+        correctSlot: soft
+  - kind: wiring-dnd
+    task: |
+      Connect each type of constraint with the way to express it in the
+      prompt so the model treats it as hard or soft.
+    sources:
+      - id: src-cap
+        label: "Absolute cap (e.g. max 50 words)."
+        detail: "If it goes over, something downstream breaks."
+      - id: src-pref
+        label: "Style preference (e.g. empathetic tone)."
+        detail: "Not critical, but improves the output."
+      - id: src-format
+        label: "Strict output shape (e.g. JSON with exact fields)."
+        detail: "If broken, the parser fails."
+      - id: src-taboo
+        label: "Absolute taboo (e.g. do not mention the competitor)."
+        detail: "Breaking it has legal or brand consequences."
+    targets:
+      - id: tgt-must
+        label: "HARD language (MUST / NEVER / EXACTLY)"
+        detail: "Imperative and verifiable."
+      - id: tgt-should
+        label: "SOFT language (prefer / try / if possible)"
+        detail: "Suggestion with flexibility."
+    correctConnections:
+      - from: src-cap
+        to: tgt-must
+      - from: src-pref
+        to: tgt-should
+      - from: src-format
+        to: tgt-must
+      - from: src-taboo
+        to: tgt-must
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this prompt. Pay attention to how each
+      constraint uses a different strength based on what it protects.
+    parts:
+      - id: task
+        label: "Task (the concrete job)"
+        text: "Summarize this shift report to send as a push notification."
+      - id: hard
+        label: "Hard constraint (operational, do not break)"
+        text: "MAX 50 words. Return only the summary, do not count words or add meta-comments."
+      - id: soft
+        label: "Soft constraint (style preference)"
+        text: "Prefer short sentences if possible. Avoid repeating the same word twice when you can."
+      - id: taboo
+        label: "Absolute taboo (inviolable rule)"
+        text: "Never mention names of the crew. If you have to refer to someone, use the role (captain, shift engineer)."
+  - kind: prompt-AB
+    question: |
+      You told the model: "MAX 30 words, do not go over for any
+      reason". The original report has a critical safety detail that
+      does not fit in 30 words. When does a hard constraint become
+      counterproductive?
+    optionA: |
+      ```
+      Keep the hard constraint of 30 words. If it does not all fit,
+      let the model decide what to cut.
+      ```
+    optionB: |
+      ```
+      Raise the limit to 60 words, or add an exception: "MAX 30 words
+      EXCEPT if there are safety details, in which case mention them
+      fully."
+      ```
+    correct: B
+    explanation: |
+      A hard constraint is useful when the rule is reasonable for every
+      input. When there is an input where the rule competes with
+      something more important (safety, accuracy, compliance), the
+      model has two bad options: respect the constraint and omit
+      critical info, or ignore the constraint and break your trust.
+
+      When this happens repeatedly, the hard constraint starts failing
+      in weird ways: the model "breaks" the cap when it feels
+      important, or truncates the critical detail without warning.
+      Neither is good.
+
+      Fix: either raise the cap to one that covers the worst case, or
+      write the exception explicitly. "MAX X words EXCEPT in case Y" is
+      legal and the model respects it better than a universal cap it
+      fights with from time to time.
+---
+
+Mission of the day: hard constraints are your seatbelt for what is
+critical. Soft constraints are for style. If you confuse them, the
+model wins and you lose.

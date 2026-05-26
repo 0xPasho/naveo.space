@@ -1,0 +1,79 @@
+---
+title: "Cuándo un prompt no alcanza"
+order: 1
+estimatedMinutes: 5
+exercise:
+  kind: prompt-AB
+  question: |
+    Orbit necesita un sistema que, dado un reporte de turno, **(1) clasifique
+    el tipo de incidente, (2) extraiga los datos clave según el tipo, y (3)
+    genere un resumen de una línea para el log del capitán**. Tiene dos
+    diseños sobre la pizarra. ¿Cuál escala?
+  optionA: |
+    UN SOLO PROMPT:
+
+    "Eres un asistente. Recibís un reporte de turno. Hacé tres cosas a la vez:
+    clasificá el incidente como [safety/maintenance/social/other], extraé los
+    datos relevantes (varía según el tipo), y devolvé un resumen de una línea.
+    Output: { categoria: ..., datos: {...}, resumen: ... }"
+  optionB: |
+    TRES PROMPTS ENCADENADOS:
+
+    Paso 1. classify_report(text) → { categoria: "safety" | "maintenance" | ... }
+
+    Paso 2. extract_fields_for(categoria, text):
+      - si categoria == "safety": prompt especializado en extraer riesgo, ubicación, severidad.
+      - si categoria == "maintenance": prompt especializado en extraer sistema, parte, tiempo.
+      - ... uno por categoría.
+
+    Paso 3. summarize(categoria, datos_extraídos) → "Resumen de una línea."
+
+    Output final: { categoria, datos, resumen }. armado desde los 3 pasos.
+  correct: B
+  explanation: |
+    El prompt único de A se rompe en cuanto:
+
+    1. **Una categoría tiene reglas distintas que las otras.** En A, todas
+       las reglas tienen que coexistir en el mismo prompt. el modelo se
+       confunde, mezcla campos, o aplica reglas de safety a un caso de
+       maintenance.
+    2. **Querés cambiar el comportamiento de UNA categoría sin tocar las
+       otras.** En A es imposible sin reescribir y re-testear todo.
+    3. **Necesitás logear o cachear los pasos intermedios.** En A no hay
+       pasos. todo es un único llamado al modelo. En B, podés cachear el
+       resultado de `classify_report` y solo re-ejecutar el resto.
+    4. **Querés evaluar el sistema.** En B podés medir accuracy del
+       classifier por separado del extractor. En A, un fallo es opaco
+      . no sabés en qué etapa se rompió.
+
+    La regla práctica: **un prompt LLM hace UNA cosa bien**. Cuando tu
+    tarea conceptual tiene varios pasos, **partís en varios prompts**.
+    Costo extra (más llamadas API) vs ganancia (claridad, debuggabilidad,
+    evaluabilidad, mantenimiento). Casi siempre vale la pena.
+hints:
+  - "¿Qué pasa cuando agregás una quinta categoría? ¿Y una sexta? ¿Y reglas distintas para cada una?"
+  - "Si tu prompt único falla, ¿cómo sabés en qué paso (clasificación, extracción, resumen) se rompió?"
+teaches:
+  - chain-vs-mono-prompt
+requires:
+  - capstone-track-1
+---
+
+## El instinto: "lo meto todo en un prompt".
+
+<Character name="orbit" /> trabaja al revés. Antes de tocar el modelo, le dibuja la tarea en la pizarra y la corta en pasos. Te va a obligar a hacer lo mismo durante todo el track.
+
+La primera reacción siempre es hacer un solo prompt monstruoso. Y para tareas chicas funciona. Para problemas reales se rompe rápido por **cuatro razones**:
+
+1. **El modelo se confunde** cuando hay muchas reglas activas al mismo tiempo.
+2. **No podés iterar parcial**. para arreglar una parte tenés que tocar todo.
+3. **No podés cachear**. cada llamada empieza desde cero.
+4. **No podés evaluar**. un fallo del sistema completo no te dice qué pieza falló.
+
+### La alternativa: partir
+
+Cuando vos, al leer la tarea, ya identificás **etapas conceptualmente distintas** (clasificar, después extraer, después resumir), tu sistema debería tener esas etapas en pasos separados. Cada paso es un prompt focal: una entrada, una salida tipada, una sola decisión.
+
+> El criterio: si tu tarea se describe naturalmente con "primero X, después Y, después Z", probablemente quieras 3 prompts. Si se describe con "tomá esto y devolveme aquello", probablemente uno.
+
+Mirá los dos diseños a la derecha. Uno es un prompt monstruoso. El otro es una cadena. Decidí cuál escala. y por qué.

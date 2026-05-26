@@ -1,0 +1,140 @@
+---
+title: "Misión exprés: vago vs específico"
+intro: |
+  Si tu prompt acepta 10 interpretaciones, vas a ver 10 outputs distintos. Specificity es lo que cierra la puerta.
+station: vega
+teaches:
+  - prompt-specificity
+  - ambiguity-resolution
+characters:
+  - atlas
+scenes:
+  - kind: prompt-AB
+    question: |
+      Atlas necesita que el modelo le escriba un email de bienvenida
+      para un crewmate nuevo. ¿Cuál prompt le deja menos espacio para
+      improvisar?
+    optionA: |
+      ```
+      Escribime un email lindo de bienvenida para alguien que se suma.
+      ```
+    optionB: |
+      ```
+      Escribime un email de bienvenida para Hex, ingeniera nueva que
+      arranca el lunes 9:00. Tono cálido pero profesional, máximo 6
+      líneas, mencioná: la guardia, el canal #bridge, y el horario
+      de la stand-up diaria 10:00.
+      ```
+    correct: B
+    explanation: |
+      El A admite cualquier tono, cualquier largo, cualquier contenido.
+      "Lindo" significa cosas distintas para cada persona. Vas a tener
+      que iterar tres veces hasta que se acerque.
+
+      El B nombra a quién, cuándo arranca, qué tono, qué largo, y qué
+      info incluir. El modelo no tiene espacio para inventar. Una
+      sola pasada y queda usable.
+
+      Regla: cada palabra vaga ("lindo", "claro", "completo") es una
+      decisión que le estás cediendo al modelo. A veces conviene; la
+      mayoría no.
+  - kind: slot-fill-dnd
+    task: |
+      Atlas revisa pedidos del equipo. Clasificá cada uno: ¿es lo
+      bastante específico para mandárselo al modelo tal cual, o
+      todavía es ambiguo?
+    slots:
+      - id: specific
+        label: "Suficientemente específico"
+      - id: vague
+        label: "Todavía ambiguo"
+    pieces:
+      - id: p1
+        label: "Hacé un resumen de lo importante."
+        correctSlot: vague
+      - id: p2
+        label: "Resumime los 3 incidentes con severity high de las últimas 24 horas en bullets."
+        correctSlot: specific
+      - id: p3
+        label: "Devolveme JSON con campos id, severity, summary para los incidentes abiertos del último turno."
+        correctSlot: specific
+      - id: p4
+        label: "Quiero ver cómo va todo."
+        correctSlot: vague
+      - id: p5
+        label: "Generá una nota interna de 100 palabras sobre el cambio de política, dirigida a personal de turno noche."
+        correctSlot: specific
+      - id: p6
+        label: "Decime si esto está bien."
+        correctSlot: vague
+  - kind: step-order-dnd
+    task: |
+      Tu prompt salió vago y el output no sirve. Ordená los pasos para
+      reescribirlo más específico, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Releé tu prompt y subrayá cada palabra vaga."
+        detail: "'Lindo', 'claro', 'importante', 'completo', 'mejor'. Esas son las puertas abiertas."
+      - id: s2
+        label: "Por cada palabra vaga, anotá qué querías exactamente."
+        detail: "Si 'lindo' era 'tono cálido pero profesional', escribilo así."
+      - id: s3
+        label: "Agregá los números que faltan: largo, cantidad, fechas."
+        detail: "'Máximo 6 líneas' es mejor que 'corto'. '3 bullets' es mejor que 'algunos'."
+      - id: s4
+        label: "Nombrá los actores y el contexto puntual."
+        detail: "Quién recibe, quién manda, qué turno, qué cliente."
+        
+      - id: s5
+        label: "Mostrá un ejemplo del output esperado si podés."
+        detail: "Un ejemplo concreto vale más que tres adjetivos."
+  - kind: prompt-AB
+    question: |
+      Tenés que pedirle al modelo que genere un mensaje de Slack para
+      avisar de un incidente. ¿Cuál de los dos prompts cierra mejor las
+      ambigüedades operacionales?
+    optionA: |
+      ```
+      Hacé un mensaje para avisar del incidente del servidor.
+      ```
+    optionB: |
+      ```
+      Generá un mensaje de Slack para el canal #incidents avisando que
+      el servidor api-prod-02 está caído desde las 14:32 UTC. Incluí:
+      severidad (high), próximo update en 15 minutos, y mención a
+      @oncall. Máximo 4 líneas, sin emojis.
+      ```
+    correct: B
+    explanation: |
+      El A asume que el modelo sabe a qué incidente, en qué canal, con
+      qué información clave, y para qué audiencia. Va a inventar todo
+      eso y vos vas a tener que reescribir desde cero.
+
+      El B nombra el canal exacto, el server caído, la hora UTC, los
+      campos a incluir, el largo, y la prohibición de emojis. El
+      output sale listo para copiar y pegar.
+
+      Una regla útil: si después del output tenés que editar más del
+      30 por ciento, tu prompt era ambiguo. Volvé al prompt, no al
+      output.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este prompt específico. Fijate cómo cada
+      pieza cierra una ambigüedad concreta.
+    parts:
+      - id: who
+        label: "Quién recibe (cierra ambigüedad de audiencia)"
+        text: "El mensaje va para el canal #incidents del Slack interno, leído por on-call y SRE."
+      - id: what
+        label: "Qué pasó (cierra ambigüedad de evento)"
+        text: "El servidor api-prod-02 está caído desde las 14:32 UTC. Severidad high."
+      - id: when
+        label: "Cuándo continúa (cierra ambigüedad de timing)"
+        text: "Próximo update en 15 minutos o cuando haya cambio relevante, lo que ocurra primero."
+      - id: how
+        label: "Cómo se devuelve (cierra ambigüedad de forma)"
+        text: "Máximo 4 líneas, tono operacional, sin emojis, mención a @oncall al final."
+---
+
+Misión del día: cada palabra vaga es una decisión que le cedés al
+modelo. Si te importa el output, no le cedas las decisiones.

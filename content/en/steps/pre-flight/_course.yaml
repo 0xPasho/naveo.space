@@ -1,0 +1,10 @@
+slug: pre-flight
+title: "Pre-flight checks"
+order: 1
+narrativeHook: |
+  Before you stand on the bridge with the crew, Vega runs a full pre-flight.
+  Twenty-one short rituals, six units. The language the ship speaks (steps,
+  decisions, variables, functions) and how the model actually thinks (tokens,
+  context, sampling, hallucinations). Already a developer? Skip ahead to
+  Track 1.
+estimatedMinutes: 105

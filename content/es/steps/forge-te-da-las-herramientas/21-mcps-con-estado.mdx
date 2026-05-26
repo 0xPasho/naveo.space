@@ -1,0 +1,158 @@
+---
+title: "MCPs con estado: el carrito que recuerda"
+order: 21
+estimatedMinutes: 12
+exercise:
+  kind: tool-handler-implement
+  toolName: cart_handlers
+  toolSchema: |
+    Tres tools relacionadas que operan sobre el mismo "carrito" del usuario:
+
+    {
+      "name": "cart_add",
+      "description": "Agrega un item al carrito del usuario actual.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item_id": { "type": "string" },
+          "quantity": { "type": "number" }
+        },
+        "required": ["item_id", "quantity"]
+      }
+    }
+
+    {
+      "name": "cart_remove",
+      "description": "Quita un item del carrito.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item_id": { "type": "string" }
+        },
+        "required": ["item_id"]
+      }
+    }
+
+    {
+      "name": "cart_checkout",
+      "description": "Cierra el carrito y emite la orden.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  starter: |
+    // Tres handlers que comparten estado: el carrito del usuario actual.
+    // Disponible: getUserId() devuelve el id del usuario de la sesión.
+    //             db.catalog.get(item_id) devuelve {price, stock} o null.
+    //             db.orders.create({userId, items, total}) crea la orden.
+    //
+    // Tu trabajo: implementar los 3 handlers manteniendo el estado del
+    // carrito coherente entre llamadas. Pensá DÓNDE vivir ese estado.
+
+    const carts = /* TODO */ null;
+
+    async function cart_add({ item_id, quantity }) {
+      // TODO
+    }
+
+    async function cart_remove({ item_id }) {
+      // TODO
+    }
+
+    async function cart_checkout() {
+      // TODO
+    }
+  language: javascript
+  scenarios:
+    - description: "Agregar item al carrito (user1, item_id='X', quantity=2). Carrito empieza vacío."
+      expected: "ok: true. Estado del carrito: {X: 2} para user1."
+    - description: "Agregar otro item al MISMO carrito (user1 ya tiene X, ahora agrega Y=1)."
+      expected: "ok: true. Carrito de user1: {X: 2, Y: 1}. NO sobrescribe el item anterior."
+    - description: "Quitar X del carrito de user1. Y debe quedar."
+      expected: "ok: true. Carrito de user1: {Y: 1}."
+    - description: "Checkout: user1 cierra su carrito. Tiene 1×Y. Stock OK. La orden se crea, el carrito se vacía."
+      expected: "ok: true, order_id. Carrito de user1 vacío después."
+    - description: "Aislamiento por usuario: user2 tiene su propio carrito. Add Z al carrito de user2 NO toca el carrito de user1."
+      expected: "Cada usuario tiene su propio carrito. Sin colisión."
+  rubric:
+    - id: state-persistence
+      kind: llm-judge
+      criterion: "El estado del carrito persiste entre llamadas. Usa una estructura (Map, objeto, o store) declarada FUERA de las funciones para que múltiples invocaciones sucesivas compartan estado. NO inicializa el carrito cada vez que se llama un handler."
+    - id: per-user-isolation
+      kind: llm-judge
+      criterion: "El estado está indexado por usuario (vía `getUserId()` u otra forma). El carrito de user1 NO se mezcla con el de user2. Cada usuario tiene su propio espacio."
+    - id: add-accumulates
+      kind: llm-judge
+      criterion: "`cart_add` ACUMULA items en el carrito existente, no lo sobrescribe. Si el item ya existe, suma la quantity (o reemplaza, según diseño explícito). Si es nuevo, lo agrega."
+    - id: remove-works
+      kind: llm-judge
+      criterion: "`cart_remove` quita correctamente el item del carrito del usuario actual. No afecta otros items ni el carrito de otros usuarios."
+    - id: checkout-clears
+      kind: llm-judge
+      criterion: "`cart_checkout` crea la orden con los items actuales y DEJA EL CARRITO VACÍO al terminar. Si se vuelve a llamar `cart_add` después, empieza en un carrito limpio."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Para mantener estado entre llamadas, declará la variable FUERA de las funciones. Ejemplo: `const carts = new Map();` antes de los handlers."
+  - "Aislamiento por usuario: usá `getUserId()` como key del Map. `carts.get(userId)` te devuelve el carrito del usuario actual."
+  - "`cart_add` debería leer el carrito actual, sumar el nuevo item, y guardarlo. Si el carrito no existe todavía para ese usuario, crealo en blanco primero."
+teaches:
+  - mcp-stateful-tools
+requires:
+  - mcp-error-handling
+---
+
+## El handler que sobrevive entre llamadas
+
+Hasta ahora cada tool era **stateless**: cada invocación independiente, sin memoria de la anterior. Funciona para lookups, pero falla en operaciones de varios pasos.
+
+Un **carrito de compras** es el caso clásico:
+
+- El usuario agrega un item, después otro, después quita uno, después hace checkout.
+- Cada llamada al tool tiene que ver lo que dejaron las anteriores.
+
+Si cada handler arranca con el carrito vacío, no sirve. **El estado tiene que vivir afuera de las funciones**.
+
+### Las tres herramientas
+
+A la derecha tenés tres tools que operan sobre el mismo carrito:
+
+- **`cart_add`**. agrega un item con quantity.
+- **`cart_remove`**. quita un item.
+- **`cart_checkout`**. cierra el carrito y emite la orden.
+
+Tu trabajo: implementar los handlers de modo que **el estado persista entre llamadas** y **esté aislado por usuario**.
+
+### El patrón
+
+```js
+const carts = new Map();  // userId -> { itemId -> quantity }
+
+async function cart_add({ item_id, quantity }) {
+  const userId = getUserId();
+  if (!carts.has(userId)) carts.set(userId, {});
+  const cart = carts.get(userId);
+  cart[item_id] = (cart[item_id] || 0) + quantity;
+  return { ok: true };
+}
+```
+
+Tres cosas que importan:
+
+1. **El `Map carts` vive afuera de las funciones.** Si lo declarás adentro, se reinicia cada llamada.
+2. **Indexado por `userId`.** Cada usuario tiene su propio carrito. Sin esto, todos comparten el mismo y se rompe en el segundo concurrent.
+3. **`cart_add` acumula**. no sobrescribe. Si ya hay 2 de X y agregás 1 más, queda 3, no 1.
+
+### Cómo se evalúa
+
+5 criterios llm-judge sobre 5 escenarios:
+
+1. El estado persiste entre llamadas.
+2. Está aislado por usuario.
+3. `cart_add` acumula correctamente.
+4. `cart_remove` quita sin romper el resto.
+5. `cart_checkout` crea orden y deja carrito vacío.
+
+> Este patrón es la base de TODO MCP con estado. Vale la pena implementarlo bien acá. vas a usarlo en sistemas reales mucho más complejos.

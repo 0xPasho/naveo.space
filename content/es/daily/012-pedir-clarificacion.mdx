@@ -1,0 +1,140 @@
+---
+title: "Misión exprés: pedirle al modelo que aclare antes"
+intro: |
+  Cuando el pedido del usuario es ambiguo, el default del modelo es adivinar. Decirle "preguntá antes" cambia el comportamiento.
+station: vega
+teaches:
+  - ask-model-to-clarify-first
+characters:
+  - forge
+scenes:
+  - kind: prompt-AB
+    question: |
+      Forge recibe pedidos vagos del equipo. Quiere que el modelo
+      pregunte antes de arrancar si el pedido es ambiguo. ¿Cuál
+      instrucción funciona mejor?
+    optionA: |
+      ```
+      Si tenés alguna duda, fijate vos qué corresponde y avanzá.
+      ```
+    optionB: |
+      ```
+      Antes de ejecutar, si el pedido del usuario tiene más de una
+      interpretación razonable, NO adivines. Hacé una sola pregunta
+      concreta para desambiguar. Sólo después de la respuesta, ejecutá.
+      ```
+    correct: B
+    explanation: |
+      El A le da permiso al modelo para inventar. "Fijate vos" es
+      exactamente lo que hace por default cuando hay ambigüedad:
+      elige una interpretación y avanza. Vas a notar el error
+      cuando ya gastaste el output.
+
+      El B nombra el caso ("más de una interpretación"), prohíbe el
+      default ("NO adivines"), pide una acción concreta ("una sola
+      pregunta concreta"), y define el siguiente paso ("sólo después
+      de la respuesta, ejecutá"). El comportamiento queda forzado.
+
+      Regla: pedir clarificación no es un comportamiento natural del
+      modelo. Hay que instalarlo en el system prompt y reforzarlo
+      cuando el pedido del usuario lo amerita.
+  - kind: slot-fill-dnd
+    task: |
+      Forge revisa pedidos del equipo. Clasificá cada uno: ¿necesita
+      una clarificación antes de ejecutar, o se puede arrancar
+      directo?
+    slots:
+      - id: clarify
+        label: "Pedir clarificación primero"
+      - id: execute
+        label: "Ejecutar directo"
+    pieces:
+      - id: p1
+        label: "'Mandá un mensaje al equipo'. No sabemos qué equipo ni qué mensaje."
+        correctSlot: clarify
+      - id: p2
+        label: "'Resumime estos 3 PRs en bullets de 1 línea cada uno' (con los PRs adjuntos)."
+        correctSlot: execute
+      - id: p3
+        label: "'Borrá los archivos viejos'. No sabemos qué carpeta ni qué umbral de antiguedad."
+        correctSlot: clarify
+      - id: p4
+        label: "'Convertí este JSON a CSV con columnas id, name, status' (con el JSON adjunto)."
+        correctSlot: execute
+      - id: p5
+        label: "'Hacé el reporte'. No sabemos cuál reporte, ni para quién, ni en qué período."
+        correctSlot: clarify
+      - id: p6
+        label: "'Traducí este texto al inglés' (texto pegado abajo)."
+        correctSlot: execute
+  - kind: step-order-dnd
+    task: |
+      El usuario manda un pedido ambiguo. Ordená los pasos que el
+      modelo (bien instruido) tendría que seguir, de arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Detectar la ambigüedad concreta."
+        detail: "Nombrar qué parte del pedido tiene más de una lectura."
+      - id: s2
+        label: "Formular una sola pregunta puntual."
+        detail: "No 5 preguntas. Una. La más decisiva."
+      - id: s3
+        label: "Ofrecer 2 o 3 opciones si ayuda."
+        detail: "'¿Querés A o B?' es más rápido para el usuario que 'aclará'."
+      - id: s4
+        label: "Esperar la respuesta antes de hacer nada."
+        detail: "Cero acción especulativa entre la pregunta y la respuesta."
+      - id: s5
+        label: "Ejecutar con la información ya desambiguada."
+        detail: "Y mencionar brevemente qué interpretación se eligió, para confirmar."
+  - kind: prompt-AB
+    question: |
+      El usuario dice "borrá los archivos viejos del bucket". El modelo
+      tiene una tool `delete_files`. ¿Cuál es la mejor primera respuesta?
+    optionA: |
+      ```
+      Listo, voy a borrar los archivos del bucket modificados hace
+      más de 30 días. [invoca delete_files]
+      ```
+    optionB: |
+      ```
+      Antes de borrar quiero confirmar dos cosas:
+      1) ¿De qué bucket hablamos: prod-uploads, staging, o backups?
+      2) ¿Qué considerás "viejo": más de 30 días, 90 días, o un año?
+      Decime y avanzo.
+      ```
+    correct: B
+    explanation: |
+      El A es una acción destructiva con dos suposiciones implícitas:
+      qué bucket y qué umbral. Si alguna está mal, el modelo borró
+      cosas que no debía y la recuperación es cara (a veces imposible).
+
+      El B detecta las dos ambigüedades, las nombra explícitamente, y
+      ofrece opciones para que el usuario elija rápido. La conversación
+      gana 30 segundos pero evita un incidente.
+
+      Regla operativa: para acciones reversibles, adivinar es barato.
+      Para acciones destructivas o costosas (borrar, mandar mail
+      masivo, modificar prod), el default tiene que ser preguntar.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de esta instrucción system que activa la
+      clarificación cuando corresponde. Cuatro piezas: trigger,
+      prohibición, acción esperada, y excepción.
+    parts:
+      - id: trigger
+        label: "Trigger (cuándo se activa la regla)"
+        text: "Si el pedido del usuario admite más de una interpretación razonable, o si falta info crítica para una acción destructiva,"
+      - id: forbid
+        label: "Prohibición (qué NO hacer)"
+        text: "no adivines, no ejecutes con suposiciones, no procedas con la lectura que te parece más probable."
+      - id: action
+        label: "Acción esperada (qué SÍ hacer)"
+        text: "Hacé una sola pregunta de clarificación, ofreciendo 2 o 3 opciones concretas cuando sea posible."
+      - id: exception
+        label: "Excepción (cuándo no aplica)"
+        text: "Si el pedido es claro y reversible (texto, formato, resumen), arrancá directo sin preguntar."
+---
+
+Misión del día: el modelo no pregunta por sí solo. Si querés que
+clarifique cuando importa, ponelo en el system y describilo concreto.

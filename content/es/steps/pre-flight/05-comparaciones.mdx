@@ -1,0 +1,94 @@
+---
+title: "Comparaciones: mayor, menor, igual"
+order: 5
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    La nave tiene esta regla:
+
+    <DecisionFlow condition="combustible < 20%?" ifAction="sonar alarma" elseAction="silencio" />
+
+    Tres lecturas del sensor llegan en este orden: **18%**, **22%**, **20%**.
+
+    ¿Cuál de las dos respuestas tiene los tres casos correctos?
+  optionA: |
+    - **18%** → sonar alarma
+    - **22%** → silencio
+    - **20%** → sonar alarma
+  optionB: |
+    - **18%** → sonar alarma
+    - **22%** → silencio
+    - **20%** → silencio
+  correct: B
+  explanation: |
+    El operador `<` es **estricto**. Se lee literalmente *"menor que"*. 20
+    no es menor que 20, así que la condición es falsa y corre la rama
+    `SINO`: silencio.
+
+    La opción A se equivoca exactamente acá: cree que `<` incluye al
+    borde. Si querés que el borde también dispare la alarma, hay que
+    escribir `<=` (menor o igual).
+
+    Esta es la clase de bug que aparece en producción y nadie sabe
+    explicar: la alarma justo no avisa **en el punto crítico** porque el
+    operador era estricto y la lectura cayó exactamente sobre el umbral.
+hints:
+  - "El operador `<` significa **estrictamente menor**. No incluye el borde."
+  - "Si la lectura es exactamente 20 y la regla es `< 20%`, ¿20 es menor que 20?"
+  - "Pensá en cada lectura por separado. ¿La regla devuelve verdadero o falso? Solo eso decide qué rama corre."
+teaches:
+  - comparison-operators
+requires:
+  - conditionals-basics
+---
+
+## Cómo se calcula el SI
+
+En la lección anterior aprendiste el `SI / SINO`. Ahora el paso de adentro: ¿cómo se calcula esa condición?
+
+La condición es una **comparación**. Tres tipos básicos cubren casi todo lo que vas a ver:
+
+| Símbolo | Significado |
+| --- | --- |
+| `<` | menor que |
+| `>` | mayor que |
+| `==` | igual a |
+
+Y sus parientes inmediatos: `<=` (menor o igual), `>=` (mayor o igual), `!=` (distinto).
+
+Cada comparación toma dos valores y devuelve **verdadero** o **falso**. Eso es todo lo que el `SI` necesita para decidir qué rama corre.
+
+### La trampa del borde
+
+`<` y `<=` se parecen pero **no son lo mismo**.
+
+Mirá la regla:
+
+```
+combustible < 20%
+```
+
+Con el sensor en:
+
+- **18%** → 18 sí es menor que 20 → **verdadero** → corre `SI`
+- **25%** → 25 no es menor que 20 → **falso** → corre `SINO`
+- **20%** → 20 no es menor que 20 (es igual) → **falso** → corre `SINO`
+
+El caso del borde (20%) es el más fácil de equivocar al leer. La regla `<` es **estricta**: NO incluye el borde. Si querés que el borde también dispare, escribís `<=`.
+
+> Este detalle es responsable de una cantidad ridícula de bugs en producción. La alarma "no avisa" exactamente en el punto crítico porque alguien escribió `<` cuando quería `<=`. Léelas con cuidado.
+
+### Cómo se ven en lenguaje natural
+
+Vas a usar comparaciones cuando le pidas algo al modelo, aunque no las escribas con símbolos:
+
+- *"Si la bio tiene **más de** 500 caracteres, resumila."* → `len(bio) > 500`
+- *"Si el usuario tiene **al menos** 18 años, mostrale la sección X."* → `edad >= 18`
+- *"Si la respuesta es **exactamente** vacía, pedile que reintente."* → `respuesta == ""`
+
+Cuando el modelo lee tu prompt, está armando estas comparaciones en su cabeza. Cuanto más explícito seas en el operador (*"al menos", "más de", "exactamente"*), menos margen le dejás para que interprete a su gusto.
+
+A la derecha: una regla, tres lecturas, dos respuestas posibles. Una de las dos tiene los tres casos correctos.

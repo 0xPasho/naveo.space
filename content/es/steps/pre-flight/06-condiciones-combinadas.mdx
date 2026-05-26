@@ -1,0 +1,110 @@
+---
+title: "Condiciones combinadas: Y / O / NO"
+order: 6
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    La nave tiene esta regla para encender los motores:
+
+    <DecisionFlow condition="esclusa cerrada Y combustible > 50%?" ifAction="encender motores" elseAction="esperar" />
+
+    Cuatro chequeos de estado distintos. ¿Cuál opción aplica la regla
+    correctamente en los cuatro?
+
+    1. Esclusa cerrada, combustible 73%
+    2. Esclusa abierta, combustible 90%
+    3. Esclusa cerrada, combustible 45%
+    4. Esclusa cerrada, combustible 51%
+  optionA: |
+    1. encender motores
+    2. esperar
+    3. **encender motores**
+    4. encender motores
+  optionB: |
+    1. encender motores
+    2. esperar
+    3. **esperar**
+    4. encender motores
+  correct: B
+  explanation: |
+    El operador `Y` exige que **las dos** partes sean verdaderas. La regla
+    `esclusa cerrada Y combustible > 50%` solo se dispara cuando se cumplen
+    ambas cosas.
+
+    El caso 3 (cerrada + 45%) es el que separa las dos opciones. La
+    esclusa está cerrada (parte 1 verdadera) **pero** el combustible es
+    45%, que no es mayor que 50% (parte 2 falsa). Una de las dos falsa
+    alcanza para que el `Y` devuelva falso. No se encienden los motores.
+
+    La opción A se equivoca acá porque trata `Y` como si fuera `O`. Esa
+    confusión (`Y` vs `O`) es una de las fuentes más comunes de bugs en
+    cualquier sistema, no solo en la nave.
+hints:
+  - "El operador `Y` exige las dos partes verdaderas. Si una sola es falsa, el `Y` entero es falso."
+  - "Tomá el caso 3 (cerrada + 45%). La esclusa cumple. ¿El combustible también cumple `> 50%`?"
+  - "La diferencia entre las dos opciones está solo en el caso 3."
+teaches:
+  - boolean-operators
+requires:
+  - conditionals-basics
+  - comparison-operators
+---
+
+## Una decisión, varias condiciones
+
+Hasta acá las condiciones eran simples: una sola pregunta sí/no. La realidad es que la mayoría de las decisiones de la nave **combinan** dos o más chequeos.
+
+Tres operadores manejan las combinaciones:
+
+| Operador | Significa | Es verdadero cuando |
+| --- | --- | --- |
+| `Y` (AND) | ambas | las dos partes son verdaderas |
+| `O` (OR) | cualquiera | al menos una parte es verdadera |
+| `NO` (NOT) | invierte | la parte original es falsa |
+
+### Y: las dos tienen que estar verdes
+
+```
+SI esclusa cerrada Y combustible > 50%:
+  encender motores
+SINO:
+  esperar
+```
+
+Para encender, **ambas** condiciones tienen que ser verdaderas. Si la esclusa está abierta no encendés, importa poco cuánto combustible tengas. Si tenés 30% no encendés, importa poco que la esclusa esté cerrada.
+
+### O: con una sola alcanza
+
+```
+SI puerta forzada O sensor de movimiento activado:
+  alertar seguridad
+SINO:
+  silencio
+```
+
+Para alertar, **cualquiera** de las dos alcanza. Es un sistema más sensible, pensado para *"no quiero que se me escape ningún caso"*.
+
+### NO: invertir una condición
+
+```
+SI NO crew_a_bordo:
+  abortar despegue
+```
+
+Se lee *"si NO hay crew a bordo, abortar"*. `NO` toma una condición verdadera y la convierte en falsa (y viceversa).
+
+### El bug más común: confundir Y con O
+
+`Y` y `O` se parecen tres letras pero **arman comportamientos opuestos**.
+
+- `puerta cerrada Y alarma activa`: muy específico. Tiene que pasar todo.
+- `puerta cerrada O alarma activa`: muy laxo. Alcanza con que pase algo.
+
+Si confundís uno por otro te pasa una de dos cosas: o el sistema **nunca dispara** (esperabas `O` y pusiste `Y`), o **dispara todo el tiempo** (esperabas `Y` y pusiste `O`). Las dos joden por igual.
+
+> Cuando armes un prompt vas a escribir esto en español: *"si el bio tiene email **y** teléfono, devolvelos. Si **solo** tiene email, devolvé el email. Si **no** tiene ninguno, devolvé null."* Mismo patrón, mismos operadores.
+
+A la derecha, una regla compuesta y cuatro chequeos. ¿En cuál opción la nave acertó qué hacer en cada uno?

@@ -1,0 +1,92 @@
+---
+title: "Compress the history without losing what matters"
+order: 16
+estimatedMinutes: 6
+characters:
+  - echo
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    You're 14 turns in with <Character name="echo" /> coordinating
+    cargo for the next jump. The conversation is heavy and the model
+    is starting to drift. Instead of adding more turns (more tokens,
+    more drift), you want to **summarize the current state** in a
+    single message and continue from that summary.
+
+    Drag each fact into the right slot of the recap. If you skip a
+    slot, the summary loses a decision and the next conversation
+    will get confused.
+  slots:
+    - id: decisions-locked
+      label: "Decisions already locked"
+    - id: open-questions
+      label: "Questions still open"
+    - id: constraints
+      label: "Constraints that don't change"
+    - id: last-action
+      label: "Last action agreed"
+    - id: next-step
+      label: "Next step"
+  pieces:
+    - id: mass
+      label: "Total cargo mass: 4.2 tons. confirmed on turn 6."
+      correctSlot: decisions-locked
+    - id: deck
+      label: "Priority crate: deck 3, A-class. confirmed on turn 8."
+      correctSlot: decisions-locked
+    - id: pending-route
+      label: "Loading route not decided yet: aisle A or B?"
+      correctSlot: open-questions
+    - id: limit
+      label: "Loading window: closes at 22:00 UTC. cannot move."
+      correctSlot: constraints
+    - id: ack
+      label: "Echo confirmed the loading team starts in 15 minutes."
+      correctSlot: last-action
+    - id: next
+      label: "I'm going to confirm the loading route before the team starts."
+      correctSlot: next-step
+hints:
+  - "Locked decisions are the ones you don't want to debate again. mass and deck go there."
+  - "Open questions are what isn't resolved yet. the summary must keep what's missing visible."
+  - "Without the **next step** slot, the model doesn't know what to do after the recap. A summary without next action is just a postcard."
+teaches:
+  - context-compression
+requires:
+  - multi-turn-followup
+  - context-drift-detection
+---
+
+## Every extra turn is a tax. the summary pays it once
+
+As a conversation grows, two things happen at the same time:
+
+1. **Token cost.** Each turn carries the whole prior history. Turn 20 costs ~20x more than turn 1.
+2. **Drift.** More history = more room for the model to "forget", contradict, or invent. You saw this in earlier lessons.
+
+The solution is the **compaction summary**: at some point between turn 10 and 15, pause the conversation, write ONE message that captures the full current state, and continue from there (ideally in a new conversation, or as explicit reference).
+
+### The 5 slots of a useful summary
+
+A useful summary isn't "a paragraph about what we talked about". It has structure:
+
+1. **Decisions already locked.** What's closed and not up for debate.
+2. **Questions still open.** What's left to resolve.
+3. **Constraints that don't change.** Hard data: dates, limits, requirements.
+4. **Last action agreed.** What was the last thing that happened.
+5. **Next step.** What needs to happen now.
+
+If any of the 5 is missing, the summary loses value. Without locked decisions, the model re-litigates them. Without open questions, you lose track of what's missing. Without next step, the summary is just a postcard.
+
+### When to compress
+
+| Signal | Action |
+|---|---|
+| The model repeats things you already said | Time to summarize. |
+| You start forgetting turn 3 | Time to summarize. |
+| The conversation passes 12-15 turns | Summarize preventively. |
+| Next 3 turns will be a different topic | Compact what's current before switching. |
+
+> Advanced trick: ask the model to BUILD the structured summary in 5 slots itself. *"Summarize this conversation into these 5 buckets: locked decisions, open questions, constraints, last action, next step."* You check it's right, save it, use it as the opening of the next turn (or the next conversation).
+
+On the right, a 14-turn conversation in compressed form. Drag each fact into the right slot.

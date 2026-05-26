@@ -1,0 +1,78 @@
+---
+title: "Failure gallery: what you'll debug in production"
+order: 24
+estimatedMinutes: 6
+demo:
+  id: output-gallery
+  props:
+    presenter: forge
+    intent: "Four typical failures. You'll see them all."
+    cases:
+      - title: "Wrong types. the model sends a string where you expected a number"
+        prompt: |
+          Tool: set_temperature
+          Parameters: { value: string }   // ⚠ should have been number
+        output: |
+          Tool call: set_temperature({ value: "twenty-five degrees" })
+
+          Handler response: 500. TypeError: cannot parse "twenty-five degrees" as float
+        why: |
+          The schema said `string` and the model obeyed. The model didn't
+          "get confused". you told it to accept strings and it picked the
+          most natural one. When the domain is numeric, declare it numeric:
+          `{ value: number, unit: "celsius" | "fahrenheit" }`.
+      - title: "Handler crashes. and the agent hangs"
+        prompt: |
+          Tool: fetch_user_orders
+          Handler: async (userId) => db.orders.findMany({ user: userId })
+        output: |
+          Tool call: fetch_user_orders({ userId: "u_42" })
+
+          Handler crash: TypeError: db is undefined
+          Agent: (no response, retries 3 times)
+        why: |
+          The handler threw an uncaught exception. The agent receives
+          `undefined` or a timeout and ends up in a loop. Every handler
+          should return a **structured object** with `{ ok: false, error: "..." }`
+          on failure. never let the exception propagate into the agent
+          runtime.
+      - title: "Ambiguous description. the agent invokes it when it shouldn't"
+        prompt: |
+          Tool: delete_user
+          Description: "remove a user from the system"
+          Parameters: { userId: string }
+        output: |
+          User: "delete the last message I sent"
+          Tool call: delete_user({ userId: "current" })
+          Result: user "current" not found (also: internal panic)
+        why: |
+          "remove a user" fired when the user wanted to delete a message.
+          Destructive tools need descriptions that explicitly exclude
+          ambiguity: "Permanently deletes a user account. Requires explicit
+          user_id, NOT context-dependent strings like 'current' or 'me'.
+          Triggers irreversible cascade delete of...".
+      - title: "Recursive schema. the model can't satisfy it"
+        prompt: |
+          Tool: create_org_chart
+          Parameters: {
+            person: {
+              name: string,
+              reports: Person[]   // ⚠ self-referential type with no depth limit
+            }
+          }
+        output: |
+          Tool call: create_org_chart({ person: { name: "Atlas", reports: [] } })
+          (second attempt) create_org_chart({ person: { name: "Atlas", reports: [{ name: "Vega", reports: [...] }] } })
+          ... infinite
+        why: |
+          Recursive types without a depth cap paralyze the model: it doesn't
+          know when to stop the recursion. Split it into two tools
+          (`create_person` + `set_reports_to`), or add an explicit max depth
+          in the description ("max 3 levels deep").
+---
+
+These four failures cover ~80% of the tickets <Character name="Forge" /> sees on MCPs that reach production. They're not model bugs. they're broken contracts between your schema and reality.
+
+Click through each case, read the output, and before you hit "Show diagnosis", try to guess **where the contract is broken**. Then compare with Forge's reading.
+
+If you recognize them here, you'll recognize them when they show up in your own MCPs.

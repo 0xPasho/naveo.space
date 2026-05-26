@@ -1,0 +1,110 @@
+---
+title: "Capability scoping: the smallest tool that does the job"
+order: 11
+estimatedMinutes: 7
+characters:
+  - hex
+  - forge
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "manage_user_account",
+      "description": "Operations on ship user accounts. Useful for support cases: read state, update fields, suspend, delete.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string" },
+          "action": {
+            "type": "string",
+            "enum": ["read", "update", "suspend", "delete"]
+          },
+          "fields": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["user_id", "action"]
+      }
+    }
+  candidates:
+    - id: action-enum-is-fine
+      label: "The enum covers reasonable actions. It's fine."
+    - id: scope-too-wide
+      label: "A single tool with four actions (read, update, suspend, delete) gives the model four power levels in one invocation. If the model is wrong or injected, it can hop from read to delete without you noticing. The tool must be split into small tools: `read_user`, `update_user_fields`, `suspend_user`, `delete_user`. each with its own scope."
+    - id: missing-required-fields
+      label: "The `fields` definition isn't strict. The model can pass anything. Needs locking down."
+    - id: name-not-domain-prefixed
+      label: "The name should be `accounts.manage_user` with a domain prefix."
+    - id: no-pagination
+      label: "For `read` there should be pagination."
+  correct: scope-too-wide
+  explanation: |
+    The principle this tool violates is **least capability**: each tool
+    exposes exactly one capability. The reason is brutally practical.
+
+    When the model (or an attacker via injection) decides to call
+    `manage_user_account(user_id="x", action="delete")`, it's deciding
+    in the same place where it earlier decided `action="read"`. Your
+    authorization layer has to guess the model's intent and decide if
+    this particular call is allowed. Brittle.
+
+    With split tools, **the capability is in the wiring, not in the
+    argument**. The level-1 support assistant has `read_user` and
+    `update_user_fields`. It doesn't have `suspend_user` or
+    `delete_user`. If the model tries to call `delete_user`, the tool
+    **doesn't exist** in its set. It's not "auth said no". it's "the
+    model never had the option to ask".
+
+    The other options are true-but-not-fatal: open fields is something
+    you'd clean up when hardening; domain prefixing is style; pagination
+    is performance. **Scope too wide is the security problem**: one
+    hole in the hull that grants access to four power levels.
+
+    > <Character name="hex" />'s rule: **one capability, one tool**. If
+    > you need two, two tools. Who has what is your authorization
+    > policy, expressed in infrastructure code, not in prompts.
+hints:
+  - "Look at the `action` enum. One tool. Four actions of very different power. What happens if the model picks the wrong action?"
+  - "Think: what if your level-1 support assistant only needs to read and update? Why did you also give it suspend and delete?"
+  - "The key question: is the model's privilege level on a call controlled by **you** (tool wiring) or by the **model** (picking the `action`)? If it's the second, the tool is too wide."
+teaches:
+  - capability-scoping
+requires:
+  - destructive-tool-mitigation
+---
+
+## The smallest tool that does its job
+
+Having one big tool with an `action` enum feels efficient. One tool, a thousand use cases. <Character name="forge" /> tried it. <Character name="hex" /> took four minutes to show them why not.
+
+The problem isn't aesthetic. it's **structural**. When you bundle four power levels into one tool, the model (or an attacker via injection) picks which one to exercise at call time. Your authorization layer now has to:
+
+1. Identify which `action` the model is requesting.
+2. Decide if the session's user is authorized for that action.
+3. Hope the model doesn't confuse similar actions.
+
+Every one of those three steps can fail. And "can fail" is what <Character name="hex" /> hunts to earn Atlas's signature.
+
+### Least capability: one tool, one capability
+
+The correct pattern:
+
+```
+read_user(user_id)            // read-only
+update_user_fields(user_id, fields)  // controlled write
+suspend_user(user_id)         // moderation action
+delete_user(user_id)          // destructive, with dry-run
+```
+
+Four tools, four power levels. When you build a level-1 support assistant, you wire `read_user` and `update_user_fields` and nothing else. The model **literally cannot** attempt `delete_user`. the tool doesn't exist in its set.
+
+> Authorization is no longer a question about data (*"is the `action` the model picked allowed?"*). it's a question about wiring (*"is this tool in the assistant's set?"*). The wiring you do, in code, on deploy, under code review. far more auditable than the model's runtime decision.
+
+### When grouping is OK
+
+When two operations are **isomorphic in power and in error surface**. `list_users(filter)` and `count_users(filter)` are basically the same thing with different output format. grouping them as `query_users(filter, format)` can make sense.
+
+When they differ in **power** (read vs delete) or **error surface** (read my account vs read any account), don't group.
+
+On the right: a tool with five supposed problems. Four are true-but-not-fatal. One is the one that would blow the ship. Find it.

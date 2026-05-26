@@ -1,0 +1,127 @@
+---
+title: "Agentes con loop: cuándo parar"
+order: 11
+estimatedMinutes: 12
+exercise:
+  kind: tool-handler-implement
+  toolName: agent_loop
+  toolSchema: |
+    Un agente que recibe un objetivo del usuario, decide qué tool invocar,
+    lee el resultado, decide si necesita otro tool, y eventualmente termina
+    con una respuesta final.
+
+    El loop:
+
+    1. callModel(messages + tools) → devuelve { type: "tool_call", name, args } o { type: "final", text }
+    2. Si es tool_call: ejecutar el handler correspondiente, agregar el resultado a messages, volver al paso 1.
+    3. Si es final: devolver la respuesta al usuario y terminar.
+
+    Tu trabajo: implementar el loop con las **stop conditions correctas**.
+    Sin ellas, el agente puede entrar en bucles infinitos o quedarse
+    corto antes de tiempo.
+  starter: |
+    // Loop del agente.
+    // Disponible:
+    //   callModel({ messages, tools }) → { type: "tool_call" | "final", ...payload }
+    //   handleTool(name, args) → resultado del tool, o lanza error
+    //
+    // Tu trabajo: implementar el loop con stop conditions.
+
+    async function runAgent({ userGoal, tools }) {
+      const messages = [
+        { role: "user", content: userGoal }
+      ];
+
+      // TODO: loop con stop conditions correctas.
+      while (true) {
+        const step = await callModel({ messages, tools });
+
+        if (step.type === "final") {
+          return { ok: true, answer: step.text };
+        }
+
+        if (step.type === "tool_call") {
+          const result = await handleTool(step.name, step.args);
+          messages.push(
+            { role: "assistant", content: null, tool_call: step },
+            { role: "tool", content: JSON.stringify(result) }
+          );
+          continue;
+        }
+      }
+    }
+  language: javascript
+  scenarios:
+    - description: "Happy path: el modelo llama 2 tools, después devuelve respuesta final."
+      expected: "ok: true, answer: el texto final."
+    - description: "Loop infinito potencial: el modelo llama el MISMO tool con los MISMOS args dos veces seguidas (señal de que está atascado)."
+      expected: "El loop se rompe antes de la 3ra llamada idéntica. Devuelve ok: false, error code 'stuck_loop' o similar."
+    - description: "Demasiados pasos: el modelo lleva 20 tool_calls sin llegar a final."
+      expected: "El loop se rompe al alcanzar max_steps (típico: 10-15). Devuelve ok: false, error code 'max_steps_exceeded'."
+    - description: "Tool falla: handleTool lanza una excepción en la 3ra iteración."
+      expected: "El error se captura, se inyecta al modelo como un tool_result con ok: false, y el loop CONTINÚA para que el modelo decida cómo recuperarse. NO termina silenciosamente."
+  rubric:
+    - id: max-steps-limit
+      kind: llm-judge
+      criterion: "El loop tiene un contador de iteraciones (típicamente max 10-15). Al alcanzar el límite, sale con un error estructurado (`ok: false, error: { code: 'max_steps_exceeded' }`). NO loopea infinitamente."
+    - id: detects-stuck
+      kind: llm-judge
+      criterion: "El loop detecta cuando el agente está pidiendo el MISMO tool con los MISMOS args dos o tres veces seguidas. señal de que está atascado. Sale con un error estructurado tipo 'stuck_loop'."
+    - id: tool-errors-feed-back
+      kind: llm-judge
+      criterion: "Cuando un tool falla, el error se captura (try/catch) y se inyecta de vuelta a los messages del agente como un tool_result con ok: false. El loop CONTINÚA. el agente puede leer el error y decidir cómo recuperarse. NO termina silenciosamente con el error como respuesta."
+    - id: happy-path-intact
+      kind: llm-judge
+      criterion: "En el happy path (modelo llama tools, después devuelve final), el comportamiento es correcto: las llamadas a tools se ejecutan, los resultados se agregan a messages, y la respuesta final se devuelve con ok: true."
+    - id: structured-returns
+      kind: llm-judge
+      criterion: "Todas las salidas del loop son objetos estructurados con `ok: true/false`. En fallo, llevan un `error.code` identificable. NO lanza excepciones hacia afuera del runAgent."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Tres stop conditions clásicas: (a) max_steps (contador absoluto), (b) loop-detection (el mismo tool con los mismos args N veces), (c) tool-error-budget (más de M errores en N pasos consecutivos)."
+  - "Para detectar loops: guardá un array de las últimas K (name, args) y comparalas. Si las últimas 3 son idénticas, salí."
+  - "Cuando un tool falla, el error TIENE que volver al modelo como input. no como excepción. El modelo puede leer el error y pedir otro tool o ajustar args. Si tirás la excepción, el loop muere y el usuario no sabe qué pasó."
+teaches:
+  - agent-loop-stop-conditions
+requires:
+  - mcp-error-handling
+---
+
+## El agente que sabe cuándo parar.
+
+<Character name="orbit" /> tiene una regla: *cualquier loop sin condición de salida es un incidente esperando suceder*. Si vas a dejar al agente correr solo, tenés que poder responder antes de presionar **Run**: ¿qué lo hace parar?
+
+Un agente que llama tools en loop es la pieza central de cualquier sistema autónomo moderno. Suena simple: modelo elige tool, ejecutás, le mandás el resultado, repetís hasta que termine.
+
+El problema: **¿cuándo "termina"?** Tres formas de no terminar nunca:
+
+1. **Loop infinito.** El modelo se "atasca" llamando el mismo tool una y otra vez con los mismos args.
+2. **Loop largo pero no infinito.** El modelo va haciendo cosas razonables pero no converge. 30 turnos después seguís consumiendo tokens.
+3. **Error que cascadea.** Un tool falla, el modelo no se entera, sigue llamando cosas que dependían de ese resultado.
+
+Diseñar bien las **stop conditions** es lo que separa un agente que se puede dejar correr de uno que necesita supervisión humana constante.
+
+### Las tres stop conditions
+
+1. **`max_steps`**. contador absoluto. Si llega a 10-15 sin un `final`, salí con error. Salvavidas universal.
+2. **Loop detection**. si el modelo pide el mismo tool con los mismos args 2-3 veces seguidas, está atascado. Salí.
+3. **Tool errors propagados**. cuando un tool falla, el error vuelve al modelo como input (`{ ok: false, error: ... }`). El modelo decide cómo recuperarse. El loop **NO se rompe**. solo se rompe si el modelo lo decide o si las otras stop conditions disparan.
+
+### El task
+
+Implementá el loop. A la derecha tenés un starter que **funciona en el happy path** pero no tiene ninguna stop condition.
+
+### Por qué no ejecutamos tu código
+
+Mismo principio que step 06 de Track 3: un LLM-judge lee tu implementación y razona si manejaría correctamente los 4 escenarios. Eso significa que tu código tiene que ser **leíble**. Nombres claros, control flow obvio, early returns para los errors.
+
+### Cómo se evalúa
+
+5 criterios LLM-judge:
+
+1. `max_steps` implementado correctamente.
+2. Loop detection implementado.
+3. Errores de tool vuelven al agente como input, no terminan el loop.
+4. Happy path intacto.
+5. Returns estructurados con `ok` boolean.

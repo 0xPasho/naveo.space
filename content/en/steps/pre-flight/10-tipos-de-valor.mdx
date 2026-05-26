@@ -1,0 +1,109 @@
+---
+title: "Value types: text, number, true/false"
+order: 10
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Six values the ship has in different boxes. Sort each one by its
+    **type**. Watch out for the ones that look like another type but
+    aren't.
+  slots:
+    - id: text
+      label: "Text"
+    - id: number
+      label: "Number"
+    - id: bool
+      label: "True or false"
+  pieces:
+    - id: name
+      label: "\"Forge\""
+      correctSlot: text
+    - id: int
+      label: "87"
+      correctSlot: number
+    - id: t
+      label: "true"
+      correctSlot: bool
+    - id: float
+      label: "14.2"
+      correctSlot: number
+    - id: f
+      label: "false"
+      correctSlot: bool
+    - id: num_text
+      label: "\"87\""
+      correctSlot: text
+hints:
+  - "Quotes are the giveaway: anything **between quotes** is text, no matter what's inside."
+  - "`true` and `false` are the only two values that go into the boolean column."
+  - "`87` (no quotes) is a number. `\"87\"` (with quotes) is text. They look alike but the ship treats them differently."
+teaches:
+  - basic-data-types
+requires:
+  - variables-basics
+---
+
+## Value types: three basic families
+
+So far boxes held "a value". But not all values are the same. A box can hold **text**, **a number**, or a **true/false**, and each type behaves differently.
+
+### The three families
+
+**Text** is letters, words, sentences. Anything in quotes:
+
+```
+name = "Forge"
+heading = "042°NW"
+status = "operational"
+```
+
+**Number** is for counting, measuring, comparing. No quotes:
+
+```
+fuel = 87
+oxygen = 14.2
+crew = 4
+```
+
+**True / false** has only two possible values. For binary decisions:
+
+```
+airlock_closed = true
+alarm_active = false
+```
+
+### Why this matters: type changes what you can do
+
+Adding two numbers makes sense. Adding two texts also works, but **it's a different operation**:
+
+```
+3 + 5              → 8            (math addition)
+"hello" + "world"  → "helloworld" (text concatenation)
+```
+
+Mix types and things start breaking:
+
+```
+3 + "5"            → 8? "35"? Depends on the language. Sometimes an error.
+"alarm" > 5        → meaningless. Crash or weird result.
+```
+
+### The classic mistake: confusing text and number
+
+These two look identical but **they are NOT equal**:
+
+```
+87        ← number. You can add, compare, divide.
+"87"      ← text. Two characters ('8' and '7') that look like a number.
+```
+
+Compare `87 == "87"` and in most serious languages the result is **false**. To the system a number and a text are different things, even when they look identical to you.
+
+This is the source of a ton of bugs when data comes from outside (a form, an API). It arrives as text. You think it's numbers. You do math. You get nonsense.
+
+> When you talk to the model, the same thing happens: if the model returns `"87"` (text) and you expected a number, you can't multiply it. That's why you'll see so many prompts saying *"return a number, not a string"*.
+
+On the right, six values. Sort them by type. Watch out for the ones that look like another type but aren't.

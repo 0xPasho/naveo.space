@@ -1,0 +1,68 @@
+---
+title: "¿Qué es un tool, exactamente?"
+order: 1
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge necesita que el agente pueda **buscar la info de un crewmate por su
+    alias**. Tiene dos formas de configurarlo. ¿Cuál le da al agente la
+    capacidad real de hacerlo?
+  optionA: |
+    SYSTEM:
+    Eres un asistente que ayuda a Forge. Tenés acceso al registro de la
+    crew. Cuando alguien te pida info de un crewmate por su alias, devolvés
+    su nombre, puesto y contacto.
+
+    USER:
+    ¿Quién es "Em"?
+  optionB: |
+    SYSTEM:
+    Eres un asistente que ayuda a Forge.
+
+    TOOLS:
+    - lookup_crewmate(alias: string): devuelve la info del crewmate
+      (nombre, puesto, contacto) registrada bajo ese alias. Llamalo
+      cuando el usuario pida datos de un crewmate por su alias.
+
+    USER:
+    ¿Quién es "Em"?
+  correct: B
+  explanation: |
+    En la opción A, el modelo NO tiene forma de buscar nada. solo tiene
+    las palabras "tenés acceso al registro". El registro no existe del
+    lado del modelo, así que va a **inventar** un nombre, un puesto y un
+    contacto. Alucinación garantizada.
+
+    En la opción B, el modelo recibe un **tool**: una función real con un
+    nombre (`lookup_crewmate`), un input tipado (`alias: string`) y una
+    descripción de qué hace y cuándo usarla. El modelo no la implementa,
+    solo decide **cuándo invocarla**. Cuando la invoca, el sistema (vos)
+    ejecuta la función real y le devuelve el resultado.
+
+    Esa es la diferencia: un tool le da al modelo **capacidad de acción
+    real** sobre tu mundo, no solo una promesa.
+hints:
+  - "¿De dónde sacaría el modelo los datos del registro en la opción A?"
+  - "Un tool es una función. Si no está definida como función, no existe."
+teaches:
+  - tool-vs-prompt
+requires:
+  - multi-turn-followup
+---
+
+## Cuando hablar ya no alcanza
+
+El modelo es bueno generando texto. No tiene acceso a tu base de datos, ni a tu API, ni al filesystem, ni a Internet. a menos que vos le des **tools**.
+
+Un tool es:
+
+- Una **función** que existe en tu código.
+- Una **descripción** que le decís al modelo: cómo se llama, qué inputs acepta, qué devuelve, cuándo usarla.
+- Una **decisión**: el modelo elige si invocarla o no, basándose en la conversación.
+
+Cuando el modelo decide invocar un tool, **vos ejecutás la función** y le devolvés el resultado. El modelo continúa la conversación con ese resultado en mano.
+
+> Sin tools, todo lo que el modelo "sabe" es lo que aprendió en entrenamiento o lo que vos le pasaste en el prompt. Con tools, puede consultar el mundo real en cada turno.
+
+Mirá a la derecha. Una opción simula tener un registro, otra le da uno real. Una es alucinación, otra es uso de tool.

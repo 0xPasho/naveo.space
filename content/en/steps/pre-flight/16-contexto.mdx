@@ -1,0 +1,95 @@
+---
+title: "Context: what the model can 'see'"
+order: 16
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    You're in a very long conversation with the model. In message 1 you
+    tell it: *"My name is Bru and I'm a ship technician."* A hundred
+    messages later, you ask: *"What's my name?"* and it answers *"I don't
+    know."*
+
+    What actually happened?
+  optionA: |
+    **The model has short-term memory and it ran out**, like a tired
+    person after a long conversation. Eventually old things get "erased".
+  optionB: |
+    **The model has no memory between messages.** Every call we send it
+    the entire history as one input. If the history exceeds its **context
+    window**, the oldest messages get trimmed before they reach it. What
+    got trimmed never existed, as far as the model is concerned.
+  correct: B
+  explanation: |
+    The model is **stateless**: it holds no persistent memory between
+    calls. Every time you speak, we re-send the **entire history** as the
+    input.
+
+    If the conversation gets very long and exceeds the context window
+    (say, 200,000 tokens), the client or wrapper trims the oldest messages
+    so the newest ones fit. When you ask *"what's my name?"*, the original
+    message where you said your name is no longer in the input the model
+    receives, so to the model it never existed.
+
+    It's not forgetting, it's trimming. And understanding that is the
+    difference between blaming the model and fixing your system.
+hints:
+  - "The model is **stateless**. It keeps no state between calls. The memory you see is an illusion built by the client."
+  - "Each call sends the whole history as input. If the history is very long, it doesn't fit whole."
+  - "The key question: is the original message with your name still in the input reaching the model on call 100?"
+teaches:
+  - context-window
+requires:
+  - llm-mental-model
+  - tokens-basics
+---
+
+## What the model can "see"
+
+The model has no memory between calls. **Zero.** It doesn't remember you from prior turns. It doesn't know the session continues. Every call starts from nothing.
+
+### The trick: we resend the whole history each time
+
+So how do conversations "work"? Trick: when you see a chat with multiple messages, what's happening underneath is this:
+
+```
+CALL 1
+  input:  [user_message_1]
+  output: response_1
+
+CALL 2
+  input:  [user_message_1, response_1, user_message_2]
+  output: response_2
+
+CALL 3
+  input:  [user_message_1, response_1, user_message_2, response_2, user_message_3]
+  output: response_3
+```
+
+Every time you speak, we re-send **the entire history** to the model, as one giant input. The model doesn't "remember": it's re-reading everything from scratch every time.
+
+### The context window
+
+The input has a hard limit. For current models:
+
+- Claude, modern GPT: ~200,000 tokens (a short book)
+- Older models: 8,000 to 32,000 tokens
+- Cheaper models: less
+
+That's the **context window**: how much text the model can "see" in a single call. If the history exceeds the limit, you have to trim it. The common move is to **drop the oldest** and keep the recent.
+
+### Why it "forgets"
+
+Result: in a very long conversation, the model appears to "forget" things you said early on. But it didn't forget: **the messages never reached it**. They got cut by the trim that fit through the window.
+
+### Practical implications
+
+1. **If you want something important to stick, repeat it periodically** or put it in the system prompt (which almost never gets trimmed).
+2. **In batch processing, don't assume the model "remembers" the previous item.** Send it the context it needs on every call.
+3. **Long documents** that don't fit the window need to be split into pieces (*chunking*) and processed one at a time.
+
+> This is central to understanding RAG, multi-turn conversations, and why models sometimes seem to contradict themselves: different call, different slice of the history visible.
+
+On the right, a 100-message conversation. The final question goes unanswered. Why?

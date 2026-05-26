@@ -1,0 +1,96 @@
+---
+title: "Vago vs específico: cierra las puertas"
+order: 2
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Vega necesita un prompt para resumir reportes de turno. Tiene dos
+    drafts. ¿Cuál es más probable que te dé un output usable en producción?
+  optionA: |
+    ```
+    Resúmeme este reporte de turno:
+
+    {{input}}
+    ```
+  optionB: |
+    ```
+    Eres un asistente que resume reportes de turno para Vega.
+
+    Devuelve UNA oración en español (máximo 25 palabras) con:
+    - qué pasó
+    - dónde
+    - si requiere acción de seguimiento
+
+    Si falta información, escribe "no reportado" en lugar de inventar.
+
+    Reporte:
+    {{input}}
+    ```
+  correct: B
+  explanation: |
+    El prompt A deja **cuatro decisiones implícitas**: formato, longitud,
+    idioma, y qué hacer ante huecos. El modelo va a llenarlas como mejor
+    le parezca. A veces te da un párrafo en inglés. A veces un objeto JSON.
+    A veces inventa la ubicación. No por bug: porque no le dijiste qué
+    querías.
+
+    El prompt B cierra las cuatro puertas explícitamente. No es más largo
+    por verbosidad. Es más largo porque cada línea **previene una falla
+    específica** que el A iba a tener en el caso 5 o 50 de producción.
+
+    Vago en, vago out. Específico en, específico out. La regla más
+    importante de la lección.
+hints:
+  - "Pensá qué pasa cuando el prompt corre 100 veces sobre 100 reportes distintos. ¿Cuál te da outputs **comparables** entre sí?"
+  - "El prompt A no dice idioma, formato, longitud, ni qué hacer si falta un dato. El modelo va a decidir por vos."
+  - "El B cierra cuatro puertas: formato (una oración), longitud (25 palabras), idioma (español), nulls ('no reportado')."
+teaches:
+  - prompt-specificity
+requires:
+  - prompt-anatomy-basics
+---
+
+## Vago en, vago out
+
+Si tu prompt no especifica el formato, la longitud, o el comportamiento ante datos faltantes, el modelo va a llenar esos huecos como mejor le parezca. Y *"como mejor le parezca"* rara vez coincide con lo que tú necesitas.
+
+### Las cuatro puertas que un prompt vago deja abiertas
+
+1. **Formato.** ¿Una oración? ¿Un párrafo? ¿JSON? ¿Lista?
+2. **Longitud.** ¿20 palabras? ¿2 párrafos? ¿Sin límite?
+3. **Idioma.** ¿Español? ¿Inglés? ¿El del input?
+4. **Comportamiento ante huecos.** ¿Inventa? ¿Pone null? ¿Salta el campo?
+
+Si tu prompt no responde estas cuatro, el modelo decide por ti. Y las decisiones del modelo son **estadísticamente promedio**: vas a recibir un párrafo en inglés, de longitud variable, que rellena los huecos con cualquier cosa plausible.
+
+### El antídoto: la regla del lector escéptico
+
+Antes de mandar tu prompt, léelo como si fueras alguien que **busca razones para hacer lo opuesto**. Cada decisión que NO está explícita es una decisión que el modelo toma sin ti.
+
+Compará:
+
+> *"Resume este reporte."*
+>
+> ¿En qué idioma? ¿Qué largo? ¿Qué hago si falta una parte?
+
+vs.
+
+> *"Resume este reporte en una oración en español, máximo 25 palabras. Si falta info, escribe 'no reportado' en vez de inventar."*
+>
+> Cuatro decisiones, cuatro respuestas explícitas.
+
+El segundo prompt no es más largo porque sí. Es más largo porque **cerró las cuatro puertas** que el modelo iba a abrir.
+
+### El pero: no sobreespecifiques
+
+Hay un punto donde más detalle deja de ayudar y empieza a entorpecer. Si tu prompt tiene 12 reglas, el modelo va a olvidar algunas. La regla práctica:
+
+- Especificá lo que **afecta el formato o la corrección** del output.
+- No especifiques estilo, tono ni estructura interna a menos que importe.
+
+> Una buena heurística: imagina que pasas el prompt a un compañero por Slack y él tiene que devolverte el output en 30 segundos. Si necesitarías hacerle 4 preguntas antes de empezar, tu prompt está vago. Si entendería al toque, está bien.
+
+A la derecha, dos prompts. Uno vago, uno específico. ¿Cuál te da output más confiable?

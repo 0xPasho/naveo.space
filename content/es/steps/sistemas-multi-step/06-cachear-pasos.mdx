@@ -1,0 +1,112 @@
+---
+title: "Cachear pasos: el mismo input, una vez"
+order: 6
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: wiring-dnd
+  task: |
+    Tu cadena tiene seis pasos y los reportes de turno se repiten con
+    pequeñas variaciones (mismo bay, misma falla, distinta hora). Sin
+    cache, ejecutás los 6 pasos cada vez. Con cache, reusás los pasos
+    cuyos inputs no cambiaron.
+
+    Pero **no todo paso es cacheable**: algunos tienen side effects,
+    otros dependen de la hora, otros consultan datos vivos. Conectá
+    cada paso al tipo de cache que le corresponde.
+
+    Tres tipos de cache disponibles, más una opción para "no cachear".
+  sources:
+    - id: classify
+      label: "classify_incident"
+      detail: "Recibe texto crudo, devuelve categoría. Determinista para mismo input."
+    - id: extract
+      label: "extract_fields"
+      detail: "Recibe texto + categoría, devuelve fields. Determinista."
+    - id: severity
+      label: "score_severity"
+      detail: "Recibe texto + categoría, devuelve high/med/low. Determinista."
+    - id: lookup-roster
+      label: "lookup_oncall_roster"
+      detail: "Consulta la API del roster. El roster cambia por turno."
+    - id: file-ticket
+      label: "file_ticket"
+      detail: "Crea un ticket en el sistema. SIDE EFFECT: cada llamada inserta una fila."
+    - id: notify
+      label: "notify_humans"
+      detail: "Manda un mensaje al canal. SIDE EFFECT por definición."
+  targets:
+    - id: cache-by-hash
+      label: "Cache permanente por hash de input"
+      detail: "Hash(input) → output. Sirve por días/semanas. Ideal para pasos puros."
+    - id: cache-ttl
+      label: "Cache con TTL corto (ej. 5 minutos)"
+      detail: "Hash(input) → output con expiración. Ideal para datos que cambian lento."
+    - id: never-cache
+      label: "Nunca cachear"
+      detail: "El paso tiene side effects, o necesita ejecutarse SIEMPRE."
+  correctConnections:
+    - from: classify
+      to: cache-by-hash
+    - from: extract
+      to: cache-by-hash
+    - from: severity
+      to: cache-by-hash
+    - from: lookup-roster
+      to: cache-ttl
+    - from: file-ticket
+      to: never-cache
+    - from: notify
+      to: never-cache
+hints:
+  - "Cualquier paso que llama a un LLM con un input fijo y un prompt fijo es **puro**: mismo input, mismo output (con temperature=0). Cacheable por hash."
+  - "Si el output depende del **mundo** (rosters, stocks, weather), TTL corto te da fresh data sin re-ejecutar cada vez."
+  - "Cualquier cosa que **cambia el mundo** (inserta filas, manda emails, llama webhooks) NUNCA se cachea. Cachear un side effect = bug silencioso garantizado."
+teaches:
+  - chain-caching
+requires:
+  - chain-state-management
+---
+
+## Cada llamada que no hacés es plata y tiempo ganados
+
+Cuando una cadena se ejecuta seguido con inputs **iguales o similares**, podés evitar repetir trabajo. El truco: identificar qué pasos son **funciones puras** (mismo input → mismo output) y guardar el resultado bajo un hash del input.
+
+La próxima vez que llegue el mismo input, vas al cache, traés el output, salteás la llamada LLM. Latencia: 5ms. Costo: cero.
+
+### Las tres reglas del cache
+
+1. **Cachear solo lo determinista.** Si el paso usa el modelo con temperature=0 y un prompt fijo, es cacheable. Si usa temperature>0, NO (cada llamada da output distinto, cachear destruye el randomness intencional).
+2. **Cachear con TTL para datos del mundo.** Lookups, rosters, stocks, fechas relativas. cache con TTL corto (segundos a minutos). Mejor que ejecutar siempre, sin servir info vieja.
+3. **NUNCA cachear side effects.** Si el paso inserta, manda, paga o notifica, ejecutarlo dos veces hace DOS cosas. Si cacheás, la segunda vez NO se ejecuta y rompés el contrato del sistema.
+
+### Cómo se ve un step cacheable
+
+```yaml
+- id: classify_incident
+  cache:
+    kind: hash
+    key: hash(input.text + prompt_version)
+    ttl: forever
+  prompt: |
+    Clasifica el siguiente reporte ...
+```
+
+El runtime, antes de llamar al LLM, computa `hash(input.text + prompt_version)`. Si encuentra una entrada, la devuelve. Si no, ejecuta y guarda.
+
+### Por qué incluir el prompt_version en la key
+
+> Si solo cacheás por input y mañana cambiás el prompt, el cache devuelve outputs del prompt VIEJO. Es el bug más común con caches LLM. La key tiene que incluir la versión del prompt para invalidar automáticamente.
+
+### Cuándo el cache te muerde
+
+- **Bugs silenciosos.** Si cacheás un paso que depende de algo no declarado en el input (un secret, una env var, el reloj), distintos contextos comparten output incorrectamente.
+- **Datos viejos.** TTLs largos sobre datos cambiantes te dan respuestas obsoletas. Usuario reporta "el sistema dijo X pero ya cambió a Y".
+- **Pruebas que mienten.** Si tus tests corren contra el cache, no estás probando el sistema. Estás probando que el cache funciona.
+
+### Tu ejercicio
+
+A la derecha, seis pasos de tu pipeline. Algunos son puros (deterministas, ideales para hash cache), otros dependen del mundo (TTL corto), otros NUNCA se pueden cachear (side effects). Conectá cada paso a su tipo correcto.
+
+> El criterio para "nunca cachear": preguntate *¿qué pasa si lo ejecuto dos veces?*. Si las dos ejecuciones son equivalentes, cacheable. Si la segunda hace algo nuevo en el mundo, jamás.

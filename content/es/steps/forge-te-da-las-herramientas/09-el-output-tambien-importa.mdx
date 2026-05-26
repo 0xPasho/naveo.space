@@ -1,0 +1,118 @@
+---
+title: "Lo que el tool DEVUELVE también es contrato"
+order: 9
+estimatedMinutes: 5
+exercise:
+  kind: prompt-AB
+  question: |
+    Mismo tool (`get_shift_status`), dos formas de devolver el resultado.
+    Una le da al agente lo que necesita para razonar y seguir; la otra lo
+    obliga a parsear, adivinar, y a veces inventar. ¿Cuál es la buena?
+  optionA: |
+    Tool: get_shift_status(shift_id: string)
+    Description: "Devuelve el estado de un turno."
+
+    Return shape (sin documentar):
+    "Shift shift-2026-05-14-N1 is currently active with 3 crewmates assigned (Em, Bru, Ly), started at 22:00 UTC, scheduled to end at 06:00 UTC. The shift lead is Em. Notes: refrigerant levels at 12% in bay 7."
+  optionB: |
+    Tool: get_shift_status(shift_id: string)
+    Description: "Devuelve el estado de un turno. Estructura del output:
+    { shift_id, status: 'scheduled'|'active'|'completed'|'cancelled',
+      crewmates: [{alias, role}], started_at: ISO, ends_at: ISO,
+      lead_alias, notes: string|null }."
+
+    Return shape:
+    {
+      "shift_id": "shift-2026-05-14-N1",
+      "status": "active",
+      "crewmates": [
+        {"alias": "Em", "role": "lead"},
+        {"alias": "Bru", "role": "engineer"},
+        {"alias": "Ly", "role": "medic"}
+      ],
+      "started_at": "2026-05-14T22:00:00Z",
+      "ends_at": "2026-05-15T06:00:00Z",
+      "lead_alias": "Em",
+      "notes": "refrigerant levels at 12% in bay 7"
+    }
+  correct: B
+  explanation: |
+    El input del tool es contrato. **El output también**. La diferencia es
+    que casi nadie lo trata así.
+
+    En la opción A, el tool devuelve **prosa**. El agente para usarla
+    tiene que:
+
+    - Parsear la oración para extraer el estado ("currently active" → ?).
+    - Adivinar el formato de la lista de crewmates ("Em, Bru, Ly").
+    - Inferir cuál es el lead ("The shift lead is Em" embebido en otra
+      oración).
+    - Reconstruir las fechas a partir de strings en lenguaje natural.
+
+    Cada uno de esos pasos es **otra oportunidad de alucinar**. El modelo
+    es bueno con texto, pero "es bueno" no es "no se equivoca nunca".
+    Cuando el output es prosa, la siguiente acción del agente se construye
+    sobre tu interpretación, no sobre datos.
+
+    En la opción B, el output es **estructurado y documentado**:
+
+    - `status` es un enum implícito. el agente sabe los valores posibles.
+    - `crewmates` es una lista con shape clara. iterable.
+    - `started_at` y `ends_at` son ISO. comparables, formateables sin
+      ambigüedad.
+    - La description del tool **documentó la shape de retorno**. el agente
+      sabe qué esperar antes de invocar.
+
+    Cuando otra tool tiene que recibir `lead_alias`, el agente lo pasa
+    directo desde `result.lead_alias`. Cero transformación, cero
+    invención.
+
+    Regla del Track 3 que casi nadie aplica: **documentá la shape del
+    output en la description del tool**. El agente la lee, la usa, y la
+    siguiente decisión sale más limpia.
+hints:
+  - "Pensá qué hace el agente DESPUÉS de invocar el tool. Si tiene que parsear texto, le diste trabajo extra y le abriste la puerta a inventar."
+  - "Estructura > prosa. Siempre. Aunque el usuario final vea texto, la conversación intermedia del agente con sus tools debería ser JSON-shaped."
+teaches:
+  - tool-output-shape
+requires:
+  - tool-description-craft
+---
+
+## Pensaste el input. ahora pensá el output.
+
+Todo el Track hasta acá te insistió en el contrato de entrada: parámetros tipados, enums, formato, required. Pero el tool también devuelve algo, y **lo que devuelve es contrato de igual peso**. La parte mala es que la mayoría de los autores de tools devuelven "lo que sale del query" o "una linda oración" y se olvidan.
+
+El problema: el agente **lee el output del tool como contexto** para decidir el siguiente paso. Si ese contexto es ambiguo, el siguiente paso es ambiguo. Si es estructurado, el siguiente paso casi se programa solo.
+
+### Tres reglas para outputs de tool
+
+1. **Estructura siempre.** Devolvé objeto JSON con campos nombrados. Nunca prosa cuando hay datos discretos.
+
+2. **Documentá la shape en la description.** El modelo lee la description antes de invocar; si sabe qué va a recibir, planifica mejor el siguiente paso.
+
+   ```
+   Description: "...Returns: { shift_id, status: 'scheduled'|'active'|
+   'completed', crewmates: [...], lead_alias }"
+   ```
+
+3. **Enums explícitos en los outputs también.** Si `status` solo puede ser 4 valores, decilo. El agente va a confiar y razonar sobre esa lista cerrada en vez de inventar branches para "active_with_warnings".
+
+### El caso del campo opcional o ausente
+
+Cuando un campo puede no estar:
+
+- **Usá `null` explícito**, no omitas el campo. `notes: null` le dice al agente "consulté y no hay". Si omitís `notes`, el agente no sabe si no consultaste, si el tool falló parcial, o si hay vacío real.
+- **Documentá los `null` esperados** en la description. `notes: string|null`.
+
+### El caso de los errores
+
+Errores también son output. Ya viste en el step 8 (preview del próximo unit) que la shape de error es:
+
+```js
+{ ok: false, error: { code: "...", message: "...", ...extra } }
+```
+
+Esa shape es contrato igual que la de éxito. **Documentala**. El agente la lee y aprende a manejar cada `code`.
+
+> Test mental: si vos fueras el agente y solo vieras el output crudo del tool (sin contexto extra), ¿podrías decidir el siguiente paso con certeza? Si la respuesta es "depende de cómo interprete esta frase", el output está mal diseñado.

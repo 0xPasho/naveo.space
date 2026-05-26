@@ -1,0 +1,12 @@
+slug: sistemas-multi-step
+title: "Multi-step systems"
+order: 1
+narrativeHook: |
+  You can write a prompt. You can sustain a conversation. You can build
+  tools. Now comes the piece that separates the LLM user from the
+  **systems engineer with LLMs**: when to split a problem into a chain
+  (and when not to), how to parallelize and cache, when to route with
+  rules vs LLMs, agent budgets, retry policies, graceful degradation,
+  traces, evals, judges, and A/B testing. Orbit walks you through flow
+  design; Echo teaches you to evaluate it; at the end, Atlas signs off.
+estimatedMinutes: 183

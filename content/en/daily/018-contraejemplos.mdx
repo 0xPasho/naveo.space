@@ -1,0 +1,162 @@
+---
+title: "Quick mission: counter-examples in few-shot"
+intro: |
+  Sometimes the most useful example is one that shows what you do NOT want. But you have to write it carefully.
+station: vega
+teaches:
+  - counter-examples
+  - negative-instruction-trap
+characters:
+  - forge
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Forge shows you two versions of a few-shot that classifies
+      messages as `action required` or `informational`. It misfires on
+      ambiguous messages. Which version fixes it better?
+    optionA: |
+      ```
+      Examples:
+      
+      Message: "I need you to approve the deploy before Friday." -> action required
+      Message: "Yesterday's deploy went out without issues." -> informational
+      Message: "Closed ticket #42." -> informational
+      ```
+    optionB: |
+      ```
+      Examples:
+      
+      Message: "I need you to approve the deploy before Friday." -> action required
+      Message: "Yesterday's deploy went out without issues." -> informational
+      Message: "Closed ticket #42." -> informational
+      Message: "Look at this when you can, thanks." -> action required (counter-example of "informational": "when you can" is still a request)
+      Message: "Just wanted to share that we closed the client." -> informational (counter-example of "action required": "just wanted to" sounds like a request but is not)
+      ```
+    correct: B
+    explanation: |
+      Option A shows the central cases: each label has a clean
+      example. It works for clear cases. The problem is the edges,
+      where language deceives: "when you can" sounds soft but asks
+      for action, "just wanted to share" sounds like a request but is
+      informational.
+
+      Option B adds counter-examples labeled explicitly. The line
+      "counter-example of informational" marks that the case looks
+      like one side but belongs to the other. That tells the model
+      where the real cut lies, not the apparent one.
+
+      Rule: a good counter-example is not "the opposite". It is a
+      case that any reasonable person would put on the wrong side.
+      If you needed 2 seconds to classify it, it is a useful
+      counter-example.
+  - kind: slot-fill-dnd
+    task: |
+      You are building counter-examples for a few-shot. Sort each
+      candidate: is it well-formed (teaches a cut) or malformed (does
+      not help or confuses)?
+    slots:
+      - id: good
+        label: "Well-formed"
+      - id: bad
+        label: "Malformed"
+    pieces:
+      - id: p1
+        label: "'Sounds casual but it is a formal request' with label `formal`. Real borderline."
+        correctSlot: good
+      - id: p2
+        label: "'Hello.' with label `formal`. Too short, could be any label."
+        correctSlot: bad
+      - id: p3
+        label: "'I will send the report when it is ready, thanks for waiting' with label `formal`. Casual tone, work context, marks the difference."
+        correctSlot: good
+      - id: p4
+        label: "'This is not formal' with label `casual`. Tells the model what it is NOT, not what the case looks like."
+        correctSlot: bad
+      - id: p5
+        label: "'Dude, send me the deck whenever' with label `informal`. Easy case, already obvious."
+        correctSlot: bad
+      - id: p6
+        label: "'I kindly request that you resend the file at your earliest convenience' with label `formal`. Textbook formal."
+        correctSlot: bad
+  - kind: step-order-dnd
+    task: |
+      Order the steps to build a useful counter-example from scratch.
+      Top to bottom.
+    steps:
+      - id: s1
+        label: "Identify a case where the model got it wrong."
+        detail: "The counter-example comes from a real error, not from imagination."
+      - id: s2
+        label: "Decide what the correct label was and why."
+        detail: "If you cannot explain the cut yourself, the model will not be able to either."
+      - id: s3
+        label: "Take the failed input and verify it is borderline (a reasonable person could classify it wrong)."
+        detail: "If the case is trivial, it does not teach a cut, it teaches the obvious."
+      - id: s4
+        label: "Add it to the few-shot with the correct label."
+        detail: "The counter-example looks like any other example, not like a negative rule."
+      - id: s5
+        label: "Optional: add a very short note clarifying the cut ('even though it says X, it is still Y')."
+        detail: "Only if the case is very counterintuitive. Do not over-explain."
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of a few-shot block that includes a well-built
+      counter-example. A healthy set has: instruction, positive
+      example for each label, counter-example, and the new input.
+    parts:
+      - id: instruction
+        label: "Instruction (what task the model is doing)"
+        text: "Classify each message as `action required` or `informational`."
+      - id: positive
+        label: "Positive example (central case for one label)"
+        text: "Message: 'I need you to approve the deploy before Friday.' -> action required"
+      - id: counter
+        label: "Counter-example (sounds like the other label but belongs to this one)"
+        text: "Message: 'Just wanted to share that we closed the client.' -> informational (not a request even though it starts with 'just wanted to')"
+      - id: input
+        label: "New input (to classify, no answer)"
+        text: "Message: 'When you have a moment, can you sign the contract?' -> "
+  - kind: prompt-AB
+    question: |
+      Vega has a prompt that generates messages for end users. The
+      model sometimes includes code examples when nobody asked. She
+      wants to tell it not to write code. Which instruction is less
+      risky?
+    optionA: |
+      ```
+      Do not include code in the answer. Do not write code. I repeat,
+      NO CODE. No code blocks.
+      ```
+    optionB: |
+      ```
+      The answer is in prose, addressed to the end user. If you have
+      to mention a technical idea, describe it in words (e.g., "the
+      system validates the email format"). Example of the desired
+      style:
+      
+      Question: how do I change my password?
+      Answer: Go to Settings > Account > Change password.
+      It will ask for the current one and the new one twice.
+      ```
+    correct: B
+    explanation: |
+      Option A is the classic negative-instruction trap. "Do not X"
+      injects the concept X into the model's context. Some models
+      handle it, others generate more X than they would without the
+      instruction. You end up asking for what you did not want.
+
+      Option B reframes in the positive: it says what TO do
+      ("answer in prose", "describe in words"), shows an example of
+      the desired style, and code is excluded by construction. The
+      model does not need to "not do" anything, it follows the
+      pattern.
+
+      Rule: when you want to avoid something, do not name it as a
+      prohibition. Show what you DO want. If you must clarify what
+      you do not, do it with a labeled counter-example, not with a
+      big "no".
+---
+
+Mission of the day: counter-examples teach where the label cuts. Big
+prohibitions ("do not do X") often make the model do more X.

@@ -1,0 +1,80 @@
+---
+title: "Variables: labeled boxes"
+order: 8
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    The bridge has five gauges. Each one is a **variable**. a labeled box
+    that holds one value. Drag each value to the gauge it belongs in.
+  slots:
+    - id: fuel
+      label: "Fuel level"
+    - id: oxygen
+      label: "Oxygen reserve"
+    - id: heading
+      label: "Heading"
+    - id: cargo
+      label: "Cargo mass"
+    - id: crew
+      label: "Crew on board"
+  pieces:
+    - id: pct
+      label: "87%"
+      correctSlot: fuel
+    - id: hours
+      label: "14.2 hours"
+      correctSlot: oxygen
+    - id: bearing
+      label: "042° NW"
+      correctSlot: heading
+    - id: tons
+      label: "2.3 tons"
+      correctSlot: cargo
+    - id: count
+      label: "4"
+      correctSlot: crew
+hints:
+  - "Read the **unit**, not the number. `tons` belongs to mass. `hours` belongs to a duration."
+  - "`042° NW` is a compass bearing. Only one gauge takes a bearing."
+  - "If you're stuck on the last two, eliminate the others first. Variables fit by *what they measure*, not by what looks pretty."
+teaches:
+  - variables-basics
+requires:
+  - sequencing-basics
+---
+
+## A variable is a labeled box
+
+Picture five boxes on the bridge. Each one has a label painted on it: `Fuel level`, `Oxygen reserve`, `Heading`. The label never changes. **The value inside the box does.**
+
+That's all a variable is. The box (the name) is fixed. The contents (the value) can be swapped, updated, read, replaced.
+
+```
+Fuel level = 87%
+Oxygen reserve = 14.2 hours
+Heading = 042° NW
+```
+
+The crew reads the labels to know what's happening. <Character name="echo" /> reads `Oxygen reserve` to know how long until life support fails. <Character name="forge" /> reads `Fuel level` to know if the engines are healthy.
+
+### One box, many values over time
+
+Watch the `fuel` box across the first quarter of a shift:
+
+```
+00:00  fuel = 100%
+00:15  fuel = 92%
+00:30  fuel = 85%
+00:45  fuel = 78%
+```
+
+Four different snapshots. Same box. **The label never moved**. it was always called `fuel`. What updated was the value inside, because the ship burned fuel between each reading.
+
+When <Character name="echo" /> warns you *"fuel low"*, she's reading the **current** value of that box. Not the value from 15 minutes ago. A variable is always read in the moment it's asked for.
+
+> When you write a prompt that says `<bio>{{input}}</bio>`, you're doing the exact same thing. `input` is a variable. The label stays put. The bio inside changes per call. exactly like the `fuel` box changes between readings.
+
+On the right: five labeled gauges and five values. Drag each value into the gauge that fits. The labels tell you what kind of value belongs.

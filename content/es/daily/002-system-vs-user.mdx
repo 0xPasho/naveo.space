@@ -1,0 +1,158 @@
+---
+title: "Misión exprés: system vs user"
+intro: |
+  Qué va en el system prompt (lo estable) y qué en el user prompt (la tarea de hoy).
+station: vega
+teaches:
+  - system-vs-user
+  - system-prompt-design
+characters:
+  - forge
+  - vega
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Forge está armando un asistente para coordinar turnos. Clasificá cada
+      línea: ¿es comportamiento estable que va en el system prompt, o es
+      una tarea puntual que va en el user prompt?
+    slots:
+      - id: system
+        label: "System prompt"
+      - id: user
+        label: "User prompt"
+    pieces:
+      - id: p1
+        label: "Sos coordinador de turno de una guardia de enfermería."
+        correctSlot: system
+      - id: p2
+        label: "Resumime el reporte del turno de hoy en 3 bullets."
+        correctSlot: user
+      - id: p3
+        label: "Siempre respondé en bullets cortos, máximo 10 palabras cada uno."
+        correctSlot: system
+      - id: p4
+        label: "Hoy entran 3 turnos nuevos a las 14:00."
+        correctSlot: user
+      - id: p5
+        label: "Nunca menciones datos personales de pacientes."
+        correctSlot: system
+  - kind: prompt-AB
+    question: |
+      Querés que el asistente firme cada respuesta con la frase "Crew on
+      duty." al final. Es algo que tiene que pasar en todas las respuestas,
+      todos los días. ¿Dónde lo ponés?
+    optionA: |
+      ```
+      [system]
+      Sos coordinador de turno. Siempre cerrá cada respuesta con
+      la línea exacta: "Crew on duty."
+      ```
+    optionB: |
+      ```
+      [user]
+      Resumime el reporte de hoy. Acordate de cerrar con "Crew on duty."
+      ```
+    correct: A
+    explanation: |
+      Si el comportamiento se repite en cada interacción, va en el system.
+      Esa es la regla mental: "¿esto vale para todos los pedidos que voy
+      a hacer, o solo para este?"
+
+      "Cerrá con 'Crew on duty.'" vale para todos. Si lo metés en el user,
+      tenés que copiarlo en cada mensaje y eventualmente se te olvida en uno.
+      El asistente lo deja de hacer y parece bug, pero es porque la
+      instrucción se perdió.
+
+      En el system queda persistente: el modelo lo aplica a la primera
+      respuesta, a la cuarta, y a la que mandes mañana sin reiniciar nada.
+      Por eso el system es para reglas que no cambian.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este prompt completo para un asistente de
+      reportes diarios. Pensalo como "rol del asistente, regla global, tarea
+      de hoy, formato esperado".
+    parts:
+      - id: role
+        label: "Role (system, define quién es)"
+        text: "Sos analista de turno de una guardia de enfermería con 10 años de experiencia."
+      - id: constraint
+        label: "Constraint (system, regla que vale para todas las respuestas)"
+        text: "Nunca menciones nombres de pacientes. Usá iniciales si necesitás referirte a alguien."
+      - id: task
+        label: "Task (user, lo que necesitás hoy)"
+        text: "Resumime los eventos del turno del 24 de mayo entre las 14:00 y las 22:00."
+      - id: format
+        label: "Format (puede ir en system o user, define la forma de la salida)"
+        text: "Devolvé 3 bullets máximo, cada uno de menos de 15 palabras."
+  - kind: prompt-AB
+    question: |
+      Forge necesita resumir el reporte específico del turno de las 14:00
+      de hoy. Es una tarea puntual: hoy es ese reporte, mañana será otro.
+      ¿Dónde va la instrucción?
+    optionA: |
+      ```
+      [system]
+      Resumime el reporte del turno de las 14:00 a 22:00 de hoy en 3 bullets.
+      ```
+    optionB: |
+      ```
+      [user]
+      Resumime el reporte del turno de las 14:00 a 22:00 de hoy en 3 bullets.
+      ```
+    correct: B
+    explanation: |
+      La regla espejo de la escena anterior: si la instrucción cambia
+      mañana, va en user. El reporte de hoy no es el de mañana, y el
+      asistente tiene que estar listo para que vos le pidas cosas
+      distintas todos los días sin tocar el system.
+      
+      Si metés el reporte de hoy en el system, mañana tenés dos opciones
+      malas: cambiar el system (rompe la sesión, pierde contexto) o
+      pedirlo de nuevo en el user (la instrucción aparece dos veces y
+      el modelo se confunde con cuál es el reporte real).
+      
+      System = reglas estables. User = pedido del momento. Si dudás,
+      preguntate "¿esto va a cambiar mañana?". Si la respuesta es sí,
+      va en user.
+  - kind: wiring-dnd
+    task: |
+      Conectá cada tipo de contenido con el lugar donde corresponde
+      ponerlo. Pensá en qué cambia y qué se queda igual entre pedidos.
+    sources:
+      - id: src-role
+        label: "Rol del asistente"
+        detail: "'Sos analista de turno', 'sos coordinador'."
+      - id: src-fewshot
+        label: "Ejemplo few-shot fijo"
+        detail: "Plantilla input -> output que usás siempre igual."
+      - id: src-input
+        label: "Input del día"
+        detail: "El texto puntual a procesar hoy."
+      - id: src-ruleglobal
+        label: "Regla global de tono"
+        detail: "'Siempre respondé en bullets cortos'."
+      - id: src-question
+        label: "Pregunta del usuario en este turno"
+        detail: "Lo que tipeás ahora mismo en el chat."
+    targets:
+      - id: tgt-system
+        label: "System prompt"
+        detail: "Lo que se queda igual entre pedidos."
+      - id: tgt-user
+        label: "User prompt"
+        detail: "Lo que cambia en cada pedido."
+    correctConnections:
+      - from: src-role
+        to: tgt-system
+      - from: src-fewshot
+        to: tgt-system
+      - from: src-input
+        to: tgt-user
+      - from: src-ruleglobal
+        to: tgt-system
+      - from: src-question
+        to: tgt-user
+---
+
+Misión del día: aprender a separar lo estable de lo puntual. El system es
+para las reglas. El user es para la tarea.

@@ -1,0 +1,133 @@
+---
+title: "Misión exprés: armá un system prompt desde template"
+intro: |
+  Un system prompt bien armado se reusa. Lo que cambia entre tareas son las variables, no la estructura.
+station: vega
+teaches:
+  - system-prompt-design
+  - prompt-anatomy-basics
+characters:
+  - atlas
+  - vega
+scenes:
+  - kind: prompt-tag-fill
+    template: |
+      <rol>
+        Sos {{rol}}, hablando con {{audiencia}}.
+      </rol>
+
+      <tono>
+        Mantené un tono {{tono}} durante toda la conversación.
+      </tono>
+
+      <formato>
+        Devolvé la respuesta en {{formato}}.
+      </formato>
+    requiredTags:
+      - rol
+      - audiencia
+      - tono
+      - formato
+  - kind: prompt-AB
+    question: |
+      Atlas tiene que coordinar tres asistentes nuevos esta semana: uno
+      para soporte, uno para reportes, uno para onboarding. ¿Qué le
+      conviene armar?
+    optionA: |
+      ```
+      Un system prompt único, largo, que diga "podés ayudar con soporte,
+      reportes, onboarding y otras tareas. Adaptate al contexto."
+      ```
+    optionB: |
+      ```
+      Un template con variables ({{rol}}, {{tono}}, {{formato}}) y tres
+      sets de valores: uno por asistente. Mismo esqueleto, valores
+      distintos.
+      ```
+    correct: B
+    explanation: |
+      El A intenta cubrir tres casos con un solo prompt y termina vago en
+      los tres. El modelo recibe "adaptate al contexto" y tiene que
+      adivinar a cada turno cuál es el modo. La performance baja en
+      todos.
+
+      El B fija la estructura (rol, tono, formato) y deja las variables
+      al input. Cada asistente recibe valores concretos: rol = "agente
+      de soporte", audiencia = "cliente final", tono = "empatico",
+      formato = "bullets cortos". Sin ambiguedad.
+
+      Bonus: si descubris una mejora en la estructura del template, los
+      tres asistentes la heredan. Si fueran tres prompts separados,
+      tendrias que cambiar tres lugares.
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las secciones de este system prompt template. Pensalo
+      como las cuatro piezas que se repiten en casi todo template
+      reusable.
+    parts:
+      - id: identity
+        label: "Identidad (quién es el asistente)"
+        text: "Sos {{rol}} con {{años_experiencia}} años de experiencia en {{dominio}}. Hablás con {{audiencia}}."
+      - id: context
+        label: "Contexto (qué información estable necesita conocer)"
+        text: "El sistema procesa eventos operacionales de la nave. Los incidentes se rastrean con ids tipo INC-XXXX y tienen severidades low/med/high/critical."
+      - id: constraints
+        label: "Constraints (reglas que se aplican siempre)"
+        text: "Nunca menciones datos personales de la tripulación. Si te piden información que no tenés, decí 'no lo sé' antes de inventar. No tomes decisiones que requieran aprobación humana."
+      - id: style
+        label: "Estilo (cómo escribe)"
+        text: "Tono {{tono}}, frases cortas, sin metáforas, sin emojis. Devolvé la respuesta en {{formato}}."
+  - kind: slot-fill-dnd
+    task: |
+      Estás migrando un system prompt viejo a un template parametrizado.
+      Clasificá cada línea: ¿es estable (va al template) o variable (va
+      al input del día)?
+    slots:
+      - id: stable
+        label: "Estable (parte del template)"
+      - id: variable
+        label: "Variable (input del día)"
+    pieces:
+      - id: p1
+        label: "Sos analista de turno de la guardia."
+        correctSlot: stable
+      - id: p2
+        label: "El turno de hoy va de 14:00 a 22:00."
+        correctSlot: variable
+      - id: p3
+        label: "Siempre respondé en bullets de menos de 15 palabras."
+        correctSlot: stable
+      - id: p4
+        label: "Reporte de eventos del 24 de mayo entre 14:00 y 22:00: ..."
+        correctSlot: variable
+      - id: p5
+        label: "Nunca menciones nombres de pacientes. Usá iniciales."
+        correctSlot: stable
+      - id: p6
+        label: "El crewmate de guardia es Hex; cualquier escalamiento va a Vega."
+        correctSlot: variable
+  - kind: step-order-dnd
+    task: |
+      Ordená los pasos para armar un template de system prompt desde
+      cero, sin partir de uno viejo.
+    steps:
+      - id: s1
+        label: "Escribí 3 ejemplos concretos de cómo querrías usar el asistente."
+        detail: "Sin ejemplos reales, el template sale teorico y no se va a usar."
+      - id: s2
+        label: "Compará los 3 ejemplos y extraé qué se repite (la estructura)."
+        detail: "Lo que se repite vive en el template; lo que cambia, son variables."
+      - id: s3
+        label: "Marcá las variables con tags {{nombre}} en el template."
+        detail: "Tags explicitas evitan confusiones cuando el equipo lo reusa."
+      - id: s4
+        label: "Probá el template con un set concreto de valores y leé el output."
+        detail: "Si el output es vago, la estructura del template todavia esta floja."
+      - id: s5
+        label: "Iterá: ajustá el template, probá con otro set de valores, repetí."
+        detail: "Un buen template se forja contra al menos dos casos distintos."
+---
+
+Misión del día: la estructura se reusa, los valores cambian. Si tu
+system prompt es texto suelto, no lo podés reusar; si es un template,
+sí.

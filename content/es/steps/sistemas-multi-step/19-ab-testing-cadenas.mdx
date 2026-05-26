@@ -1,0 +1,139 @@
+---
+title: "A/B testing: comparar dos versiones de la cadena"
+order: 19
+estimatedMinutes: 8
+characters:
+  - echo
+  - orbit
+exercise:
+  kind: prompt-AB
+  question: |
+    Tu cadena de procesamiento de tickets corre en producción.
+    <Character name="orbit" /> propuso un cambio en el step 2 (extract)
+    que en teoría reduce alucinaciones. Dos estrategias para evaluar
+    si efectivamente conviene desplegarlo a todo el tráfico. ¿Cuál
+    elegís?
+  optionA: |
+    DESPLIEGUE DIRECTO + COMPARACIÓN POST-HOC:
+
+    Cambiás el step 2 a la versión nueva. Lo desplegás al 100% del
+    tráfico. Esperás 7 días. Mirás métricas (tickets bien clasificados,
+    quejas de usuarios, accuracy del eval set) comparándolas con los
+    7 días anteriores.
+
+    Si las métricas son mejores, lo dejás. Si son peores, hacés rollback.
+  optionB: |
+    A/B TEST SIMULTÁNEO:
+
+    Hash determinístico del trace_id → 50% del tráfico ejecuta la
+    cadena vieja (control), 50% la nueva (variant). Mismas condiciones,
+    misma ventana de tiempo, mismo eval set corriendo sobre ambos.
+
+    Después de 7 días o N tickets, comparás métricas entre los dos
+    grupos. Si variant es significativamente mejor que control, promoveés.
+  correct: B
+  explanation: |
+    El A/B test simultáneo es el único método **honesto** para comparar
+    dos versiones de un sistema LLM. La comparación post-hoc (opción A)
+    está plagada de confusores:
+
+    1. **Distribución del input cambia.** Los tickets del lunes son
+       distintos a los del miércoles. Comparar semanas distintas es
+       comparar inputs distintos, no versiones distintas.
+    2. **Cambios externos te confunden.** Otro equipo cambió otro
+       sistema en paralelo. ¿La mejora es por tu cambio o por el de
+       ellos? No podés saberlo.
+    3. **Drift de prompts.** Los proveedores actualizan modelos cada
+       cierto tiempo silenciosamente. El "mismo modelo" del lunes
+       puede no ser idéntico al del miércoles.
+    4. **Sin grupo de control, no hay baseline real.** Estás comparando
+       contra recuerdos de cómo era antes, no contra datos reales del
+       mismo momento.
+
+    El A/B test elimina esos confusores **manteniendo todo igual entre
+    los dos grupos excepto la variable que querés medir**. Mismo tráfico,
+    mismo momento, mismo proveedor. la única diferencia es la versión
+    de tu cadena.
+
+    Tres reglas para que el A/B sea válido:
+
+    1. **Asignación determinística por hash.** Mismo usuario o mismo
+       request siempre va al mismo brazo. Sin esto, un usuario podría
+       ver respuestas inconsistentes y eso ensucia las métricas.
+    2. **Tamaño muestral suficiente.** Para detectar una mejora del 5%
+       en accuracy con confianza estadística, necesitás miles de
+       eventos, no docenas.
+    3. **Métricas pre-acordadas.** Definí ANTES qué vas a medir
+       (success rate, latencia, costo, satisfaction). Si las elegís
+       después de ver resultados, vas a encontrar números que confirman
+       lo que ya querías creer.
+hints:
+  - "El A/B test es la única forma de saber si un cambio en una cadena LLM realmente mejora algo. Las comparaciones 'antes/después' están contaminadas por todo lo que cambió alrededor."
+  - "Para hash determinístico: `arm = hash(user_id) % 2 == 0 ? 'control' : 'variant'`. Mismo usuario, mismo arm, siempre."
+  - "Cuidado con métricas con 'efectos de red'. Si tu cadena B genera respuestas más largas y los usuarios escriben menos follow-ups, tu métrica de 'mensajes por sesión' cae por una buena razón, no mala."
+teaches:
+  - ab-testing-chains
+requires:
+  - evals-author
+  - eval-judge-author
+---
+
+## El único método honesto para comparar dos versiones
+
+Cuando cambiás algo en una cadena LLM (prompt nuevo, modelo distinto, paso reordenado), ¿cómo sabés si el cambio es bueno? La respuesta natural es "lo despliego y miro las métricas". El problema: **comparar el "antes" con el "después" mide mucho más que tu cambio**.
+
+### Lo que pasa entre semana y semana
+
+- El tráfico cambia (estacionalidad, eventos, día de la semana).
+- Otros equipos cambian otros sistemas.
+- Los proveedores actualizan modelos silenciosamente.
+- La composición de usuarios cambia (nuevos onboardings, churn).
+- Tu propia interpretación de las métricas cambia (sesgo de confirmación).
+
+Cualquiera de esos puede explicar la "mejora" o "empeora" que ves, sin que tu cambio haya hecho nada.
+
+### El A/B test elimina esos confusores
+
+Dividís el tráfico en dos grupos simultáneos:
+
+- **Control (A)**: la versión vieja. 50% del tráfico.
+- **Variant (B)**: la versión nueva. 50% del tráfico.
+
+Ambos corren al mismo tiempo, con los mismos usuarios distribuidos por hash determinístico. La única diferencia entre los dos grupos es la versión de tu cadena. Cualquier diferencia en métricas se debe a tu cambio, no al ruido del mundo.
+
+### Las tres reglas que hacen al A/B válido
+
+#### 1. Asignación determinística por hash
+```
+arm = hash(user_id || trace_id) % 2 == 0 ? 'control' : 'variant'
+```
+
+Sin determinismo, un usuario podría ver respuestas inconsistentes (a veces control, a veces variant), lo cual deteriora la experiencia y contamina las métricas con varianza no-explicada.
+
+#### 2. Tamaño muestral suficiente
+Para detectar una mejora del 5% en accuracy con confianza estadística, típicamente necesitás **miles de eventos por brazo**. Para detectar una mejora del 1%, decenas de miles. El A/B con 30 eventos no te dice nada útil.
+
+#### 3. Métricas pre-acordadas
+Definí **antes** de ver resultados qué vas a medir y qué umbral cuenta como "ganadora". Si las decidís después, vas a encontrar la métrica que confirma lo que ya querés creer. Esto se llama p-hacking y arruina A/Bs serios.
+
+### Métricas típicas para A/B de cadenas LLM
+
+| Métrica | Cómo medirla |
+|---|---|
+| Eval pass rate | Eval set corriendo sobre cada brazo, % que pasa |
+| Latencia p50/p95 | Trace duration_ms, percentil 50 y 95 |
+| Costo medio por request | Sumar cost_usd de spans, promediar |
+| Tasa de degradación | % de traces con status `partial` |
+| Satisfaction (proxy) | Thumbs up/down del usuario, follow-up rate |
+
+### Cuándo NO usás A/B
+
+- **Cambios de seguridad.** Si parchaste una vulnerabilidad, no la dejes en control el 50% del tiempo. Despliegue total + monitoreo.
+- **Cambios obviamente mejores.** Fixing a bug? Just deploy.
+- **Tráfico chico.** Si tu sistema procesa 100 requests por semana, un A/B no va a alcanzar significancia. Usá eval offline.
+
+> Eval offline mide el **techo** de calidad (¿el cambio podría ser mejor?). A/B mide el **comportamiento real** (¿el cambio realmente es mejor con usuarios reales?). Los dos son necesarios; ninguno reemplaza al otro.
+
+### Tu ejercicio
+
+A la derecha, dos estrategias para evaluar el mismo cambio en una cadena. Elegí la que vas a usar en producción.

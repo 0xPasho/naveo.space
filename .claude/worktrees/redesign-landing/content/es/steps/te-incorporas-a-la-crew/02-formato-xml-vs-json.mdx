@@ -1,0 +1,69 @@
+---
+title: "El formato que Echo entiende"
+order: 2
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo es la quartermaster de la crew: verifica los datos de cada nuevo
+    crewmate y necesita la información en orden. Tienes dos versiones del
+    mismo prompt para que Echo extraiga `alias`, `puesto` y `contacto` de
+    una bio. ¿Cuál suele funcionar mejor con Claude?
+  optionA: |
+    Eres Echo, quartermaster de la crew. Devuelve alias, puesto y contacto
+    del siguiente texto en formato JSON:
+
+    { "alias": "...", "puesto": "...", "contacto": "..." }
+
+    Texto: "Bru, técnico de turno, bru@thecrew.io"
+  optionB: |
+    <task>
+      Extrae alias, puesto y contacto del nuevo crewmate.
+    </task>
+
+    <output_format>
+      { "alias": "string", "puesto": "string", "contacto": "string" }
+    </output_format>
+
+    <input>
+      Bru, técnico de turno, bru@thecrew.io
+    </input>
+  correct: B
+  explanation: |
+    Claude está entrenado con muchísimo HTML/XML y aprovecha tags como
+    `<task>`, `<input>` y `<output_format>` para separar **roles** dentro
+    del prompt. Eso reduce confusiones del tipo "¿el modelo cree que el
+    ejemplo es parte del input?" Ambos prompts piden lo mismo, pero el B
+    le da a Claude (y a Echo) un mapa explícito de qué es qué.
+
+    No es magia: con otro modelo el A funcionaría parecido. Es un estilo
+    afín a Claude.
+hints:
+  - "Mira cómo están separadas las secciones en cada prompt."
+  - "¿Qué pasaría si el texto del crewmate contuviera la palabra 'JSON' o 'alias'?"
+teaches:
+  - xml-tags-claude
+requires:
+  - prompt-anatomy-basics
+---
+
+## El estilo que <Character name="echo" /> no rechaza
+
+Claude funciona muy bien con **XML tags** dentro del prompt. No porque entienda XML literalmente, sino porque su entrenamiento incluye toneladas de HTML y aprendió a usar tags como **separadores de secciones**.
+
+Compara estas dos formas de pedirle un resumen de turno:
+
+```
+Resume el parte en una frase: Bruno terminó el mantenimiento del módulo 4 sin incidentes.
+```
+
+vs.
+
+```xml
+<task>Resume el parte en una frase.</task>
+<input>Bruno terminó el mantenimiento del módulo 4 sin incidentes.</input>
+```
+
+Cuando el input es corto, no se nota. Cuando el input crece o tiene palabras que parecen instrucciones, los tags evitan que Claude **confunda el contenido con lo que tú le mandas hacer**. Para <Character name="echo" /> — que procesa muchos partes parecidos al día — es la diferencia entre datos limpios y datos basura.
+
+> En este ejercicio no escribes nada — solo eliges. Más adelante, cuando llegues a ejercicios donde **tú** redactas el prompt, vas a querer tener esta intuición ya hecha.

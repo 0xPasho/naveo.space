@@ -1,0 +1,116 @@
+---
+title: "What the tool RETURNS is also a contract"
+order: 9
+estimatedMinutes: 5
+exercise:
+  kind: prompt-AB
+  question: |
+    Same tool (`get_shift_status`), two ways of returning the result. One
+    gives the agent what it needs to reason and move on; the other forces
+    it to parse, guess, and sometimes invent. Which is the good one?
+  optionA: |
+    Tool: get_shift_status(shift_id: string)
+    Description: "Returns a shift's status."
+
+    Return shape (undocumented):
+    "Shift shift-2026-05-14-N1 is currently active with 3 crewmates assigned (Em, Bru, Ly), started at 22:00 UTC, scheduled to end at 06:00 UTC. The shift lead is Em. Notes: refrigerant levels at 12% in bay 7."
+  optionB: |
+    Tool: get_shift_status(shift_id: string)
+    Description: "Returns a shift's status. Output shape:
+    { shift_id, status: 'scheduled'|'active'|'completed'|'cancelled',
+      crewmates: [{alias, role}], started_at: ISO, ends_at: ISO,
+      lead_alias, notes: string|null }."
+
+    Return shape:
+    {
+      "shift_id": "shift-2026-05-14-N1",
+      "status": "active",
+      "crewmates": [
+        {"alias": "Em", "role": "lead"},
+        {"alias": "Bru", "role": "engineer"},
+        {"alias": "Ly", "role": "medic"}
+      ],
+      "started_at": "2026-05-14T22:00:00Z",
+      "ends_at": "2026-05-15T06:00:00Z",
+      "lead_alias": "Em",
+      "notes": "refrigerant levels at 12% in bay 7"
+    }
+  correct: B
+  explanation: |
+    The tool input is a contract. **The output is too**. The difference is
+    almost no one treats it that way.
+
+    In option A, the tool returns **prose**. To use it the agent has to:
+
+    - Parse the sentence to extract the status ("currently active" → ?).
+    - Guess the format of the crewmate list ("Em, Bru, Ly").
+    - Infer who's the lead ("The shift lead is Em" embedded in another
+      sentence).
+    - Reconstruct dates from natural-language strings.
+
+    Each of those steps is **another chance to hallucinate**. The model is
+    good with text, but "good" isn't "never wrong". When the output is
+    prose, the agent's next action is built on your interpretation, not
+    on data.
+
+    In option B, the output is **structured and documented**:
+
+    - `status` is an implicit enum. the agent knows the possible values.
+    - `crewmates` is a list with a clear shape. iterable.
+    - `started_at` and `ends_at` are ISO. comparable, formattable without
+      ambiguity.
+    - The tool's description **documented the return shape**. the agent
+      knows what to expect before invoking.
+
+    When another tool needs `lead_alias`, the agent passes it directly
+    from `result.lead_alias`. Zero transformation, zero invention.
+
+    Track 3 rule almost no one applies: **document the output shape in
+    the tool description**. The agent reads it, uses it, and the next
+    decision comes out cleaner.
+hints:
+  - "Think about what the agent does AFTER invoking the tool. If it has to parse text, you gave it extra work and opened the door to invention."
+  - "Structure > prose. Always. Even if the end user sees text, the agent's intermediate conversation with its tools should be JSON-shaped."
+teaches:
+  - tool-output-shape
+requires:
+  - tool-description-craft
+---
+
+## You thought about the input. now think about the output.
+
+The whole Track so far insisted on the input contract: typed parameters, enums, format, required. But the tool also returns something, and **what it returns is a contract of equal weight**. The bad part is that most tool authors return "whatever the query spits out" or "a nice sentence" and forget.
+
+The problem: the agent **reads the tool's output as context** to decide the next step. If that context is ambiguous, the next step is ambiguous. If it's structured, the next step almost programs itself.
+
+### Three rules for tool outputs
+
+1. **Structure always.** Return a JSON object with named fields. Never prose when there's discrete data.
+
+2. **Document the shape in the description.** The model reads the description before invoking; if it knows what it'll get back, it plans the next step better.
+
+   ```
+   Description: "...Returns: { shift_id, status: 'scheduled'|'active'|
+   'completed', crewmates: [...], lead_alias }"
+   ```
+
+3. **Explicit enums in outputs too.** If `status` can only be 4 values, say so. The agent will trust and reason over that closed list instead of inventing branches for "active_with_warnings".
+
+### The optional-or-absent field case
+
+When a field might not be there:
+
+- **Use explicit `null`**, don't omit the field. `notes: null` tells the agent "I checked and there's nothing". If you omit `notes`, the agent doesn't know whether you didn't check, the tool partial-failed, or there's an actual emptiness.
+- **Document expected `null`s** in the description. `notes: string|null`.
+
+### The error case
+
+Errors are output too. You already saw in step 14 that the error shape is:
+
+```js
+{ ok: false, error: { code: "...", message: "...", ...extra } }
+```
+
+That shape is a contract just like the success shape. **Document it**. The agent reads it and learns to handle each `code`.
+
+> Mental test: if you were the agent and only saw the raw tool output (no extra context), could you decide the next step with certainty? If the answer is "depends on how I interpret this sentence", the output is poorly designed.

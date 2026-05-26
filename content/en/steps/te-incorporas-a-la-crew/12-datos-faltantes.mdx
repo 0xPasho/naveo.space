@@ -1,0 +1,121 @@
+---
+title: "When data is missing: explicit nulls"
+order: 12
+estimatedMinutes: 7
+characters:
+  - echo
+exercise:
+  kind: prompt-task
+  task: |
+    Echo processes bios and needs to extract the `email`. The catch: the
+    field "is missing" in **five different ways** in production. Your
+    prompt has to return real `null` (not the string "null", not "TBD",
+    not an empty string) in ALL cases where there is no valid email.
+
+    Output: `{ "email": "..." }` or `{ "email": null }`. No preamble.
+
+    Where the bio goes, use `{{input}}`.
+  starter: |
+    <task>
+      Extract the email from the following bio. Return JSON with the key
+      `email`. If there is no valid email, return null (the JSON null
+      value, not the word "null" as a string).
+
+      Consider "no email" any of:
+      - the bio doesn't mention an email
+      - mentions "no email", "pending", "TBD", "n/a", or similar placeholder
+      - the text looks like an email but isn't (e.g., "@user" with no domain)
+    </task>
+
+    <output_format>
+      { "email": "string@domain.com" | null }
+    </output_format>
+
+    <bio>
+      {{input}}
+    </bio>
+  testCases:
+    - input: "Bru, technician, bru@thecrew.io"
+    - input: "Lyra (alias 'Ly'), engineer. No contact registered yet."
+    - input: "Carlos, mechanic, contact TBD"
+    - input: "Em, nurse, @em on the internal comms channel"
+    - input: "María Pérez, security officer. María Pérez."
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "The output is valid JSON"
+    - id: has-email-key
+      kind: deterministic
+      check: has-keys
+      args: ["email"]
+      criterion: "Contains the `email` key"
+    - id: correct-null-handling
+      kind: llm-judge
+      criterion: "For bios with a real valid email (format local@domain), returns the exact email. For bios with no email, with placeholders ('TBD', 'pending', 'n/a'), with handles without a domain ('@em'), or that don't mention an email, returns the JSON null VALUE (not the string 'null', not an empty string, not the string 'TBD')."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "The trick is to enumerate the cases. 'No email' means 5 different things; your prompt has to list them so the model identifies them all."
+  - "Watch out for case 4 (`@em on the comms channel`). It looks like an email because of the `@`, but it has no domain. Explicitly tell the model that an email needs `local@domain` format."
+  - "To force a real `null` (not the string 'null'), add it to the prompt: 'return the JSON null value, not the word null as a string'."
+teaches:
+  - null-handling-systematic
+requires:
+  - prompt-task-basics
+  - structured-output
+---
+
+## A taxonomy of "missing data"
+
+When a field "isn't there", it can mean many different things. Your prompt needs to treat them all as `null`:
+
+1. **Not mentioned.** The bio simply doesn't include the field.
+2. **Mentioned as absent.** *"No contact registered"*, *"pending assignment"*.
+3. **Partially formatted.** *"@bru"* (looks like an email but isn't).
+4. **Contradictory.** *"No email. bru@thecrew.io"* (the bio contradicts itself).
+5. **Placeholder.** *"TBD"*, *"[redacted]"*, *"n/a"*.
+
+A prompt that just says "extract the email" will fail on some of these. The model can:
+
+- Return the literal placeholder (*"TBD"*).
+- Invent a plausible one (pure hallucination).
+- Return the handle as if it were an email.
+- Return empty string `""` instead of null.
+
+### The minimum rule: enumerate the "absence" triggers
+
+Your prompt has to **explicitly list** what counts as absence:
+
+```
+If there's no email OR the bio says "no contact", "pending", "TBD", "n/a",
+or any similar placeholder, return null.
+
+If the text looks like an email but doesn't have "local@domain.tld" format,
+also return null.
+```
+
+Four or five trigger words cover 90% of cases.
+
+### Real null, not the string "null"
+
+```json
+{ "email": null }     ✓ correct
+{ "email": "null" }   ✗ string that says null
+{ "email": "" }       ✗ empty string
+{ "email": "TBD" }    ✗ placeholder passed to output
+```
+
+Telling the model *"return the JSON null VALUE, not the word 'null' as a string"* usually does it. If in doubt, you can also say *"the output must parse with `JSON.parse` and the `email` key must be strictly null or a string"*.
+
+### Why this matters downstream
+
+When a downstream system receives `"TBD"` instead of `null`:
+
+- The filter "all emails containing @" lets it through as valid.
+- The attempt to email "TBD" breaks the system.
+- The query "count registered emails" returns an inflated count.
+
+Each of these bugs is **invisible on the first test pass** and shows up in production. That's why the null case is one of the most important to cover.
+
+On the right, five bios with different forms of "no email". Write a prompt that returns consistent `null` in the four cases without an email, and the real email in the first.

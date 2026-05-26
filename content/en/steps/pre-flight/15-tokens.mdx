@@ -1,0 +1,82 @@
+---
+title: "Tokens: how the model reads"
+order: 15
+estimatedMinutes: 4
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Two text strings. Both look short. Which one **costs more tokens** for
+    the model to read?
+  optionA: |
+    `"Paris is in France."` (four words of plain prose)
+  optionB: |
+    `"for (i = 0; i < 10; i++) { print(i); }"` (a short loop in code)
+  correct: B
+  explanation: |
+    Code gets tokenized much finer than prose. Each symbol (parentheses,
+    braces, semicolons, comparisons, assignments) tends to be its own
+    token, sometimes more.
+
+    "Paris is in France." uses around 5-6 tokens. The short code loop can
+    use 20-30, even though it looks shorter on the screen.
+
+    That's why an API that charges per token can cost you double if you
+    send code vs equivalent prose. And it's why, when you're processing
+    long documents, it pays to know how "dense" the thing you're feeding
+    the model really is.
+hints:
+  - "Punctuation counts as tokens. `()` is typically 2, `{}` too, `;` is 1 more."
+  - "Count the symbols in the code: `(`, `)`, `=`, `<`, `+`, `+`, `{`, `;`, `(`, `)`, `;`, `}`. Each one adds up."
+  - "Plain prose benefits from word-level tokens the model learned. Code doesn't."
+teaches:
+  - tokens-basics
+requires:
+  - llm-mental-model
+---
+
+## How the model "reads": tokens
+
+In lesson 14 you saw that the model predicts token by token. But what exactly is a token?
+
+### A token is NOT a word
+
+It's finer than that. A token is a **piece** the model treats as an atomic unit. It can be:
+
+- a whole word (`"hello"` → 1 token)
+- a piece of a word (`"unbelievable"` → about 3 tokens: `un` + `believ` + `able`)
+- a symbol or punctuation mark (`","` → 1 token; `"."` → 1 token)
+- a space (yes, spaces count too)
+
+Tokenization is a trick to **compress the vocabulary**: instead of one token per possible word (hundreds of thousands), the model learns about 50,000 common pieces and builds the rest by combining them.
+
+### Useful approximations
+
+For English text:
+
+- 1 token ≈ 0.75 words
+- 1 word ≈ 1.3 tokens
+- 1,000 tokens ≈ 750 words (about 3 paragraphs)
+
+For code:
+
+- Much denser. A short program can use double or triple the tokens of the same amount of prose.
+
+For non-English languages (Spanish, French, Chinese):
+
+- More tokens to say the same thing. The model is trained mostly on English data, so pieces in other languages tend to be shorter (and therefore, more of them).
+
+### Why you care
+
+Three practical reasons:
+
+**Cost.** APIs charge per token (input and output separately). More tokens, more money.
+
+**Limits.** Every model has a max tokens per call (its "context window", which is the next lesson). If you exceed it, it doesn't fit.
+
+**Speed.** The model generates token by token. A 1,000-token response is slower than a 100-token one.
+
+> Practical takeaway: **write short, precise prompts**, ask for concise outputs, and if you're processing a lot of text, split it into manageable chunks.
+
+On the right, two strings. Which one costs more tokens?

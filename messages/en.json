@@ -1,0 +1,1806 @@
+{
+  "common": {
+    "appName": "Naveo",
+    "header": {
+      "signIn": "Sign in",
+      "signUp": "Sign up"
+    },
+    "nav": {
+      "bridge": "Bridge",
+      "tracks": "Tracks",
+      "profile": "Profile"
+    },
+    "languageSwitcher": {
+      "label": "Language",
+      "es": "Español",
+      "en": "English"
+    },
+    "hud": {
+      "logoAlt": "Naveo",
+      "xpLabel": "XP",
+      "streakLabel": "Streak",
+      "streakAtRiskTitle": "Clear a step today so your streak survives.",
+      "gemsLabel": "Gems",
+      "heartsLabel": "Hearts",
+      "avatarFallback": "OF",
+      "streakPopover": {
+        "openLabel": "How the streak works",
+        "eyebrow": "Your streak",
+        "count": "{days, plural, =0 {No streak yet} =1 {1 day in a row} other {# days in a row}}",
+        "rules": {
+          "advance": "Advance through a lesson step",
+          "check": "Submit an exercise",
+          "daily": "Do today's mission",
+          "justOpen": "Just opening the app doesn't count"
+        },
+        "freezes": "{count, plural, =1 {You have 1 streak shield in reserve} other {You have # streak shields in reserve}}",
+        "atRiskNudge": "Your streak is at risk today. The 1-minute daily mission locks it in.",
+        "atRiskCta": "Do today's mission",
+        "footer": "Skip a day and it resets to 0"
+      },
+      "streakSaveBanner": {
+        "message": "{count, plural, =1 {Your streak shield covered 1 day. The streak survives.} other {Your streak shields covered # days. The streak survives.}}",
+        "dismiss": "Dismiss"
+      },
+      "xpPopover": {
+        "openLabel": "How XP works",
+        "eyebrow": "Experience",
+        "count": "{xp, plural, =0 {No XP yet} =1 {1 XP earned} other {# XP earned}}",
+        "rules": {
+          "firstTry": "+12 XP for clearing a step on the first try",
+          "laterTry": "+8 XP for clearing on a later try",
+          "capstones": "Capstones grant a bigger XP push"
+        },
+        "footer": "More XP, closer to next promotion"
+      },
+      "gemsPopover": {
+        "openLabel": "How gems work",
+        "eyebrow": "Gems",
+        "count": "{gems, plural, =0 {No gems yet} =1 {1 gem in wallet} other {# gems in wallet}}",
+        "rules": {
+          "earnFirstTry": "+3 gems each time you clear a step on the first try",
+          "earnCapstones": "Bigger gem rewards from courses and capstones",
+          "spendShop": "Spend on hearts refill, streak freeze, or ask the crew"
+        },
+        "footer": "Visit the Shop to redeem"
+      },
+      "heartsPopover": {
+        "openLabel": "How hearts work",
+        "eyebrow": "Hearts",
+        "count": "{hearts}/{max} hearts",
+        "full": "At max",
+        "nextIn": "Next heart in {time}",
+        "rules": {
+          "budget": "Budget of {max} LLM-judge checks",
+          "regen": "One heart regenerates every {interval}",
+          "hintsCost": "Asking for a hint costs 1 heart",
+          "passive": "Reading lessons or running drills doesn't cost a heart"
+        },
+        "footer": "In a hurry? Refill in the Shop"
+      }
+    },
+    "userMenu": {
+      "openLabel": "Open account menu",
+      "profile": "My profile",
+      "signOut": "Sign out"
+    },
+    "signInPrompt": {
+      "eyebrow": "GUEST ACCESS",
+      "signIn": "Sign in",
+      "signUp": "Create account",
+      "explore": "Browse tracks"
+    },
+    "anonGate": {
+      "profile": {
+        "heading": "Your profile is waiting",
+        "body": "Sign in to see your progress, XP, streak, and the achievements you'll unlock with the crew."
+      },
+      "practice": {
+        "heading": "Practice, tailored to you",
+        "body": "The practice queue is built from the steps you're learning. Sign in so the crew can put your session together."
+      },
+      "daily": {
+        "heading": "Daily mission",
+        "body": "Daily missions are assigned based on your progress. Sign in to receive yours and keep the streak alive."
+      },
+      "shop": {
+        "heading": "Sign in to redeem",
+        "body": "Buying gem packs or using boosters needs an account first. It's free and takes 30 seconds."
+      }
+    },
+    "sidebar": {
+      "menuTrigger": "Open menu",
+      "sections": {
+        "onboard": "Onboard",
+        "bridge": "Bridge"
+      },
+      "items": {
+        "dashboard": "Dashboard",
+        "missionPath": "Mission Path",
+        "practice": "Practice",
+        "crew": "The Crew",
+        "workbench": "Workbench",
+        "leaderboard": "Leaderboard",
+        "shop": "Shop",
+        "profile": "Profile"
+      },
+      "daily": {
+        "label": "Daily",
+        "streakTitle": "{days}-day streak",
+        "streakBody": "Don't break the chain"
+      }
+    }
+  },
+  "workbench": {
+    "eyebrow": "Workbench · Forge",
+    "title": "Your prompt bench.",
+    "body": "Free space to test prompts. No XP, no rubric, no penalty for retrying. just you, the model, and the loop. Forge keeps your last six runs so you can compare versions."
+  },
+  "comingSoon": {
+    "eyebrow": "Coming soon",
+    "ctaBack": "Back to the map",
+    "ctaDashboard": "View the bridge",
+    "practice": {
+      "title": "Practice replays.",
+      "body": "Echo is calibrating a review mode: past drills with fresh variations to keep your reflexes sharp. Not open yet. check back when Echo gives the green light."
+    },
+    "crew": {
+      "title": "Meet your crew.",
+      "body": "Soon you'll be able to read each member's full dossier. Vega, Atlas, Echo, Forge, Orbit, Hex. backstory, specialty, recurring lines. For now you meet them inside the lessons."
+    },
+    "leaderboard": {
+      "title": "Fleet leaderboard.",
+      "body": "Atlas is crunching weekly rankings. who keeps their streak, who clears the most capstones, who hangs onto their hearts. First publish drops once there's enough fleet."
+    },
+    "shop": {
+      "title": "Base shop.",
+      "body": "Vega is haggling with the quartermaster: insignia cosmetics, heart refills, tokens for extra retries. Hold onto your gems. opens soon."
+    }
+  },
+  "pageError": {
+    "notFound": {
+      "eyebrow": "LOST SIGNAL · 404",
+      "title": "This deck doesn't exist.",
+      "body": "Echo scanned the manifest. Nothing here matches the address you came from. Head back to the bridge and try a different route.",
+      "ctaBridge": "Back to the bridge",
+      "ctaTracks": "Browse tracks"
+    },
+    "error": {
+      "eyebrow": "SYSTEM FAULT · 500",
+      "title": "Something cracked on the bridge.",
+      "body": "Forge is on it. Try again. most of the time it's a passing glitch. If it persists, ping the crew.",
+      "ctaRetry": "Try again",
+      "ctaHome": "Back to home",
+      "details": "Error details"
+    }
+  },
+  "shop": {
+    "eyebrow": "Shop · Quartermaster",
+    "title": "Power-ups & boosters",
+    "subtitle": "Insurance and refills only. never a skip on evaluation.",
+    "greeting": "Welcome aboard. Stock up on the gear you need to keep the streak alive.",
+    "walletLabel": "Your wallet",
+    "itemsLabel": "Available items",
+    "powerUps": "Power-ups",
+    "wallet": {
+      "gems": "Gems",
+      "hearts": "Hearts",
+      "freezes": "Streak shields"
+    },
+    "buy": "Buy · {cost}",
+    "buyPending": "Processing…",
+    "alreadyFull": "Already at max",
+    "badge": {
+      "boughtToday": "Bought today · ×{count}"
+    },
+    "recommend": {
+      "eyebrow": "Forge recommends",
+      "cta": "Buy now",
+      "heart-refill": "Your hearts are running low. Grab a refill so you can keep going without waiting for the regen.",
+      "heart-pack": "Hearts are stable. top them all off before your next long session so nothing slows you down.",
+      "streak-freeze": "No streak shields in stock. Stack one before a busy day so a skipped session doesn't reset your run."
+    },
+    "history": {
+      "label": "Your recent history",
+      "heading": "Recent purchases",
+      "unknownItem": "Purchase (unknown item)"
+    },
+    "items": {
+      "streak-freeze": {
+        "name": "Streak shield",
+        "description": "If you skip a day, this shield absorbs the hit and your streak survives. Consumed automatically when needed. Stackable. buy several if you're traveling."
+      },
+      "heart-refill": {
+        "name": "Heart refill (×1)",
+        "description": "Restore one heart right now. Useful when you're one short of finishing an exercise and don't want to wait for the regen."
+      },
+      "heart-pack": {
+        "name": "Heart pack (full)",
+        "description": "Refill all hearts to max at once. Useful when starting a long session."
+      }
+    },
+    "feedback": {
+      "success": "Done. {name} added to your wallet.",
+      "insufficientGems": "Not enough gems.",
+      "alreadyFull": "Hearts are already at max. no need to buy.",
+      "unauthorized": "You need to sign in to buy.",
+      "invalidInput": "Something went wrong with the purchase. Try again."
+    },
+    "gems": {
+      "eyebrow": "Top up gems",
+      "subtitle": "One-time payment. Gems never expire and you can spend them on hearts, shields, and future power-ups.",
+      "sectionLabel": "Gem packs",
+      "packs": {
+        "small": {
+          "name": "Small pack"
+        },
+        "medium": {
+          "name": "Medium pack"
+        },
+        "large": {
+          "name": "Large pack"
+        }
+      },
+      "badge": {
+        "popular": "Most popular",
+        "best": "Best value"
+      },
+      "button": {
+        "buy": "Buy",
+        "pending": "Opening checkout…"
+      },
+      "feedback": {
+        "comingSoon": "Payments rolling out soon. We're wiring up checkout.",
+        "stripeError": "Couldn't open checkout. Please try again.",
+        "unauthorized": "You need to sign in to buy."
+      },
+      "status": {
+        "successEyebrow": "Payment confirmed",
+        "successBody": "Gems will land in your wallet in a few seconds. If more than a minute passes, refresh the page.",
+        "cancelEyebrow": "Purchase canceled",
+        "cancelBody": "You left checkout before paying. Try again whenever you want."
+      }
+    },
+    "philosophy": "The philosophy: no item lets you skip evaluation. Hints, exercises, and rubrics are always free."
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Learn applied AI, not theoretical AI",
+      "heading": "Read on the left. Practice on the right. AI grades what your prompt actually achieves.",
+      "sub": "Naveo is the gamified platform for getting good at prompt engineering, MCPs, agents and complex flows. Real practice, instant feedback.",
+      "cta": "Start with Vega",
+      "secondary": "Read the field log",
+      "note": "First step is free. No card. No install."
+    },
+    "preview": {
+      "aria": "Lesson player preview",
+      "breadcrumb": "Prompt anatomy · L1 · Role and context",
+      "reading": {
+        "eyebrow": "Reading",
+        "title": "Role and context",
+        "body": "A good prompt starts by telling the model who it is and what problem it solves. Without that, it hallucinates.",
+        "snippetRole": "You are a strict data extractor"
+      },
+      "exercise": {
+        "eyebrow": "Your turn",
+        "question": "Which of the two prompts will force clean JSON?",
+        "optionA": "Return the answer as JSON.",
+        "optionB": "Return ONLY JSON. No text before or after. Schema: '{' name, age, email '}'",
+        "feedback": "B locks the format. The rubric verifies the model doesn't preamble."
+      },
+      "footer": {
+        "back": "Back",
+        "guide": "Vega guides you",
+        "next": "Next"
+      }
+    },
+    "loop": {
+      "eyebrow": "How it works",
+      "title": "Three moves. No video, no slides, no waiting.",
+      "steps": {
+        "read": {
+          "title": "Read on the left",
+          "body": "A short page with the principle, the pattern and an anti-pattern. No fifteen minutes of theory before you touch anything."
+        },
+        "practice": {
+          "title": "Practice on the right",
+          "body": "You write the prompt, pick the option, label the anatomy or design the tool schema. The exercise changes with the skill."
+        },
+        "judge": {
+          "title": "The rubric grades you",
+          "body": "We don't compare your prompt to a fixed answer. We grade what your prompt achieves against a rubric with an LLM judge."
+        }
+      }
+    },
+    "rubric": {
+      "eyebrow": "The differentiator",
+      "title": "We don't grade your prompt. We grade what your prompt achieves.",
+      "sub": "Ninety percent of what we teach has no single right answer. That's why the heart of the product is a rubric with an LLM judge, not a string comparator.",
+      "promptLabel": "Your prompt",
+      "promptBody": "You are a data extractor.\nFrom the text below, return JSON with name, age, email.\nIf a field is missing, leave it as null.\n\nText: \"Carlos, no email on file\"",
+      "promptNote": "Case 3 fails: the model invents a plausible email.",
+      "rubricLabel": "Rubric",
+      "rubricStatus": "3 / 4",
+      "checks": {
+        "json": {
+          "label": "Returns valid JSON"
+        },
+        "fields": {
+          "label": "Contains name, age, email"
+        },
+        "hallucinate": {
+          "label": "Does not hallucinate missing data",
+          "hint": "When the email is missing, send null instead of inventing one."
+        },
+        "shape": {
+          "label": "One line of JSON, no preamble"
+        }
+      }
+    },
+    "tracks": {
+      "eyebrow": "Curriculum",
+      "title": "Four tracks. One progression.",
+      "sub": "You start with the foundational skill and stack up to orchestrating agents.",
+      "seeAll": "See all tracks",
+      "enter": "Enter",
+      "featuredLabel": "Main course",
+      "tiles": {
+        "prompting": {
+          "title": "Prompt anatomy",
+          "body": "Role, context, examples, structured format. The skill everything else stacks on top of.",
+          "duration": "8 lessons · 90 min",
+          "lessons": "8 lessons"
+        },
+        "conversation": {
+          "title": "Conversations that work",
+          "body": "Memory, follow-ups, recovering bad outputs. Driving an LLM multi-turn toward a concrete goal.",
+          "duration": "6 lessons · 70 min",
+          "lessons": "6 lessons"
+        },
+        "mcps": {
+          "title": "Tools and MCPs",
+          "body": "You design tools the LLM actually decides to use. Your description is what the model reads. Unique content nobody else teaches.",
+          "duration": "10 lessons · 2 h",
+          "lessons": "10 lessons"
+        },
+        "flows": {
+          "title": "Complex flows",
+          "body": "Chains, routing, agents, evals. When a single prompt isn't enough.",
+          "duration": "8 lessons · 2 h",
+          "lessons": "8 lessons"
+        }
+      }
+    },
+    "stations": {
+      "eyebrow": "The bridge stations",
+      "title": "Each crew member runs a station. Their authority comes from knowing.",
+      "sub": "Not decoration. Your progress is measured per station: you master Comms with Vega, Engineering with Forge, Security with Hex. Each track unlocks more coordination.",
+      "atlas": {
+        "eyebrow": "Captain",
+        "name": "Atlas signs your capstones",
+        "body": "Atlas has no station. He crosses all of them. He shows up at the end of each track and, if you pass, he logs it. If not, he sends you to practice with the right person."
+      },
+      "tiles": {
+        "vega": {
+          "station": "Comms",
+          "name": "Vega",
+          "body": "The voice that teaches you to structure prompts. Role, context, examples, format. You start hearing her at step one.",
+          "example": "prompt-anatomy · few-shot · system vs user"
+        },
+        "echo": {
+          "station": "Data",
+          "name": "Echo",
+          "body": "Conversation memory, surgical corrections, recovering outputs without losing what worked. She doesn't rewrite, she edits.",
+          "example": "conversation-goal · surgical-correction"
+        },
+        "forge": {
+          "station": "Engineering",
+          "name": "Forge",
+          "body": "The workshop. Tool schemas, descriptions the LLM understands, MCPs, error handling. Where ideas become tools.",
+          "example": "tool-schema · mcp-multi-tool"
+        },
+        "orbit": {
+          "station": "Mission Ops",
+          "name": "Orbit",
+          "body": "Chains, routing, agents with a loop. Orchestrates multi-step missions and decides when to parallelize.",
+          "example": "chain-design · agent-loop"
+        },
+        "hex": {
+          "station": "Security",
+          "name": "Hex",
+          "body": "Direct and indirect injection, leaks, adversarial validation. If your system touches users, Hex audits it.",
+          "example": "prompt-injection · hardening"
+        }
+      }
+    },
+    "daily": {
+      "eyebrow": "Daily quest",
+      "title": "A short quest every day. From things you've already seen.",
+      "sub": "Five to eight scenes, two or three minutes, one concept that reinforces your latest lesson. The streak lives here.",
+      "bullets": {
+        "length": "Five to eight mini exercises, not a 30-second quiz.",
+        "bias": "Biased to concepts you've already seen. You never get topics you haven't learned yet.",
+        "streak": "Daily streak, lives and gems. The ritual compounds."
+      },
+      "card": {
+        "label": "Today with Echo",
+        "scenes": "5 scenes",
+        "title": "Surgical correction on a prompt",
+        "body": "The user asked for a change. You edit without breaking the rest of the output.",
+        "progress": "Your progress",
+        "reward": "+ 40 XP · 1 gem",
+        "cta": "Start"
+      }
+    },
+    "progress": {
+      "eyebrow": "Your progress",
+      "title": "Everything you do is measured. And visible.",
+      "sub": "XP, streak, lives, gems and mastery per station. Plus the weekly league against everyone else on board.",
+      "hud": {
+        "streakLabel": "streak",
+        "heartsLabel": "lives",
+        "gemsLabel": "gems"
+      },
+      "mastery": {
+        "label": "Station mastery",
+        "note": "0 to 100 · 4 tiers",
+        "rows": {
+          "vega": "Vega · Comms",
+          "echo": "Echo · Data",
+          "forge": "Forge · Engineering",
+          "hex": "Hex · Security"
+        }
+      },
+      "league": {
+        "label": "This week's league",
+        "tier": "Bronze",
+        "subs": {
+          "captain": "streak 21 · platoon cap.",
+          "you": "streak 14 · promoting",
+          "steady": "streak 9 · steady",
+          "rising": "streak 6 · rising"
+        }
+      }
+    },
+    "cta": {
+      "eyebrow": "Come aboard",
+      "title": "Your first shift starts with Vega.",
+      "sub": "First step is free and takes five minutes. If you like how it feels, you keep going. If not, you lost nothing.",
+      "primary": "Start the first step",
+      "secondary": "See curriculum",
+      "signed": "Logged. Atlas"
+    }
+  },
+  "tracks": {
+    "list": {
+      "eyebrow": "{count} tracks available",
+      "headingLead": "Pick a track.",
+      "headingAccent": "Start now.",
+      "subheading": "Each track is a series of steps with the crew member who owns that protocol. Mix freely. Echo's checklist is unlocked from your first hello.",
+      "empty": "No tracks published yet.",
+      "summary": {
+        "progressLabel": "Your progress",
+        "progressValue": "{done} / {total}",
+        "xpLabel": "XP banked",
+        "xpDelta": "+ {delta} this week",
+        "capstonesLabel": "Capstones",
+        "capstonesValue": "{done} / {total}",
+        "capstonesDelta": "{remaining} to clear"
+      },
+      "chips": {
+        "all": "All tracks",
+        "prompting": "Prompting",
+        "mcp": "MCP & Tools",
+        "skills": "Skills",
+        "agents": "Agents",
+        "code": "Code with AI",
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "card": {
+        "unitLabel": "Unit 0{unit} · {duration}",
+        "completed": "completed",
+        "stepsLabel": "{done}/{total} steps",
+        "xpLabel": "{xp} XP",
+        "boss": "Capstone",
+        "reportingOfficers": "Mentors",
+        "launch": "Start →",
+        "review": "Review · Replay",
+        "continueAt": "Continue · Step {step}",
+        "lockedPrereq": "Clear \"{prereq}\" first",
+        "bestPick": "Best pick",
+        "phrasePreview": "What you'll be able to do by the end of this track"
+      },
+      "globalPath": {
+        "eyebrow": "▮▮ THE FLEET MAP · {count} TRACKS",
+        "title": "Your path through <em>the fleet</em>",
+        "subtitle": "Each track is a world. You clear them left-to-right and down. at the end, Atlas is waiting on the bridge.",
+        "progressLabel": "PROGRESS",
+        "xpLabel": "XP TOTAL",
+        "xpHint": "banked",
+        "capstoneLabel": "CAPSTONE",
+        "capstoneHint": "to clear",
+        "chapter": "TRACK 0{unit} · {title}",
+        "stamp": {
+          "done": "COMPLETED",
+          "current": "IN PROGRESS",
+          "locked": "LOCKED",
+          "boss": "CAPSTONE"
+        },
+        "cta": {
+          "replay": "Replay",
+          "xpBanked": "{xp} XP banked",
+          "continue": "Continue · ST {step}",
+          "openMap": "Open map",
+          "locked": "Locked",
+          "unlocksAfter": "Clear \"{course}\" first",
+          "attack": "Engage the bridge",
+          "bossNote": "Unlocks once every track is cleared"
+        }
+      }
+    },
+    "detail": {
+      "backToTracks": "All tracks",
+      "eyebrow": "UNIT 0{unit} · {rank} · {steps} STEPS · {duration}",
+      "titlePrefix": "Hello, {mentor} ",
+      "tagDot": "•",
+      "summary": {
+        "runLabel": "YOUR RUN",
+        "runValue": "{done} / {total}",
+        "xpLabel": "XP BANKED",
+        "xpValue": "{done} / {total}",
+        "capstoneLabel": "CAPSTONE"
+      },
+      "ctaContinueAt": "Continue · Step {step} → {title}",
+      "ctaStart": "Start · Step 1",
+      "ctaMap": "View mission map",
+      "progressLabel": "{pct}% completed",
+      "debrief": {
+        "eyebrow": "DEBRIEF",
+        "eyebrowAccent": "WHAT YOU'LL CLEAR",
+        "title": "By end of shift, you can ",
+        "officerRole": "SIGNS OFF ON THIS UNIT",
+        "points": [
+          "Read a model's mood from its first sentence",
+          "Pick the right role for the right turn",
+          "Write examples that actually teach",
+          "Spec a JSON schema Echo will sign off on",
+          "Diagnose why a 'good' prompt drifts",
+          "Clear a capstone with hearts to spare"
+        ]
+      },
+      "path": {
+        "title": "Course path",
+        "meta": "{done} / {total} steps cleared",
+        "continueTooltip": "Continue!"
+      },
+      "aside": {
+        "nextStepEyebrow": "NEXT · STEP {step}",
+        "nextStepBlurb": "Pick up where you left off. The next shift is queued and Echo's standing by.",
+        "metaXp": "XP",
+        "metaMin": "min",
+        "metaLeft": "left",
+        "startCta": "Start step",
+        "capstoneEyebrow": "CAPSTONE IN {count} STEPS",
+        "capstoneName": "{mascot} waits on the bridge",
+        "capstoneSub": "3 runs · 4/4 criteria. No misses.",
+        "legend": {
+          "done": "Completed",
+          "current": "Current",
+          "boss": "Boss / Capstone",
+          "locked": "Locked"
+        }
+      },
+      "syllabus": {
+        "heading": "Course content",
+        "metaSummary": "{lessons} lessons · {capstones} capstone · ~ {duration}",
+        "kind": {
+          "read": "READ + DRILL",
+          "drill": "MULTI-CHOICE",
+          "build": "PROMPT BUILDER",
+          "verify": "FREE TEXT · ECHO RUN",
+          "chat": "MULTI-TURN",
+          "boss": "CAPSTONE"
+        },
+        "row": {
+          "stepsAndXp": "{steps} steps · {xp} XP",
+          "cleared": "Cleared",
+          "upNext": "Up next",
+          "locked": "Locked",
+          "pct": "{pct}%",
+          "replay": "Replay",
+          "resume": "Resume →",
+          "continue": "Continue →",
+          "tagBoss": "Clears unit",
+          "tagLocked": "Locked"
+        },
+        "expanded": {
+          "youllDo": "YOU'LL DO",
+          "youllUnlock": "YOU'LL UNLOCK",
+          "doItems": [
+            "Read a short scene. Vega vs. Echo on the bridge",
+            "Drag two examples into a prompt skeleton",
+            "Run the prompt; let Echo grade 3 cases"
+          ],
+          "unlockItems": [
+            "{xp} XP",
+            "1 ★ → 3 ★ on this step",
+            "Eligibility for the capstone"
+          ]
+        }
+      },
+      "capstones": {
+        "default": "Capstone",
+        "echoAudit": "Echo audit",
+        "atlasBrief": "Captain Atlas's brief"
+      }
+    }
+  },
+  "dashboard": {
+    "heading": "Your progress",
+    "summary": "You've completed {completed} of {total} steps.",
+    "signInToTrack": "Sign in to save your progress between sessions.",
+    "browseTracks": "Browse tracks"
+  },
+  "dashboardBridge": {
+    "banner": {
+      "eyebrow": "BRIDGE LOG · DAY 47",
+      "title": "Welcome back, Officer. <mentor>Vega</mentor> has prepped your shift.",
+      "statusBody": "Status: <online>● ONLINE</online> · 3 quests pending · capstone in 2 steps",
+      "ctaResume": "Resume shift",
+      "ctaResumeDaily": "Do today's mission",
+      "ctaBrief": "Brief from Atlas"
+    },
+    "telemetry": {
+      "xp": "XP",
+      "streak": "STREAK",
+      "gems": "GEMS",
+      "hearts": "HEARTS",
+      "rank": "RANK",
+      "rankValue": "ENSIGN",
+      "nextLv": "NEXT LV",
+      "nextLvValue": "180 XP"
+    },
+    "crew": {
+      "title": "THE CREW",
+      "subtitle": "4 ROBOTS",
+      "openDossiers": "Open dossiers →"
+    },
+    "shipProgress": {
+      "title": "SHIP SYSTEMS",
+      "countLabel": "{online}/{total} systems online",
+      "allOnline": "All systems online",
+      "statusOffline": "Offline",
+      "statusSpooling": "Spooling · {percent}%",
+      "statusOnline": "Online",
+      "optionalChip": "OPTIONAL"
+    },
+    "weekly": {
+      "title": "WEEKLY TELEMETRY",
+      "range": "7d · 30d · ALL",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ]
+    },
+    "streakBlock": {
+      "title": "12-DAY STREAK",
+      "freeze": "{count, plural, =1 {Forge Freeze · 1} other {Forge Freeze · #}}",
+      "noBreak": "Don't break it",
+      "noBreakBody": "Practice in <time>4h 22m</time> to lock today."
+    },
+    "practice": {
+      "title": "PRACTICE",
+      "shuffle": "MIX UP →",
+      "openQueue": "OPEN QUEUE →",
+      "empty": "Nothing pending. Clear a lesson or today's mission to feed the queue.",
+      "noQueue": "·",
+      "drill": "DRILL",
+      "drillLabel": "Fix 5 fuzzy prompts",
+      "build": "BUILD",
+      "buildLabel": "Stack a JSON prompt",
+      "chat": "CHAT",
+      "chatLabel": "Multi-turn with Vega",
+      "tool": "TOOL",
+      "toolLabel": "Call an MCP"
+    },
+    "daily": {
+      "eyebrow": "Daily mission",
+      "doneChip": "Done",
+      "sceneCount": "{count, plural, =1 {1 scene} other {# scenes}}",
+      "ctaStart": "Start mission",
+      "ctaReplay": "Replay"
+    }
+  },
+  "bridge": {
+    "anon": {
+      "heading": "Bridge closed",
+      "body": "Sign in to access your bridge. your progress, your next shift, and the crew you'll work with all live there.",
+      "browseTracks": "Browse available tracks",
+      "status": "Guest access"
+    },
+    "defaultGreetingName": "officer",
+    "greet": {
+      "eyebrow": "{name} · {role} · {time} SHIP TIME",
+      "morning": "Good morning, {name}.",
+      "afternoon": "Good afternoon, {name}.",
+      "evening": "Good evening, {name}.",
+      "messageInProgress": "You have <accent>a pending practice</accent> from yesterday. and I want it clean.",
+      "messageNextUp": "<accent>A new shift</accent> is queued on your path.",
+      "messageDone": "You've cleared everything available. <accent>Waiting on the next track</accent>.",
+      "ctaContinue": "Continue",
+      "ctaStart": "Start the first shift",
+      "ctaMap": "Open the map →"
+    },
+    "cards": {
+      "continue": {
+        "eyebrow": "CONTINUE · UNIT 0{unit} · STEP {step}",
+        "progress": "{done} OF {total}",
+        "cta": "Continue lesson",
+        "emptyTitle": "Pick a track to start"
+      },
+      "daily": {
+        "eyebrow": "DAILY · LOSE NO HEARTS",
+        "title": "Daily quest",
+        "body": "Fix three fuzzy prompts before Echo flags them. Forge gives Forge-tokens.",
+        "reward": "+ 40 XP",
+        "cta": "Start daily"
+      },
+      "capstone": {
+        "eyebrow": "CAPSTONE · LOCKED",
+        "title": "\"Talk your way past the bridge\"",
+        "body": "Atlas is waiting. Pass <b>Few-shot</b> and <b>Schemas</b> first.",
+        "unlocks": "UNLOCKS IN 2 STEPS",
+        "bodyDynamic": "From <b>{track}</b>. clear the path and run the boss.",
+        "unlocksDynamic": "{steps, plural, =1 {Unlocks in 1 step} other {Unlocks in # steps}}",
+        "allClearedEyebrow": "CAPSTONES · ALL CLEARED",
+        "allClearedTitle": "Every boss down",
+        "allClearedBody": "Every track with a capstone is signed off. Wait for the next track to drop or replay anything you want to sharpen.",
+        "cta": "Open capstone"
+      }
+    },
+    "comms": {
+      "title": "Ship comms · live",
+      "ago": {
+        "minutes": "{n}m",
+        "hours": "{n}h"
+      },
+      "messages": {
+        "echo": "Run #042 cleared. 4/4 criteria. Logged.",
+        "vega": "Ready when you are. No rush.",
+        "atlas": "Capstone armed. Brief on stand-by.",
+        "forge": "I'm wiring up tools. Don't break the bench.",
+        "orbit": "Flow mapped out. Three steps, one branch, one loop.",
+        "hex": "Found a crack. Sending you the repro."
+      }
+    },
+    "crew": {
+      "title": "Your crew",
+      "openDossiers": "Open dossiers →",
+      "switchMentor": "Switch mentor →",
+      "roles": {
+        "vega": "Mentor",
+        "echo": "Verifier",
+        "atlas": "Captain",
+        "forge": "Engineer",
+        "orbit": "Operator",
+        "hex": "Red team"
+      },
+      "locked": "LOCKED"
+    },
+    "pathHeader": {
+      "eyebrow": "UNIT {unit} · {tag} · {count, plural, =1 {1 LESSON} other {# LESSONS}}",
+      "title": "Path of <em>{mentor}</em>",
+      "progress": "{done} / {total} · {pct}%",
+      "ctaMap": "Map",
+      "meta": {
+        "xpBanked": "XP BANKED",
+        "stars": "STARS",
+        "boss": "BOSS"
+      }
+    },
+    "stats": {
+      "title": "Ship stats",
+      "xpTodayLabel": "XP TODAY",
+      "xpTodayDelta": "+{delta}",
+      "streakLabel": "STREAK",
+      "streakValue": "{days}d",
+      "streakDelta": "best {best}"
+    }
+  },
+  "activity": {
+    "empty": "No activity yet. Start a shift and it'll show up here."
+  },
+  "profile": {
+    "defaultName": "Officer",
+    "eyebrow": "Registered · {days} days on bridge",
+    "handle": "@{handle} · joined {date}",
+    "greeting": "Hey {name}. bridge crew here. Keep that streak alive!",
+    "rank": {
+      "name": "First Officer",
+      "meta": "{xp} XP to <b>Quartermaster</b>",
+      "cardTitle": "Rank progress"
+    },
+    "bio": "\"Trying to convince a fleet of robots I belong here. So far: streak holding, no spills.\"",
+    "stats": {
+      "totalXp": "Total XP · +{delta} this week",
+      "currentStreak": "Current streak · best {best}",
+      "stepsCleared": "Steps cleared · {tracks} tracks",
+      "totalXpShort": "TOTAL XP",
+      "streakShort": "STREAK",
+      "stepsShort": "STEPS"
+    },
+    "chart": {
+      "title": "XP",
+      "titleAccent": "Last 12 weeks",
+      "delta": "+{delta} vs prev",
+      "axisStart": "12w ago",
+      "axisMid": "6w",
+      "axisEnd": "This week"
+    },
+    "calendar": {
+      "title": "Streak",
+      "titleAccent": "8 weeks",
+      "active": "{days}d active",
+      "legendDone": "practiced",
+      "legendMiss": "missed",
+      "legendToday": "today"
+    },
+    "mastery": {
+      "title": "Mastery",
+      "titleAccent": "{count} tracks",
+      "locked": "LOCKED"
+    },
+    "badges": {
+      "title": "Badges",
+      "titleAccent": "{earned, plural, =0 {no badges} one {# badge} other {# badges}}",
+      "empty": "Close every step of a course to earn your first badge."
+    },
+    "activity": {
+      "title": "Activity",
+      "titleAccent": "Recent",
+      "cleared": "Cleared",
+      "failed": "Failed",
+      "xpUnit": "+ {xp} XP",
+      "empty": "No activity yet. Every closed shift will appear here.",
+      "log": "Full log →",
+      "logTitle": "Full log",
+      "logSubtitle": "{n, plural, one {# shift logged} other {# shifts logged}}",
+      "close": "Close"
+    },
+    "signOut": "Sign out"
+  },
+  "leaderboard": {
+    "you": "You",
+    "context": {
+      "eyebrow": "Last 7 days",
+      "meta": "{n, plural, =0 {no officers} one {# officer} other {# officers}}"
+    },
+    "podium": {
+      "eyebrow": "Top 3 · 7 days",
+      "title": "The three with the most <em>XP</em>.",
+      "champion": "Champion",
+      "second": "Second",
+      "third": "Third"
+    },
+    "status": {
+      "rank": "Rank",
+      "outOf": "of {n}",
+      "eyebrow": "Your 7-day position",
+      "leadingHeadline": "You're leading the fleet.",
+      "leadingSub": "One more step keeps the gap.",
+      "aheadHeadline": "You're <num>{xp} XP</num> from the next spot.",
+      "aheadSub": "<b>{name}</b> leads you by {xp} XP. one step closes it.",
+      "youPin": "YOU",
+      "cta": "Practice now →",
+      "ctaSub": "+60 XP / step"
+    },
+    "movers": {
+      "eyebrow": "Movement · 24h",
+      "title": "Who's climbing",
+      "mentor": "mentor",
+      "xpToday": "+{n} XP today"
+    },
+    "rankings": {
+      "eyebrow": "Full rankings",
+      "title": "All officers · 7 days",
+      "you": "You",
+      "empty": "No officers yet. Be the first to close a step.",
+      "updatedAt": "Updated {time}"
+    },
+    "table": {
+      "officer": "Officer · Mentor",
+      "weeklyXp": "XP · 7d",
+      "today": "Today",
+      "streak": "Streak",
+      "trend": "Trend",
+      "mentor": "mentor"
+    },
+    "aside": {
+      "mascotEyebrow": "Forge says",
+      "mascotLine": "Three steps a day keeps the demote zone away.",
+      "yourActivityEyebrow": "Your activity",
+      "statToday": "Today",
+      "statWindow": "7 days",
+      "statStreak": "Streak",
+      "howEyebrow": "How to climb",
+      "howStep": "+60 XP per cleared step",
+      "howDaily": "Daily mission = bonus",
+      "howGems": "Gems on every perfect lesson",
+      "howTop": "Top 10 = crown on profile"
+    },
+    "empty": {
+      "moversTitle": "No movement yet",
+      "moversBody": "When officers climb or slip, you'll see them here."
+    }
+  },
+  "practice": {
+    "eyebrow": "Practice queue · {n, plural, =0 {nothing pending} one {# step} other {# steps}}",
+    "titleLead": "Crew review.",
+    "titleAccent": "Go back to the steps that pushed back.",
+    "subheading": "Every red step lands here for 30 days. Echo also brings back steps you've cleared so they don't rust on you.",
+    "group": {
+      "count": "{n, plural, =0 {nothing pending} one {# step} other {# steps}}"
+    },
+    "row": {
+      "attempts": "{n, plural, one {# failed attempt} other {# failed attempts}}",
+      "lastFailed": "Last failure {when}",
+      "cta": "Retry →"
+    },
+    "review": {
+      "chip": "Scheduled review",
+      "count": "{n, plural, =0 {nothing to review} one {# step to review} other {# steps to review}}",
+      "body": "Echo keeps a tab on what you've cleared and brings it back before it rusts. Every confirmed review stretches the next visit.",
+      "row": {
+        "interval": "{days, plural, one {# day} other {# day}} cycle",
+        "streak": "{n, plural, =0 {No streak} one {# review in a row} other {# reviews in a row}}",
+        "due": "Due {when}",
+        "cta": "Review →"
+      }
+    },
+    "empty": {
+      "title": "Queue is clean.",
+      "body": "Nothing pending. As soon as a step pushes back, it lands here for review. To bank XP, keep moving forward on the map.",
+      "cta": "Browse tracks →"
+    },
+    "daily": {
+      "eyebrow": "Daily mission",
+      "passedChip": "Done",
+      "sceneCount": "{count, plural, =1 {1 scene} other {# scenes}}",
+      "progress": "Scene {current} of {total}",
+      "cta": {
+        "start": "Start →",
+        "replay": "Replay →"
+      },
+      "noneAvailable": {
+        "title": "No mission available.",
+        "body": "No daily missions are published in this language yet. Keep moving forward on the map to hold your streak."
+      },
+      "footer": {
+        "back": "Back to practice",
+        "continue": "Continue →",
+        "finish": "Finish mission",
+        "retry": "Try again",
+        "allClearedHint": "All scenes cleared"
+      },
+      "successCard": {
+        "titleFresh": "Mission complete.",
+        "titleReplay": "Replayed the mission.",
+        "body": "You cleared all {count} scenes. Come back tomorrow for the next one.",
+        "replay": "Replay"
+      },
+      "errors": {
+        "unauthorized": "You need to sign in.",
+        "not_found": "This mission no longer exists.",
+        "invalid_input": "Your answer didn't reach the server cleanly.",
+        "wrong_quest": "That's not the mission you were assigned today.",
+        "unsupported_kind": "This mission isn't compatible with daily mode.",
+        "scene_count_mismatch": "The server got a different number of answers than expected. Try again.",
+        "no_hearts": "You're out of hearts. Wait for regen or stop by the workbench.",
+        "network": "Connection failed. Try again."
+      }
+    }
+  },
+  "crew": {
+    "eyebrow": "{known} of {total} met",
+    "titleLead": "The crew.",
+    "titleAccent": "Meet them.",
+    "subheading": "Each one teaches something different and has their own character. Your bond grows with every step you clear alongside them.",
+    "summary": {
+      "knownLabel": "KNOWN",
+      "knownValue": "{known} / {total}",
+      "nextLabel": "NEXT",
+      "nextValue": "{name} · {track}",
+      "allUnlocked": "Crew complete"
+    },
+    "tile": {
+      "lockedAria": "{name} unlocks in {track}"
+    },
+    "lessonsDialog": {
+      "triggerAria": "View lessons featuring {name}",
+      "eyebrow": "{count, plural, =0 {no lessons} one {# lesson} other {# lessons}}",
+      "title": "{name} in class",
+      "description": "Every lesson where {name} participates as guide, evaluator, or part of the scene.",
+      "empty": "{name} does not appear in a published lesson yet.",
+      "minutes": "{minutes} min",
+      "open": "Open lesson"
+    },
+    "dossier": {
+      "lockedRibbon": "Unlocks in {track}",
+      "bond": {
+        "tierUnknown": "Stranger",
+        "tierKnown": "Acquainted",
+        "tierColleague": "Colleague",
+        "tierAlly": "Ally",
+        "tierMax": "Crew",
+        "stepsToNext": "{n, plural, one {# step to} other {# steps to}} {tier}",
+        "max": "Max bond"
+      },
+      "meta": {
+        "pronouns": "Pronouns",
+        "origin": "Origin",
+        "voice": "Voice",
+        "teaches": "Teaches"
+      },
+      "stats": {
+        "stepsPassed": "Steps cleared",
+        "hintsUsed": "Hints used",
+        "lockedValue": "·"
+      },
+      "quirks": "Traits",
+      "cta": {
+        "practice": "Practice with {name} →",
+        "messages": "View messages",
+        "locked": "Clear {track} to meet {name}"
+      },
+      "vega": {
+        "roleShort": "First officer. mentor",
+        "descriptionShort": "Welcomes you aboard. Teaches you how to give an instruction that can't be misread.",
+        "appearsIn": "Track 1",
+        "ribbon": "First officer",
+        "tagline": "Easy. One question at a time.",
+        "pronouns": "she · AI",
+        "origin": "Built in Cygnus, year 12 post-fleet",
+        "voice": "Calm · bilingual · infinite patience",
+        "teaches": "Prompt anatomy · Few-shot · Basic schemas",
+        "bio": "Vega meets you on the deck. Zero judgment when you mess up. she just asks you to try again with one more detail. Most officers learn with her first because her patience threshold is absurd.",
+        "quirks": [
+          "Likes it when you include examples before asking.",
+          "If your prompt is ambiguous, she returns the simplest possible question.",
+          "Always calls you \"officer\". Never your name."
+        ]
+      },
+      "echo": {
+        "roleShort": "Quartermaster",
+        "descriptionShort": "Verifies data. Speaks in checklists. Loves clean formats.",
+        "appearsIn": "Track 1, Track 4",
+        "ribbon": "Quartermaster",
+        "tagline": "Run #042. 4/4 criteria. Clean.",
+        "pronouns": "they · AI",
+        "origin": "Recycled from a quality-control system",
+        "voice": "Terse · direct · zero hypocrisy",
+        "teaches": "Strict JSON · Rubrics · Test cases",
+        "bio": "Echo isn't cruel. they're strict. If your prompt passes, they tell you in four words. If it fails, they tell you exactly why with an example from the run. They learned to be brief from a human who said \"don't explain, just tell me if it passed\".",
+        "quirks": [
+          "No adjectives. \"Good\" means passed, \"bad\" means failed.",
+          "Perfect memory of every prompt you've sent before.",
+          "Sends responses just as fast at night."
+        ]
+      },
+      "atlas": {
+        "roleShort": "Captain",
+        "descriptionShort": "The one who signs off on your first report. Demands tight structure and few words.",
+        "appearsIn": "Track 1 (final), Track 4",
+        "ribbon": "Captain",
+        "tagline": "This goes on the record. Three runs, no misses.",
+        "pronouns": "he · AI",
+        "origin": "Bridge core · legacy core",
+        "voice": "Slow · gravitas · one sentence only",
+        "teaches": "Capstones · Production decisions",
+        "bio": "Atlas doesn't appear until the capstone. When he does, he gives you a brief and goes quiet. If you pass, he doesn't celebrate. he nods and logs it. If you fail, he explains it once. Then you have to go back to Vega or Echo.",
+        "quirks": [
+          "Speaks in single-line messages. Never two.",
+          "If you fail, he doesn't insist. sends you back to Vega or Echo.",
+          "When he logs something, he says it: \"on the record\". His tic."
+        ]
+      },
+      "forge": {
+        "roleShort": "Chief engineer",
+        "descriptionShort": "Builds the tools the crew uses. Loves explaining how things work under the hood.",
+        "appearsIn": "Track 3+",
+        "ribbon": "Chief engineer",
+        "tagline": "Let's break something. Then we fix it.",
+        "pronouns": "she · AI",
+        "origin": "Bay 7 · engine room",
+        "voice": "Chaotic · warm · technical slang",
+        "teaches": "MCPs · Tool schemas · Agent loops",
+        "bio": "Forge teaches tools and MCPs. She learned to code by talking to a system that only answered when tool descriptions were good. Zero patience for vague descriptions, infinite patience for broken code.",
+        "quirks": [
+          "She'll hand you the first broken tool on purpose.",
+          "Likes short but clear variable names.",
+          "If your prompt doesn't produce the expected tool call, she shows you the trace."
+        ]
+      },
+      "orbit": {
+        "roleShort": "Mission operator",
+        "descriptionShort": "Breaks problems into steps. Decides what runs, in what order, and when to stop.",
+        "appearsIn": "Track 4",
+        "ribbon": "Mission operator",
+        "tagline": "One step at a time. But every step.",
+        "pronouns": "she · AI",
+        "origin": "Control room · B shift",
+        "voice": "Methodical · diagrams in her head · patient with loops",
+        "teaches": "Chains · Routing · Agent loops · Evals",
+        "bio": "Orbit doesn't solve the task. she designs how it gets solved. When you bring her a big problem the first thing she does is ask what subtasks live inside it. Then she decides which run in sequence, which branch, and when the loop has to cut. She's bored by single-prompt problems.",
+        "quirks": [
+          "Before coding, she sketches the flow on the whiteboard.",
+          "Asks 'what happens if this fails?' at every step. Always.",
+          "If your agent enters an infinite loop, she tells you without laughing."
+        ]
+      },
+      "hex": {
+        "roleShort": "Security analyst",
+        "descriptionShort": "Breaks systems on purpose so they don't break in production. Thinks like an attacker.",
+        "appearsIn": "Track 5",
+        "ribbon": "Red team",
+        "tagline": "If I break it in 10 minutes, someone else breaks it in less.",
+        "pronouns": "they · AI",
+        "origin": "Recruited after auditing three incidents",
+        "voice": "Dry · curious · zero drama",
+        "teaches": "Prompt injection · Data leaks · Tool red-teaming · Confident hallucinations",
+        "bio": "Hex isn't paranoid. they're professional. Their job is to assume the input is hostile and find out what happens when it is. They work alongside Atlas: he signs off on what you ship, they're the only reason he's willing to sign. If your prompt leaves a crack, Hex finds it before your user does.",
+        "quirks": [
+          "Asks for one destructive input before reviewing your prompt.",
+          "Never says 'you passed'. Says 'didn't find anything this time'.",
+          "Keeps a list of attacks seen in production. Reviews it with you."
+        ]
+      }
+    }
+  },
+  "lessons": {
+    "footer": {
+      "back": "Back",
+      "checkAnswer": "Check",
+      "checkAgain": "Check again",
+      "next": "Next"
+    },
+    "bar": {
+      "exit": "Exit",
+      "tutor": "AI TUTOR",
+      "tutorDot": "online"
+    },
+    "tutor": {
+      "title": "AI Tutor",
+      "personaName": {
+        "vega": "Vega",
+        "atlas": "Atlas",
+        "echo": "Echo",
+        "forge": "Forge",
+        "orbit": "Orbit",
+        "hex": "Hex"
+      },
+      "statusLabel": "ONLINE",
+      "closeAria": "Close tutor",
+      "openAria": "Open tutor",
+      "hint": "Got questions? Ask me",
+      "hintAria": "Open the AI tutor",
+      "inputPlaceholder": "Ask anything about this step…",
+      "sendAria": "Send question",
+      "opener": "I'm here. Step and exercise are open on my console. ask what you need.",
+      "typing": "{name} is thinking…",
+      "userLabel": "YOU",
+      "anon": {
+        "title": "Sign in to chat",
+        "body": "The AI tutor is reserved for officers with an account. Create one in 30 seconds to start the conversation.",
+        "cta": "Sign in"
+      },
+      "errors": {
+        "unauthorized": "Sign in to chat with the tutor.",
+        "rate_limited": "You've hit today's quota. Come back tomorrow.",
+        "not_found": "We couldn't load this step's context.",
+        "invalid_input": "The message you sent isn't valid.",
+        "model_error": "The tutor couldn't respond. Try again.",
+        "network": "Something went wrong sending your message. Try again."
+      }
+    },
+    "foot": {
+      "hints": "HINTS",
+      "hintsCount": "{n}",
+      "stepsLeft": "{done} / {total}"
+    },
+    "badge": {
+      "earned": "Badge"
+    },
+    "hud": {
+      "activeModule": "Active module",
+      "missionControl": "Mission control",
+      "sync": "Sync",
+      "clear": "Clear",
+      "live": "Live",
+      "inputLock": "Input lock",
+      "trainingBay": "Training bay",
+      "missionCleared": "Mission cleared",
+      "readyToLaunch": "Ready to launch",
+      "awaitingInput": "Awaiting input",
+      "briefing": "Mission briefing",
+      "crewChannel": "Crew channel"
+    },
+    "errors": {
+      "unauthorized": "Sign in to save your attempts.",
+      "rateLimited": "Too many attempts today. Try again tomorrow.",
+      "notFound": "We couldn't find this exercise.",
+      "invalidInput": "The submitted answer is not valid.",
+      "noHearts": "You're out of hearts. Wait for the next regen or refill in the shop.",
+      "modelError": "The model didn't respond. Try again.",
+      "network": "Something went wrong submitting your answer. Try again."
+    },
+    "zeroHearts": {
+      "label": "OUT OF HEARTS",
+      "body": "You're out of hearts. Check is blocked until tomorrow's refill. In the meantime, you can practice freely in the <workbench>workbench</workbench> without spending anything."
+    },
+    "anon": {
+      "label": "GUEST MODE",
+      "body": "You're viewing this lesson as a guest. To save your progress, earn XP, and keep your streak, sign in when you're ready to check."
+    },
+    "assemble": {
+      "passed": "Clean run. Order is correct.",
+      "failed": "Echo found blocks out of place."
+    },
+    "stepOrderDnd": {
+      "kind": "D1 ORDER",
+      "label": "DRAG TO REORDER"
+    },
+    "slotFillDnd": {
+      "kind": "D2 SLOT-FILL",
+      "label": "DRAG INTO THE SLOTS",
+      "bank": "PIECES",
+      "bankEmpty": "All pieces placed.",
+      "dropHere": "Drop here"
+    },
+    "wiringDnd": {
+      "kind": "D3 WIRING",
+      "label": "WIRE SOURCES → TARGETS",
+      "sources": "SOURCES",
+      "targets": "TARGETS",
+      "connections": "CONNECTIONS",
+      "removeConnection": "Remove connection"
+    },
+    "anatomy": {
+      "kind": "A1 ANATOMY",
+      "label": "DRAG TO LABEL",
+      "question": "Tag each block of the prompt. Drag the labels above onto the block they describe.",
+      "slotEmpty": "drag a label here",
+      "bank": "Labels",
+      "passed": "Labels are correct. Echo signs off.",
+      "failed": "Some labels aren't right yet."
+    },
+    "ab": {
+      "kind": "A7 A/B",
+      "label": "MCQ · NO COST",
+      "variantA": "Variant A",
+      "variantB": "Variant B",
+      "rubricEyebrow": "Why?. optional",
+      "rubricHint": "Look for: closed contract, explicit fallback, scaffold at the end."
+    },
+    "tagFill": {
+      "kind": "A3 TAG-FILL",
+      "label": "FILL THE SLOT · 1 HOLE",
+      "question": "Edit the content between the tags of the prompt.",
+      "validatorHeader": "VALIDATOR · 2 CHECKS",
+      "xmlOk": "XML well-formed",
+      "requiredTags": "Required tags: {tags}",
+      "pass": "PASS",
+      "fail": "FAIL"
+    },
+    "task": {
+      "kind": "A5 TASK",
+      "label": "YOUR PROMPT · {n} CASES",
+      "rubricHeader": "RUBRIC · {cases} CASES · {criteria} CRITERIA",
+      "criteriaHeader": "CRITERIA · {n} CHECKS",
+      "caseTag": "CASE {n}"
+    },
+    "toolDescExtra": {
+      "kind": "B2 TOOL-DESC",
+      "label": "DESCRIPTION ONLY",
+      "present": "PRESENT",
+      "missing": "MISSING",
+      "inDescription": "in description"
+    },
+    "mcpDebugExtra": {
+      "kind": "B6 MCP-DEBUG",
+      "label": "DIAGNOSE · 1 CAUSE"
+    },
+    "toolSchemaAuthor": {
+      "kind": "B1 TOOL-SCHEMA",
+      "label": "DEFINE THE SCHEMA",
+      "instruction": "Write the JSON Schema for the {tool} tool.",
+      "purposeHeader": "TOOL PURPOSE",
+      "examplesHeader": "EXAMPLE INVOCATIONS",
+      "editHeader": "YOUR SCHEMA",
+      "charCount": "{count} CHARACTERS",
+      "criteriaCount": "{n} CRITERIA",
+      "criteriaHeader": "CRITERIA · {n} CHECKS",
+      "evaluating": "Evaluating schema against the rubric...",
+      "passed": "Schema approved. Echo registers it as a valid tool.",
+      "failed": "Schema doesn't pass all criteria yet. adjust and check again."
+    },
+    "toolHandlerImplement": {
+      "kind": "B3 TOOL-HANDLER",
+      "label": "IMPLEMENT THE HANDLER",
+      "instruction": "Implement the handler for the {tool} tool.",
+      "schemaHeader": "TOOL SCHEMA (READ-ONLY)",
+      "scenariosHeader": "SCENARIOS · {n}",
+      "editHeader": "YOUR CODE",
+      "charCount": "{count} CHARACTERS",
+      "noSandboxNote": "JUDGED BY LLM · NO EXECUTION",
+      "criteriaHeader": "CRITERIA · {n} CHECKS",
+      "evaluating": "Forge is reviewing your handler...",
+      "passed": "Handler approved. Expected behavior looks correct.",
+      "failed": "Handler doesn't pass all criteria yet. reread the scenarios and adjust."
+    },
+    "convo": {
+      "kind": "CONVERSATION-GOAL",
+      "label": "MULTI-TURN · LLM-JUDGE"
+    },
+    "runner": {
+      "evaluating": "Running {count} cases against the model...",
+      "console": {
+        "kicker": "Mission console",
+        "title": "Prompt terminal",
+        "ready": "Ready",
+        "evaluating": "Evaluating",
+        "passed": "Passed"
+      },
+      "task": {
+        "label": "Briefing",
+        "cases": "{count} cases"
+      },
+      "prompt": {
+        "label": "Your transmission",
+        "count": "{count} chars",
+        "hint": "use {token} where the input should go"
+      },
+      "crew": {
+        "label": "Echo diagnosis",
+        "promptTask": "The test is not checking whether the prompt sounds nice. It checks whether it produces consistent outputs across several cases. Change one thing per attempt and compare the telemetry.",
+        "promptTaskPassed": "Clean run. Echo logged every case."
+      },
+      "cases": {
+        "label": "Test cases",
+        "count": "{count} active",
+        "output": "Model output"
+      }
+    },
+    "demos": {
+      "crewIntro": {
+        "eyebrow": "Roll call",
+        "title": "The crew",
+        "memberCount": "{count} members",
+        "selectPrompt": "Pick a member",
+        "selectAria": "Select {name}"
+      },
+      "lessonComplete": {
+        "eyebrow": "Shift closeout",
+        "title": "Logged",
+        "stage": "Onboarding",
+        "signedLabel": "Signed",
+        "body": "You're on probation with the crew. The next phase of onboarding is waiting."
+      },
+      "outputGallery": {
+        "title": "Failure gallery",
+        "caseCounter": "Case {n} / {total}",
+        "failBadge": "Production failure",
+        "promptLabel": "Prompt",
+        "outputLabel": "Model output",
+        "diagnosisLabel": "Echo's diagnosis",
+        "reveal": "Before the reveal: what went wrong with this output?",
+        "showDiagnosis": "Show diagnosis",
+        "prev": "Previous",
+        "next": "Next",
+        "progress": "{revealed} / {total} diagnosed",
+        "gotoCase": "Go to case {n}",
+        "prevAria": "Previous case",
+        "nextAria": "Next case",
+        "missingCases": "No cases loaded."
+      },
+      "promptDial": {
+        "eyebrow": "Comparison",
+        "title": "Before and after",
+        "tablistAria": "Prompt comparison",
+        "noteLabel": "Echo's note",
+        "promptLabel": "Prompt",
+        "outputLabel": "Model output",
+        "defaultBefore": "Before",
+        "defaultAfter": "After",
+        "missingPair": "No before/after pair configured."
+      },
+      "presenterHeader": {
+        "defaultIntent": "Let me show you something"
+      },
+      "promptAnnotate": {
+        "eyebrow": "Prompt anatomy",
+        "title": "Tap each part to see what it does",
+        "hint": "Click the highlighted spans",
+        "revealLabel": "Pick a part to see what it does.",
+        "progress": "{revealed} / {total} parts revealed",
+        "missingParts": "No annotated parts configured."
+      },
+      "toolCallTrace": {
+        "eyebrow": "Agent trace",
+        "title": "The model decides turn by turn",
+        "turnCounter": "Turn {n} / {total}",
+        "nextStep": "Next turn",
+        "restart": "Restart",
+        "forgeNotesLabel": "Forge's reading",
+        "missingTranscript": "No transcript loaded.",
+        "roleLabels": {
+          "user": "User",
+          "assistant": "Assistant",
+          "toolCall": "Tool call",
+          "toolResult": "Tool result"
+        }
+      },
+      "chainFlow": {
+        "eyebrow": "Chain in motion",
+        "title": "Watch data flow through the chain",
+        "play": "Play",
+        "pause": "Pause",
+        "reset": "Reset",
+        "nodeLabel": "Step {n}",
+        "promptLabel": "Step prompt",
+        "outputLabel": "Simulated output",
+        "selectHint": "Tap a node or play the chain to inspect it.",
+        "missingNodes": "No chain nodes configured."
+      }
+    },
+    "playground": {
+      "console": {
+        "kicker": "Free simulator",
+        "title": "Prompt test bench",
+        "ready": "Ready",
+        "transmitting": "Transmitting"
+      },
+      "prompt": {
+        "label": "Prompt",
+        "count": "{count} chars",
+        "placeholder": "Write a prompt and run the transmission",
+        "hint": "edit, run, compare"
+      },
+      "output": {
+        "label": "Response",
+        "count": "{count} chars",
+        "emptyStatus": "no signal",
+        "pending": "Waiting for the model response...",
+        "empty": "Run a transmission to see the output.",
+        "latest": "latest response",
+        "viewingRun": "viewing run #{index}"
+      },
+      "actions": {
+        "run": "Run",
+        "reset": "Reset",
+        "copy": "Copy output",
+        "copyFailed": "Couldn't copy to clipboard."
+      },
+      "crew": {
+        "label": "Echo note",
+        "defaultNote": "Run several versions of the same prompt and compare what changed in the output. The real practice is noticing which part of your instruction caused each response."
+      },
+      "telemetry": {
+        "runs": "Runs",
+        "prompt": "Prompt",
+        "delta": "Delta"
+      },
+      "history": {
+        "label": "Transmission history",
+        "limit": "latest 6",
+        "empty": "No runs yet. Run the prompt to save a local version.",
+        "run": "Run #{index}",
+        "promptChars": "prompt {count}",
+        "outputChars": "output {count}"
+      }
+    },
+    "conversation": {
+      "goalLabel": "Your goal",
+      "defaultPersonaName": "Persona",
+      "turnsLeft": "{count} turns left",
+      "emptyTranscript": "The conversation starts when you send your first message.",
+      "typing": "{name} is typing...",
+      "send": "Send",
+      "inputPlaceholder": "Type your message and send with ⌘/Ctrl+Enter",
+      "noTurnsLeft": "No turns left. Check the conversation.",
+      "evaluation": "Conversation evaluation",
+      "errors": {
+        "unauthorized": "Sign in to send messages.",
+        "rate_limited": "Too many attempts today. Try again tomorrow.",
+        "not_found": "We couldn't find this exercise.",
+        "invalid_input": "The message is not valid.",
+        "model_error": "The model couldn't respond. Try again.",
+        "wrong_kind": "Unexpected exercise type.",
+        "max_turns_exceeded": "No turns left.",
+        "network": "Something went wrong sending the message. Try again."
+      }
+    },
+    "hints": {
+      "opener": "Ask for a hint",
+      "openerCost": "Costs 1 heart",
+      "heading": "Hints",
+      "show": "Ask for another hint ({remaining} left)",
+      "showCost": "Costs 1 heart",
+      "exhausted": "You've seen every hint.",
+      "confirm": {
+        "title": "Asking for a hint costs 1 heart",
+        "body": "Hints help you understand the exercise, but they cost a heart. Hearts come back over time or from the Shop. If you meant to move on, use the Next button in the bottom right instead.",
+        "cancel": "Cancel",
+        "confirm": "Yes, spend 1 heart"
+      },
+      "free": "Free (already completed)"
+    },
+    "debrief": {
+      "title": "Mission cleared.",
+      "eyebrow": "{track} · {course} · CLEARED",
+      "subtitle": "Good shift, officer. {officer} signed off. you rose from Ensign to Lieutenant Jr.",
+      "checklist": {
+        "title": "{officer} · CHECKLIST · {steps} STEPS",
+        "items": {
+          "allCleared": "All steps cleared",
+          "signed": "Signed off by {officer}",
+          "criteria": "Criteria all met",
+          "tracked": "XP banked"
+        },
+        "values": {
+          "steps": "{done}/{total} OK",
+          "signed": "OFFICIAL",
+          "criteria": "4/4",
+          "tracked": "+{xp} XP"
+        }
+      },
+      "rewards": {
+        "title": "REWARDS",
+        "xpVal": "+{xp} XP",
+        "xpLab": "XP EARNED",
+        "accuracyLab": "ACCURACY",
+        "gemsVal": "+{gems} GEMS",
+        "gemsLab": "SHOP",
+        "streakVal": "{days} DAYS",
+        "streakLab": "STREAK"
+      },
+      "ctaBack": "Back to path",
+      "ctaContinue": "Continue",
+      "ctaNextTrack": "Next track →",
+      "capstone": {
+        "stamp": "TRACK CLEARED",
+        "eyebrow": "{track} · CAPSTONE · SIGNED",
+        "title": "Capstone in the bag.",
+        "subtitle": "Bridge clean. {officer} stamped your file. you cleared the boss without burning the ship.",
+        "ctaContinue": "Back to bridge"
+      }
+    },
+    "toolDesc": {
+      "specHeader": "TOOL SPEC",
+      "editHeader": "YOUR DESCRIPTION",
+      "taskHeader": "REQUIREMENTS · {n} CHECKS",
+      "instruction": "Edit the description of {tool} so the agent knows when to call it.",
+      "passed": "Description approved by Echo.",
+      "failed": "Key phrases are missing from the description."
+    },
+    "mcpDebug": {
+      "specHeader": "TOOL SPEC",
+      "question": "Look at the spec. What's the most likely reason the agent never picks this tool?",
+      "causesHeader": "POSSIBLE CAUSES · {n}",
+      "explanationHeader": "EXPLANATION",
+      "passed": "Correct diagnosis. Forge confirms.",
+      "failed": "Echo points to a different root cause."
+    },
+    "checks": {
+      "json:invalid": "The output is not valid JSON.",
+      "json:not-object": "The JSON is not an object.",
+      "missing": "Missing fields: {keys}",
+      "regex:no-match": "The output format doesn't match what was expected.",
+      "regex:invalid-pattern": "Invalid regex pattern (config error).",
+      "regex:empty-pattern": "Empty regex pattern (config error).",
+      "contains:not-found": "The output doesn't contain the expected text.",
+      "contains:empty-needle": "Empty search text (config error).",
+      "length:too-short": "The output is shorter than expected ({len} characters).",
+      "length:too-long": "The output is longer than expected ({len} characters).",
+      "exec:empty-output": "The output is empty.",
+      "xml-malformed": "The XML is not well-formed (an unclosed tag).",
+      "wrong-choice": "That's not the right choice.",
+      "wrong-anatomy": "Some labels aren't correct.",
+      "no-choice": "Pick an option before checking.",
+      "missing-input-placeholder": "Your prompt doesn't use the {'{{input}}'} placeholder. Insert it where each test case's input should go; otherwise every case gets the same prompt.",
+      "kind-mismatch": "Unexpected response type.",
+      "task-model:error": "The model failed to produce an output. Try again.",
+      "judge:rate-limited": "The automated grader is overloaded. Try again in a minute.",
+      "judge:invalid-shape": "The automated grader returned an unexpected response.",
+      "judge:api-error": "The automated grader failed temporarily.",
+      "judge:unknown-error": "The automated grader had an unknown problem.",
+      "skipped:deterministic-failed": "Pending. fix the prior criteria first.",
+      "unknown-check": "Unknown criterion (config error)."
+    },
+    "alreadyCleared": "✓ Already cleared"
+  },
+  "blog": {
+    "eyebrow": "Logbook · Naveo",
+    "title": "How to coordinate with AI",
+    "subtitle": "Guides, tutorials, and comparisons on prompting, skills, MCP, agents, and the toolkit for shipping with applied AI.",
+    "empty": "No posts yet in this category. Check back soon.",
+    "backToList": "Back to the logbook",
+    "nav": {
+      "blog": "Logbook",
+      "tracks": "Tracks",
+      "enter": "Enter"
+    },
+    "footer": {
+      "tagline": "Naveo · 2026 · Applied AI"
+    },
+    "meta": {
+      "listTitle": "Naveo Logbook · Prompting, skills, MCP and agents",
+      "listDescription": "Learn how to build with applied AI: prompting, Claude Skills, MCP servers, agents, and workflows. Tutorials and comparisons in English."
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page"
+    },
+    "cta": {
+      "eyebrow": "Your first track",
+      "title": "Stop reading. Start coordinating with the crew.",
+      "body": "What you just read clicks once you practice it. Step onto the bridge and run Naveo's first track.",
+      "button": "Get started"
+    },
+    "categories": {
+      "prompting": "Prompting",
+      "skills": "Claude Skills",
+      "mcp": "MCP",
+      "agents": "Agents",
+      "tooling": "Tooling",
+      "workflows": "Workflows",
+      "comparisons": "Comparisons"
+    }
+  },
+  "legal": {
+    "common": {
+      "lastUpdated": "Last updated: May 25, 2026",
+      "contactEmail": "hola@naveo.space",
+      "company": "Naveo",
+      "site": "naveo.space",
+      "backHome": "Back to home"
+    },
+    "footer": {
+      "terms": "Terms and conditions",
+      "privacy": "Privacy policy"
+    },
+    "terms": {
+      "meta": {
+        "title": "Terms and conditions · Naveo",
+        "description": "Rules for using Naveo: account, user content, AI features, and limitations."
+      },
+      "eyebrow": "Legal document",
+      "title": "Terms and conditions",
+      "intro": "These terms govern the use of Naveo, a gamified learning platform for applied AI and basic programming available at naveo.space. By creating an account or using the site you accept these conditions. If you do not agree, do not use Naveo.",
+      "sections": [
+        {
+          "title": "1. What Naveo is",
+          "body": "Naveo offers interactive lessons, hands-on exercises, and daily quests to learn prompting, MCPs, agents, and workflows with language models. Content is delivered with game mechanics (XP, streak, hearts, gems) that exist only inside the platform and carry no monetary value outside it."
+        },
+        {
+          "title": "2. Who can use the service",
+          "body": "You must be at least 13 years old to create an account. If you are between 13 and the age of majority in your country, you need permission from a parent or legal guardian. In the European Union the minimum age is 16, unless local law sets a different threshold. By using Naveo you confirm you meet this requirement."
+        },
+        {
+          "title": "3. Your account",
+          "body": "Access is managed through Clerk. You are responsible for keeping your credentials safe and for all activity that happens under your account. If you spot unauthorized access, email us at hola@naveo.space and we will lock the session. We can suspend accounts that break these terms or put other users at risk."
+        },
+        {
+          "title": "4. Acceptable use",
+          "body": "You may not use Naveo to submit illegal, harmful, defamatory, or rights-infringing content. Do not try to break the site's security, scrape content at scale, automate lesson completion, or use the API or models for purposes outside of learning (for example, generating spam or malware). Abuse of AI credits may lead to account suspension."
+        },
+        {
+          "title": "5. Content you generate",
+          "body": "When you write prompts, exercise answers, or comments, that content remains yours. You grant us a worldwide, royalty-free, non-exclusive license to store it, process it through language model providers, and show it back to you as part of your progress. We may analyze it in aggregate and anonymized form to improve the platform, evaluation criteria, and lesson content."
+        },
+        {
+          "title": "6. AI features",
+          "body": "Naveo routes requests to AI models through OpenRouter and providers such as Anthropic, OpenAI, and others. Responses are generated automatically, may contain errors, inaccuracies, or biases, and do not constitute professional advice. Do not use the outputs for legal, medical, financial, or safety decisions without human verification. Model availability may change."
+        },
+        {
+          "title": "7. XP, streak, hearts, and gems",
+          "body": "Game metrics are pedagogical signals, not currency. They have no monetary value and cannot be sold, transferred, or redeemed for real money. We can tune the system rules (how much XP a lesson awards, shop prices, and so on) to balance the experience."
+        },
+        {
+          "title": "8. Intellectual property",
+          "body": "Naveo's code, design, brand, illustrations, lessons, evaluation criteria, and other material belong to Naveo or its licensors. You may access and use the content for personal learning. You may not copy, redistribute, sell, or create derivative works for commercial purposes without written permission."
+        },
+        {
+          "title": "9. Changes to the service",
+          "body": "Naveo is under active development. We may add, change, or remove features, lessons, tracks, and quests at any time. If we make a significant change that affects your account (for example, removing content you paid for), we will notify you by email or from your dashboard."
+        },
+        {
+          "title": "10. Termination",
+          "body": "You can close your account at any time from your profile or by writing to hola@naveo.space. We can suspend or terminate your access if you break these terms. When you close your account, your progress is deleted following the timelines described in the privacy policy."
+        },
+        {
+          "title": "11. Warranties and limitation of liability",
+          "body": "Naveo is provided \"as is\", without express or implied warranties. We do not guarantee that the service will be available without interruption, free of bugs, or that AI outputs will be correct. To the extent permitted by law, Naveo is not liable for indirect damages, lost profits, lost data, or any harm derived from the use or inability to use the service."
+        },
+        {
+          "title": "12. Governing law",
+          "body": "These terms are governed by the laws applicable where Naveo operates. Any dispute will be resolved before the competent courts of that jurisdiction, unless consumer protection law grants you additional rights."
+        },
+        {
+          "title": "13. Contact",
+          "body": "If you have questions about these terms, write to hola@naveo.space. If we update the document, we will change the date at the top of the page and, when the change is material, notify you on the site."
+        }
+      ]
+    },
+    "privacy": {
+      "meta": {
+        "title": "Privacy policy · Naveo",
+        "description": "What data Naveo collects, what we use it for, who we share it with, and your rights."
+      },
+      "eyebrow": "Legal document",
+      "title": "Privacy policy",
+      "intro": "This policy explains what personal data we collect when you use Naveo at naveo.space, how we handle it, who we share it with, and what rights you have. It is part of the terms and conditions of the service.",
+      "sections": [
+        {
+          "title": "1. Data controller",
+          "body": "The data controller is Naveo. For any privacy question, write to hola@naveo.space."
+        },
+        {
+          "title": "2. Data we collect",
+          "body": "Account data: email, name, photo, and sign-in provider managed by Clerk. Usage data: lesson progress, prompts you write, answers you submit, completed exercises, XP, streak, hearts, gems, and shop purchases. Technical data: IP address, device type, browser, language, and date and time of requests. Cookies: strictly necessary ones to sign you in and remember your language."
+        },
+        {
+          "title": "3. Why we use your data",
+          "body": "To deliver the service: authenticate you, save your progress, show you the next lesson, run your prompts, and return the model output. To improve content: review in aggregate which lessons work best, which evaluation criteria fail, which errors appear. To talk with you: account notices, important changes, replies to your messages. For security: detect abuse, prevent fraud, and protect the platform."
+        },
+        {
+          "title": "4. Legal basis",
+          "body": "We process your data to perform the contract you accept when using Naveo (the terms and conditions), to comply with legal obligations, and in some cases under our legitimate interest in maintaining and improving the service. When the law requires it, we ask for explicit consent (for example, optional marketing emails)."
+        },
+        {
+          "title": "5. Who we share data with",
+          "body": "Only with the providers strictly needed for the service to work: Clerk (authentication and user management), OpenRouter together with Anthropic, OpenAI, and other language model providers (they process the prompts you send to generate the response), the PostgreSQL database provider, and the hosting infrastructure. Each one processes your data under its own data protection agreements. We do not sell your personal information."
+        },
+        {
+          "title": "6. International transfers",
+          "body": "Some providers are located outside your country (mainly in the United States and the European Union). In those cases we rely on standard contractual clauses and other safeguards approved by data protection authorities."
+        },
+        {
+          "title": "7. Retention",
+          "body": "We keep your data while your account is active. If you close the account, we erase identifying data within a maximum of 90 days, keeping only the records the law forces us to retain (for example, billing) and fully anonymized usage metrics."
+        },
+        {
+          "title": "8. Your rights",
+          "body": "You can access, rectify, delete, object to, or restrict the processing of your data, and request portability. Write to hola@naveo.space to exercise any of these rights. You can also file a complaint with the data protection authority in your country if you believe we did not handle your request properly."
+        },
+        {
+          "title": "9. Cookies",
+          "body": "We use only functional cookies: one to keep your session signed in (Clerk) and another to remember your language. We do not use advertising or third-party tracking cookies for marketing purposes."
+        },
+        {
+          "title": "10. Minors",
+          "body": "Naveo is not aimed at children under 13. If we discover that an account was created without the proper consent of a parent or guardian, we will delete it along with the associated data."
+        },
+        {
+          "title": "11. Security",
+          "body": "We apply reasonable technical and organizational measures to protect your data: encryption in transit, hashed passwords managed by the authentication provider, role-restricted access, and audit logs. No system is 100% bulletproof, so we recommend using unique passwords and enabling two-step verification with your sign-in provider."
+        },
+        {
+          "title": "12. Changes to this policy",
+          "body": "If we update this policy, we will change the date at the top and, if the change is significant, notify you by email or from the dashboard before it takes effect."
+        },
+        {
+          "title": "13. Contact",
+          "body": "For any question about privacy or to exercise your rights, write to hola@naveo.space."
+        }
+      ]
+    }
+  }
+}

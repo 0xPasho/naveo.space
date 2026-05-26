@@ -1,0 +1,108 @@
+---
+title: "Iterar un prompt que falla"
+order: 18
+estimatedMinutes: 8
+characters:
+  - forge
+exercise:
+  kind: prompt-task
+  task: |
+    Forge necesita extraer la fecha de reportes y devolverla como JSON
+    `{ "date": "YYYY-MM-DD" }` o `{ "date": null }`. El starter que te
+    dejó es **intencionalmente flojo**: la primera corrida va a fallar.
+    Tu trabajo: iterar hasta que los 4 casos pasen.
+
+    Los casos van a sacar a flote, uno por uno, las cosas que el starter
+    no cubre.
+  starter: |
+    <task>
+      Saca la fecha del reporte. Devuelve JSON.
+    </task>
+
+    <report>
+      {{input}}
+    </report>
+  testCases:
+    - input: "Reporte del 15 de marzo de 2026. Bay 7 OK, sin incidentes."
+    - input: "March 15, 2026, Bay 7 OK."
+    - input: "Bay 7 OK, todo nominal en el último chequeo."
+    - input: "Reporte del 15-03-2026 actualizado 16-03-2026 con observaciones nuevas."
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "El output es JSON válido."
+    - id: has-date-key
+      kind: deterministic
+      check: has-keys
+      args: ["date"]
+      criterion: "Contiene la clave `date`."
+    - id: format-iso-or-null
+      kind: llm-judge
+      criterion: "El valor de `date` es un string con formato exacto YYYY-MM-DD (ej: '2026-03-15'), o el VALOR JSON null. NO 'null' como string. NO 'pendiente'. NO formato '15/03/2026' ni '15 de marzo'."
+    - id: correct-date
+      kind: llm-judge
+      criterion: "Para reportes con fecha, devuelve la fecha correcta convertida a YYYY-MM-DD. Para reportes sin fecha (caso 3), devuelve null. Para reportes con varias fechas (caso 4), devuelve la primera/más temprana."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Iteración 1: el starter no especifica formato. El caso 1 va a salir como '15 de marzo' o '2026-03-15' al azar. Agregá la regla de formato ISO."
+  - "Iteración 2: el caso 3 (sin fecha) va a inventar o devolver string. Agregá la regla 'si no hay fecha, devolvé null'."
+  - "Iteración 3: el caso 4 tiene dos fechas. Decile explícitamente cuál elegir: 'si hay varias, usá la más temprana'."
+teaches:
+  - prompt-iteration-loop
+requires:
+  - prompt-task-basics
+  - structured-output
+  - null-handling-systematic
+---
+
+## Prompt engineering = iteración
+
+Casi ningún prompt sale bien al primer intento. La habilidad real no es escribir el prompt perfecto de una. Es **iterar rápido**.
+
+### El loop
+
+```
+1. Escribís prompt v1.
+2. Corrés contra tus test cases.
+3. Mirás qué falla y por qué.
+4. Cambiás UNA cosa específica.
+5. Volvés a correr.
+6. Repetís.
+```
+
+La parte que la gente saltea: el **paso 3**. Mirar el output real, no asumir cuál es el problema. Si asumís, terminás cambiando lo que no falla.
+
+### Las 4 categorías de falla
+
+Casi todo bug de prompt cae en una de cuatro categorías. Reconocer cuál te ahorra horas:
+
+**1. Formato.** El contenido es correcto pero rompe el parser (sobra preamble, falta una clave, formato inconsistente).
+**Fix:** agregar reglas de formato explícitas, usar `<output_format>`, mostrar el shape exacto del output.
+
+**2. Cobertura.** Algunos casos andan, otros no. El prompt asume que el input es de cierta forma y los casos raros lo rompen.
+**Fix:** agregar regla específica para el caso que falla.
+
+**3. Inventos (alucinación).** Devuelve datos que no están en el input.
+**Fix:** agregar *"si no aparece, devolvé null"*, explícitamente.
+
+**4. Tono / idioma / longitud.** Lo más fácil. Restricciones específicas resuelven.
+
+### El truco del cambio aislado
+
+Cuando iteras, cambiá **una cosa a la vez**. Tentación: ver 3 problemas, cambiar 3 reglas en el prompt, correr todo. Resultado: si 1 de los 3 fixes empeora otra cosa, no sabés cuál fue.
+
+Disciplina: una iteración = un cambio = una corrida. Aburrido pero mil veces más rápido para llegar al prompt correcto.
+
+### Las 3 preguntas que te haces en cada output fallido
+
+En orden:
+
+1. **¿Cuál criterio falló específicamente?** (Lo dice el feedback.)
+2. **¿El output muestra entendimiento parcial o error completo?** (Parcial = ajuste; completo = repensar).
+3. **¿Mi prompt menciona explícitamente esta situación?** (Si "no", ya sabés qué agregar.)
+
+> El prompt final que pasa todos los casos rara vez es el más elegante. Es el que sobrevivió a las 4 iteraciones que se necesitaron. No te enamores del v1.
+
+A la derecha, un starter intencionalmente flojo. Corré sin tocar, mirá qué falla, ajustá una cosa. Repetí.

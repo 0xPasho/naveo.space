@@ -1,0 +1,96 @@
+---
+title: "El system prompt en profundidad"
+order: 9
+estimatedMinutes: 6
+characters:
+  - echo
+exercise:
+  kind: prompt-tag-fill
+  template: |
+    <!-- Echo te pasó este prompt que escribió un compañero. Está todo
+         en un solo bloque. Reescríbelo en dos canales:
+         - <system>: lo que es CONSTANTE entre llamadas (rol, reglas, formato).
+         - <user>: lo que CAMBIA cada llamada (el reporte específico).
+
+         Prompt monolítico de referencia:
+
+         "Eres Echo, quartermaster de la crew. Tu trabajo es procesar
+         reportes de turno. Siempre respondes en JSON con los campos
+         timestamp, location, status. Nunca inventes datos que no
+         aparezcan en el reporte.
+
+         Reporte de turno:
+         {{input}}"
+    -->
+
+    <SPLIT_AQUI/>
+  requiredTags:
+    - system
+    - user
+hints:
+  - "El rol, las reglas y el formato aplican a TODA conversación, sin importar el reporte. Eso va en <system>."
+  - "El reporte específico cambia cada vez. Eso va en <user>, con `{{input}}`."
+  - "Pista mínima: <system> contiene la identidad y las reglas; <user> contiene 'Reporte de turno:' y `{{input}}`."
+teaches:
+  - system-prompt-design
+requires:
+  - system-vs-user
+---
+
+## Qué va realmente en el system prompt
+
+En la lección 4 viste que `system` y `user` son dos canales distintos. Ahora la pregunta más práctica: ¿qué pertenece a cada uno?
+
+### Regla del eje: lo constante vs lo que cambia
+
+La línea divisoria más útil:
+
+- **System:** lo que es **constante** entre llamadas. No cambia entre el mensaje 1 y el 50.
+- **User:** lo que es **específico** al turno actual. Cambia cada vez.
+
+| Cosa | Dónde va | Por qué |
+| --- | --- | --- |
+| Identidad del modelo ("Eres Echo") | system | Constante toda la conversación |
+| Reglas de formato ("siempre JSON") | system | Aplica a TODAS las respuestas |
+| Restricciones de seguridad ("nunca inventes") | system | Aplica siempre |
+| Tono persistente ("formal, conciso") | system | Aplica siempre |
+| Few-shot examples | system | Reutilizables en cada turno |
+| Pregunta del momento | user | Cambia cada turno |
+| Datos a procesar (`{{input}}`) | user | Cambia cada llamada |
+| Contexto del usuario que habla | user | Específico de la sesión |
+
+### Qué NO va en system
+
+Tres errores comunes:
+
+**1. Datos variables.** Si pusiste el bio del crewmate en system, lo estás reenviando idéntico cada llamada, pero el bio cambia entre llamadas. Va en user.
+
+**2. Información sensible o personal.** El system prompt se cachea y se manda en cada llamada. No pongas datos PII ahí si la conversación puede ser larga.
+
+**3. Instrucciones one-off.** *"Solo esta vez, respondeme corto."* Eso va en user, no en system. Si lo metes en system, el modelo lo va a aplicar a TODAS las respuestas siguientes.
+
+### Plantilla útil
+
+Para empezar, este shape funciona el 80% del tiempo:
+
+```xml
+<system>
+Eres [identidad].
+Tu trabajo es [tarea persistente].
+
+Reglas:
+- [formato persistente]
+- [restricción persistente]
+- [tono]
+
+Si [edge case común], [comportamiento esperado].
+</system>
+
+<user>
+[Pregunta del turno o datos a procesar]
+</user>
+```
+
+> Refactor mental: cuando armas un prompt, léelo y subraya lo que **siempre** será verdad. Eso es system. Lo demás es user.
+
+A la derecha, un prompt monolítico que mezcla las dos cosas. Reescríbelo en `<system>` y `<user>`.

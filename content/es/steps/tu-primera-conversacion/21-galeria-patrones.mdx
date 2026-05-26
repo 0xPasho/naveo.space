@@ -1,0 +1,105 @@
+---
+title: "Galería de patrones de conversación"
+order: 21
+estimatedMinutes: 5
+demo:
+  id: output-gallery
+  props:
+    presenter: vega
+    intent: "5 patrones probados para conversaciones que llegan a algún lugar"
+    cases:
+      - title: "Patrón 1. Drafter-Reviewer"
+        prompt: |
+          Turno 1: "Escribime el resumen ejecutivo."
+          Turno 2: "Ahora sos auditor escéptico. Listame 3 debilidades.
+                    No reescribas."
+          Turno 3: "Arreglá los puntos 1 y 3."
+        output: |
+          Output 1: Draft del modelo (mediocre, plausible).
+          Output 2: "1. La métrica clave no aparece. 2. Falta el
+                     contexto de fechas. 3. La conclusión asume sin
+                     evidencia."
+          Output 3: Resumen corregido específicamente en los puntos
+                    1 y 3. La estructura general queda intacta.
+        why: |
+          El loop drafter-reviewer (lección 7) en acción. Mismo modelo, dos roles. La crítica con número fijo te da control sobre qué atacar. Útil cuando: outputs que necesitan rigor (informes, copy, código crítico).
+      - title: "Patrón 2. Expert-asks-back"
+        prompt: |
+          "Voy a pedirte un plan de migración. Antes de proponer
+          nada, hacéme 3 preguntas concretas que necesités. Numeralas."
+        output: |
+          1. ¿Cuál es el sistema actual y la versión objetivo?
+          2. ¿Tenés ventana de downtime o tiene que ser zero-downtime?
+          3. ¿Hay datos en producción o es una migración limpia?
+        why: |
+          El modelo invierte el flujo (lección 3): pregunta antes de inventar. Útil cuando: arrancás algo donde sabés que el modelo va a tener que asumir cosas. Le ahorrás 3 turnos de "no, en realidad...".
+      - title: "Patrón 3. Devil's advocate"
+        prompt: |
+          "Sos ingeniero senior escéptico. Acá está mi plan: <plan>.
+          Listame 3 riesgos concretos y un test para descartar cada uno."
+        output: |
+          Riesgo 1: el rollback no está testeado. Test: correr el
+          rollback en staging antes del deploy.
+          Riesgo 2: la migración asume índices que no existen. Test:
+          verificar con \\d en producción.
+          Riesgo 3: timeouts en el script de migración. Test: medir
+          tiempo del script en un dataset de prueba 10x más chico.
+        why: |
+          El modelo adopta postura adversaria (lección 10) y devuelve crítica accionable. Útil cuando: decisiones donde el costo de equivocarse es alto.
+      - title: "Patrón 4. Recap-then-ask"
+        prompt: |
+          "Antes de pedirte el próximo paso, te resumo dónde estamos:
+          - Decisiones firmadas: A, B, C.
+          - Preguntas abiertas: X.
+          - Próximo paso: decidir si Y o Z.
+
+          Dada esta situación, ¿qué dato necesitás de mí para ayudarme
+          a decidir Y vs Z?"
+        output: |
+          Necesito saber 2 cosas para ayudarte a decidir:
+          1. ¿Cuál es la prioridad principal: velocidad o estabilidad?
+          2. ¿Tenés capacidad operativa para mantener Y, o necesitás
+             algo más automatizado como Z?
+        why: |
+          El recap-then-ask combina compactación (lección 16) con expert-asks-back. Útil cuando: una conversación larga llegó a un punto de decisión y necesitás alinear el contexto antes del siguiente turno crítico.
+      - title: "Patrón 5. Ping-pong refine"
+        prompt: |
+          Turno 1: "Escribime un párrafo sobre X."
+          Turno 2: (output del modelo)
+          Turno 3: "Sacá la oración 2 y reemplazala por algo que mencione Y."
+          Turno 4: (output corregido)
+          Turno 5: "Ahora cambiá el cierre por algo más concreto: una métrica
+                    o un ejemplo. No toques el resto."
+        output: |
+          Cada turno cambia UNA cosa específica del output anterior.
+          El párrafo va evolucionando incremental, manteniendo lo que
+          ya está bien.
+        why: |
+          Ping-pong refine es el correction prompt quirúrgico (lección 4) aplicado en serie. Útil cuando: estás puliendo un output cercano al final. Cada turno cambia una cosa, no reescribe todo. Si decís "mejoralo" en lugar de cambios puntuales, perdés el output bueno que ya tenías.
+---
+
+## Tu kit de patrones para conversaciones reales
+
+Hasta acá aprendiste técnicas sueltas: insistir con preguntas específicas, corregir quirúrgicamente, reafirmar, reiniciar. Esta lección las **junta en 5 patrones** que vas a aplicar combinados en producción.
+
+Estos no son los únicos patrones. son los más prácticos para empezar. Una vez que los tenés en la cabeza, podés combinarlos según la situación.
+
+### Cuándo usar cada uno
+
+| Patrón | Cuándo |
+|---|---|
+| **Drafter-Reviewer** | Output que necesita rigor. cualquier deliverable que va a usuario final. |
+| **Expert-asks-back** | Arranque de tarea donde el modelo necesita inputs que no tiene. |
+| **Devil's advocate** | Decisiones importantes antes de ejecutar. |
+| **Recap-then-ask** | Conversación larga en un punto de decisión. |
+| **Ping-pong refine** | Pulir un output cercano al final, sin perder lo bueno. |
+
+### Combinaciones útiles
+
+- **Expert-asks-back → Drafter-Reviewer → Ping-pong refine.** Para entregar algo de alta calidad desde cero.
+- **Drafter → Devil's advocate → Drafter.** Para tomar decisiones técnicas con confianza.
+- **Recap-then-ask + reset.** Cuando la conversación se ensució: resumí el estado, abrí conversación nueva con el resumen.
+
+A la derecha tenés los 5 patrones lado a lado. Antes de cerrar el track, internalizalos como **herramientas separadas**: cada una resuelve un problema distinto. Si las usás todas para todo, sobreingeniería. Si las usás según el caso, sos un operador multi-turn experto.
+
+> Estos mismos patrones se replican en el trabajo con humanos. El drafter-reviewer es lo que hace un PM antes de mandar un doc al equipo. El expert-asks-back es lo que hace un consultor en la primera reunión. El devil's advocate es lo que separa una decisión buena de una rapidamente tomada.

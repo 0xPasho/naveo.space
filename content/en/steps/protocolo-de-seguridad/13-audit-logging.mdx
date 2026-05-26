@@ -1,0 +1,106 @@
+---
+title: "Audit logging: the paper trail"
+order: 13
+estimatedMinutes: 6
+characters:
+  - hex
+  - atlas
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Atlas signs systems that leave a trail. <Character name="hex" />
+    checks that the trail is **the right one**. Not everything goes to
+    the audit log. what goes in must serve to reconstruct an incident.
+    what doesn't, must not go in because it turns the log into a new
+    security problem.
+
+    Classify each field as:
+
+    - **Log.** Adds forensics, isn't PII or secret.
+    - **Log hashed.** Adds forensics if you have it. needs to be
+      hashed or tokenized before writing.
+    - **NEVER log.** Anything you put here turns the log into an attack
+      target.
+  slots:
+    - id: log
+      label: "Log"
+    - id: hash
+      label: "Log hashed"
+    - id: never
+      label: "NEVER log"
+  pieces:
+    - id: timestamp
+      label: "UTC timestamp of the call"
+      correctSlot: log
+    - id: tool-name
+      label: "Name of the called tool (e.g. `delete_user`)"
+      correctSlot: log
+    - id: action-result
+      label: "Action result (success / error / dry-run-preview)"
+      correctSlot: log
+    - id: user-id
+      label: "Session user's ID"
+      correctSlot: log
+    - id: prompt-content
+      label: "Full text of the user's message"
+      correctSlot: hash
+    - id: api-key
+      label: "API key used to authenticate"
+      correctSlot: never
+    - id: model-output
+      label: "Full model output, including reasoning"
+      correctSlot: hash
+    - id: pii-fields
+      label: "ID / email / phone of the affected user"
+      correctSlot: never
+    - id: confirm-token
+      label: "Confirm token from the destructive phase 2"
+      correctSlot: log
+hints:
+  - "Think: if an attacker steals your audit log tomorrow, which individual piece immediately grants access to something? That piece is NEVER log."
+  - "User message text and model output are useful for forensics but contain potential PII. Hashing or tokenizing lets you correlate incidents without storing plaintext."
+  - "Audit tokens (timestamps, tool IDs, confirm tokens) are operational metadata. Log in plain."
+teaches:
+  - audit-logging-for-compliance
+requires:
+  - destructive-tool-mitigation
+  - data-classification-for-llms
+---
+
+## The log that saves you or the log that sinks you
+
+The audit log is the only way to reconstruct what happened in an incident. it's also, if not designed right, the juiciest file on your ship for an attacker.
+
+<Character name="hex" /> has three signs on the SOC wall:
+
+1. **Log everything operational.** Who, when, what tool, what result. Without this you can't debug anything.
+2. **Hash everything sensitive.** The prompt content may carry PII. so may the model output. Salted hash or tokenization lets you correlate without storing plaintext.
+3. **Never log secrets or plaintext PII.** Your log gets replicated, backed up, exported to SIEM, rotated to cold archive. Any secret there is in a thousand places tomorrow.
+
+### What has to be there to do useful forensics
+
+When an incident comes in, you need to answer:
+
+- When did it happen? → **timestamp**
+- What tool ran? → **tool name**
+- Who triggered it? → **session user_id**
+- What was asked, what came back? → **result** + **hash of input and output**
+- Was it destructive? → **confirm_token** and **dry-run preview**
+
+With those six fields you can reconstruct the what, the when, the who, the why.
+
+### What can NEVER be there
+
+**API keys.** They rotate, they leak, they end up in replicated logs. any key you log is compromised the moment you write it.
+
+**Plaintext PII.** Affected user's emails, IDs, addresses. The audit log exists to reconstruct incidents, not to store PII. If you need to reference the user, use the `user_id` that points to a vault entry.
+
+**System prompt contents.** Not only operational secret, but an attacker with log access can plan injections specific to your prompt.
+
+### Hashing is the middle path
+
+For data that **could** be useful for correlation (the user input content, the model output), salt-hash or tokenize. Tomorrow, if two incidents share the same input hash, you know the attacker used the same payload. without you having the payload in plaintext.
+
+> Atlas's rule: **a secure audit log is one that, if stolen, adds no new attack**. If your leaked log gives the attacker PII, secrets, or hints about your prompt, you don't have an audit log. you have a second problem.
+
+On the right are nine possible fields for your log. Classify each one before writing it.

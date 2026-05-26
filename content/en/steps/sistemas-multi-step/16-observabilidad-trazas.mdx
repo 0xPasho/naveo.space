@@ -1,0 +1,150 @@
+---
+title: "Observability: traces and spans"
+order: 16
+estimatedMinutes: 8
+characters:
+  - orbit
+  - echo
+exercise:
+  kind: prompt-task
+  task: |
+    <Character name="echo" /> enters the track. She asks you to design
+    the **trace schema** of your multi-step system: which fields to
+    store per execution so you can debug a failure six hours later
+    without having to re-run everything.
+
+    Your job: write the JSON-Schema (or an example JSON structure) of a
+    **trace** with its **spans**. A trace represents ONE complete system
+    execution; each span represents ONE step (LLM call, tool call,
+    router decision, etc.).
+
+    Cover:
+
+    1. Root-level trace fields (trace_id, user_id, started_at, duration_ms, status, input_summary).
+    2. Per-span fields (span_id, parent_span_id, name, kind, started_at, duration_ms, status, input, output, error, model, tokens_used, cost_usd).
+    3. How you model order and nesting (parent → child).
+    4. What to redact (PII, secrets) and what to store literally.
+
+    Where the user goal goes, use `{{input}}`. Your output is the JSON
+    of the schema or a concrete example of a well-formed trace.
+  starter: |
+    {
+      "trace_id": "trc_...",
+      "user_id": "...",
+      "started_at": "...",
+      "duration_ms": ...,
+      "status": "success | partial | error",
+      "input_summary": "...",
+      "spans": [
+        {
+          "span_id": "spn_001",
+          "parent_span_id": null,
+          "name": "router.classify",
+          "kind": "llm_call | tool_call | decision | retrieval",
+          "started_at": "...",
+          "duration_ms": ...,
+          "status": "...",
+          "input": "...",
+          "output": "...",
+          "error": null,
+          "model": "...",
+          "tokens_used": { "in": ..., "out": ... },
+          "cost_usd": 0.0,
+          "metadata": {}
+        }
+        // TODO: more spans, with nesting and redaction
+      ]
+    }
+  testCases:
+    - input: "meta-evaluation"
+  rubric:
+    - id: trace-root-fields
+      kind: llm-judge
+      criterion: "The trace root has at least: trace_id, user_id (or equivalent), started_at, duration_ms, status (with clear values), input_summary. NOT just trace_id."
+    - id: span-essentials
+      kind: llm-judge
+      criterion: "Each span has: span_id, parent_span_id (for nesting), name, kind, started_at, duration_ms, status, input, output, error. Without this you can't correlate the span with its place in the chain."
+    - id: kind-enumerated
+      kind: llm-judge
+      criterion: "The span's `kind` field has a clear enum (llm_call, tool_call, decision, retrieval, agent_step, etc.). Not free text. downstream filters depend on this."
+    - id: cost-and-tokens-per-llm-span
+      kind: llm-judge
+      criterion: "Spans of kind=llm_call carry tokens_used (in + out) and cost_usd. Without this you can't aggregate 'how much this chain cost' or do cost optimization analysis."
+    - id: parent-child-relationship
+      kind: llm-judge
+      criterion: "The schema models nesting with parent_span_id (a nullable field). Child spans (e.g. tool calls inside an agent_step) point to the parent span. Does NOT use only a flat array without relation."
+    - id: redaction-explicit
+      kind: llm-judge
+      criterion: "The schema explicitly marks what's redacted (PII, secrets) or how: e.g. 'sensitive fields go as hash or replaced with `[REDACTED]`'. If you don't contemplate this, traces are a data leak waiting to happen."
+    - id: useful-status-values
+      kind: llm-judge
+      criterion: "The status field has actionable values: 'success', 'partial' (degraded), 'error' (with error type), 'cached'. NOT just 'ok/fail'. The intermediate 'partial' is critical for systems with graceful degradation."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Think of the trace as **the execution's medical history**. If six hours later someone asks 'why did this request return X?', the trace has to answer without re-running anything."
+  - "parent_span_id is what turns a flat array into a tree. Without it, you can't visualize 'the router invoked the incident flow, which called the agent_loop, which invoked 3 tools'."
+  - "For redaction, a simple rule: 'anything matching PII regex goes as hash; secrets go as `[REDACTED]`; the rest stored literal'. Document it in the schema."
+teaches:
+  - observability-traces
+requires:
+  - chain-design-basics
+---
+
+## Your system without traces is a black box
+
+<Character name="echo" /> shows up at the end of the track because the last skill of an LLM systems engineer isn't building; it's **knowing what happened when something fails**. Without observability, a production bug is a mystery: the user reports "the system said something weird", and you can't reproduce or explain it.
+
+The solution is old: **distributed traces**, imported from the microservices world but adapted for LLMs.
+
+### Trace and span
+
+- **Trace** = a complete system execution. One trace_id per request.
+- **Span** = an individual step within the trace. Every LLM call, every tool call, every router decision is a span.
+
+Spans nest: an agent_loop is a parent span that contains N child spans (one per tool call). The router is a parent span that contains a child span (the flow it picked). The trace shape is a tree.
+
+### What to store per span
+
+Minimum viable:
+
+```json
+{
+  "span_id": "spn_042",
+  "parent_span_id": "spn_001",
+  "name": "rag.retrieve",
+  "kind": "retrieval",
+  "started_at": "2026-05-24T12:34:56.123Z",
+  "duration_ms": 187,
+  "status": "success",
+  "input": "what's the coolant protocol?",
+  "output": "[3 snippets]",
+  "model": null,
+  "tokens_used": null,
+  "cost_usd": null,
+  "metadata": { "vector_store": "primary", "top_k": 3 }
+}
+```
+
+For LLM spans, you add `model`, `tokens_used` (in/out separated), and `cost_usd`. For tool spans, you add the `tool_name` and `args`.
+
+### Why the "obvious" fields matter
+
+- **parent_span_id**: turns the span array into a tree. Without this you can't see "router invoked the agent_loop, which invoked tool X". It's the difference between visual debugging and reading 500 log lines by hand.
+- **duration_ms**: first debugging filter. "Which span took longest?" answers 80% of latency issues.
+- **cost_usd and tokens_used**: aggregable. "How much did this request cost? How much does this flow cost on average?" doesn't answer without this.
+- **status with `partial`**: when you degrade gracefully (step 14), the trace status is neither success nor error. it's `partial`. Without this value, you lose visibility of degradation.
+
+### Redaction: what you do NOT store literally
+
+Traces live in observability systems (Datadog, Honeycomb, OpenTelemetry). **Anything you put there is potentially readable by your whole team + the provider**. Rules:
+
+- **PII (emails, IDs, names)**: hash or token. Recoverable if you have access to the lookup table.
+- **Secrets (API keys, tokens)**: `[REDACTED]`. Never recoverable.
+- **Big outputs**: truncate to 2KB and store a reference to cold storage if you need the full blob.
+
+> A trace that leaks PII in logs is a real data-breach story. Document the redaction policy in the schema, not in a wiki nobody reads.
+
+### Your task
+
+Write the schema (or a concrete example) of a trace for your system. The judge evaluates 7 criteria on schema coverage. trace root, spans, nesting, cost, status, redaction.

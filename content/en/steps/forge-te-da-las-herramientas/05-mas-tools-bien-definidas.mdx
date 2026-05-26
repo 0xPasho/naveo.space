@@ -1,0 +1,113 @@
+---
+title: "More tools, more realistic parameters"
+order: 5
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: assign_shift
+  toolPurpose: |
+    Assign a crewmate to a specific shift with a concrete role. The system
+    validates that the crewmate exists, that the role is valid for that
+    shift, and records the assignment in the roster.
+
+    Inputs:
+    - crewmate's alias (string)
+    - shift id (string, format "shift-YYYY-MM-DD-NN")
+    - role during the shift (one of: lead, engineer, medic, comms, support)
+  exampleInvocations:
+    - 'assign_shift(crewmate_alias: "Em", shift_id: "shift-2026-05-14-N1", role: "medic") → {ok: true, registered_at: "..."}'
+    - 'assign_shift(crewmate_alias: "Bru", shift_id: "shift-2026-05-15-D1", role: "engineer") → {ok: true, registered_at: "..."}'
+  starter: |
+    {
+      "name": "assign_shift",
+      "description": "",
+      "parameters": {
+        "type": "object",
+        "properties": {
+
+        },
+        "required": []
+      }
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Schema is valid JSON"
+    - id: has-name
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"assign_shift\""
+      criterion: "name = \"assign_shift\""
+    - id: has-three-params
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"crewmate_alias\"[\\s\\S]*\"shift_id\"[\\s\\S]*\"role\""
+      criterion: "Defines the three parameters: crewmate_alias, shift_id, role"
+    - id: all-required
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"required\"\\s*:\\s*\\[[^\\]]*\"crewmate_alias\"[^\\]]*\"shift_id\"[^\\]]*\"role\""
+      criterion: "All three parameters are in required"
+    - id: role-is-enum
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"role\"[\\s\\S]{0,200}\"enum\""
+      criterion: "The `role` parameter uses `enum` to limit values (lead, engineer, medic, comms, support)"
+    - id: description-clear
+      kind: llm-judge
+      criterion: "The tool's `description` explains that it assigns a crewmate to a shift with a role, mentions that it's a MUTATING operation on the roster (not just read-only), and orients the model on when to use it. NOT a vague 'assigns someone'."
+    - id: parameter-descriptions
+      kind: llm-judge
+      criterion: "Each of the three parameters (crewmate_alias, shift_id, role) has its own description that helps the model know what to pass. For shift_id, ideally mentions the expected format. For role, ideally mentions the valid values."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "For `role` with limited values, use `\"enum\": [\"lead\", \"engineer\", \"medic\", \"comms\", \"support\"]`. The model won't invent roles that don't exist."
+  - "For `shift_id`, add a description with the expected format (\"shift-YYYY-MM-DD-NN\"). The model will respect it."
+  - "Mention in the tool's description that this is a MUTATING operation. If you don't, the model might invoke it to 'check' a shift when you only wanted to read it."
+teaches:
+  - tool-schema-multi-param
+  - tool-schema-enum
+requires:
+  - tool-schema-author-basics
+---
+
+## Real tools have three or four parameters
+
+The first tool was easy. one input, one output. Reality is uglier: most useful functions take 2-5 parameters, some with limited values (`enum`), others with specific formats (dates, IDs).
+
+Your job here is to define `assign_shift`: an operation that **mutates** the shift roster. Three parameters:
+
+- `crewmate_alias`. string. The crewmate's alias.
+- `shift_id`. string. Specific format: `shift-YYYY-MM-DD-NN`.
+- `role`. string. Only five valid values: `lead`, `engineer`, `medic`, `comms`, `support`.
+
+### What's new: `enum`
+
+When a parameter accepts only a finite set of values, **use `enum`**:
+
+```json
+"role": {
+  "type": "string",
+  "enum": ["lead", "engineer", "medic", "comms", "support"],
+  "description": "Role during the shift."
+}
+```
+
+With `enum`, the model can't invent values that don't exist ("captain", "doctor", "comms_lead"). The system rejects out-of-enum values and the model quickly learns the valid set.
+
+### What's new: parameter descriptions
+
+Each parameter has its own `description`. For generic types (string, number), the description is what tells the model **what to put in there**. Example: `shift_id` is a string, but the model won't know the format unless you say so.
+
+> Rule of thumb: if you could pass the parameter wrong (weird format, invalid value), add its description.
+
+### Mutating vs read-only operations
+
+`lookup_crewmate` is read-only. `assign_shift` **mutates state**. The tool description must make it clear which one is which. the model decides differently for operations that change things.

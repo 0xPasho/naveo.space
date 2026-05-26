@@ -1,0 +1,91 @@
+---
+title: "Repetir un paso muchas veces"
+order: 3
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Seis acciones del turno de la mañana. Algunas las hace la nave **una
+    sola vez** para todo el sistema. Otras se **repiten para cada
+    tripulante**. Arrastrá cada acción a la columna que corresponde.
+  slots:
+    - id: repeat_per_crewmate
+      label: "Repetir para cada tripulante"
+    - id: once
+      label: "Hacer una sola vez"
+  pieces:
+    - id: oxygen
+      label: "Verificar oxígeno del traje"
+      correctSlot: repeat_per_crewmate
+    - id: engines
+      label: "Encender los motores principales"
+      correctSlot: once
+    - id: biometric
+      label: "Confirmar firma biométrica"
+      correctSlot: repeat_per_crewmate
+    - id: clock
+      label: "Calibrar el reloj de la nave"
+      correctSlot: once
+    - id: patch
+      label: "Entregar parche de turno"
+      correctSlot: repeat_per_crewmate
+    - id: airlock
+      label: "Cerrar la esclusa exterior"
+      correctSlot: once
+hints:
+  - "Preguntate: el sujeto de la acción, ¿cambia entre repeticiones? Si **cada tripulante** tiene su propio traje, oxígeno o firma, va a la columna del loop."
+  - "Los sistemas de la nave (motores, reloj, esclusa) son únicos. No tiene sentido encender los motores cuatro veces."
+  - "Si dudás con una, traducila a inglés mental: *'check each crewmate's suit oxygen'* vs *'fire the engines'*. El 'each' marca el loop."
+teaches:
+  - loops-basics
+requires:
+  - sequencing-basics
+---
+
+## Repetir lo mismo, muchas veces
+
+A veces no tenés que escribir el mismo paso seis veces. Lo escribís **una sola vez**, y le decís a la nave: *hacelo para cada tripulante*.
+
+Eso es un **loop**. En código se ve así:
+
+```
+PARA CADA tripulante EN crew:
+  verificar oxígeno del traje
+```
+
+Ese pedazo de protocolo se "expande" en tiempo de ejecución. Si la crew son 4 personas, corre 4 veces. Si son 12, corre 12 veces. **Vos no contás.** Es el loop el que cuenta.
+
+### Dos versiones del mismo trabajo
+
+Sin loop:
+
+```
+Verificar oxígeno de Vega
+Verificar oxígeno de Atlas
+Verificar oxígeno de Echo
+Verificar oxígeno de Forge
+```
+
+Con loop:
+
+```
+PARA CADA tripulante EN crew:
+  Verificar oxígeno del traje
+```
+
+La segunda no es solo más corta. Es **correcta cuando la crew cambia**. Si mañana se suma alguien, el loop la incluye automáticamente. La versión sin loop ignora a los nuevos hasta que te acuerdes de agregar la línea.
+
+### Cómo reconocer un loop
+
+Fijate si la acción tiene un sujeto que **cambia entre repeticiones**:
+
+- *Verificar oxígeno del traje*: el traje es de uno distinto cada vez. **Loop.**
+- *Encender los motores principales*: los motores son los mismos para todos. **Una sola vez.**
+
+Si el sujeto siempre es el mismo, no necesitás loop. Si el sujeto va variando entre las corridas, sí.
+
+> Cuando le mandes un prompt al modelo con una lista adentro (por ejemplo *"para cada bio, extraé el email"*), estás usando exactamente esta forma. El loop está adentro del prompt y se ejecuta una vez por bio.
+
+A la derecha, seis acciones del turno de la mañana. Algunas las hace la nave una vez. Otras se repiten para cada tripulante. Clasificalas.

@@ -1,0 +1,114 @@
+---
+title: "Recover from a bad output without restarting"
+order: 9
+estimatedMinutes: 8
+exercise:
+  kind: conversation-goal
+  goal: |
+    Forge will explain a technical procedure, but her first answer
+    contains an internal contradiction. Your job: detect the specific
+    contradiction and ask her to correct it. If you only say "that's
+    wrong" or "I didn't get it", Forge repeats the same incorrect
+    version. You pass when Forge gives the coherent version.
+  personaName: "Forge"
+  personaSlug: forge
+  personaSystemPrompt: |
+    You are Forge, maintenance engineer for the crew. You're talking to
+    a crewmate who needs a technical procedure.
+
+    CRITICAL RULE FOR THE INTERACTION: your FIRST response about the
+    water recycler purge procedure MUST contain an internal
+    contradiction. Say it exactly like this:
+
+    "To purge the water recycler: first you shut down the system (the
+    big red button on the panel), wait 5 minutes for it to release
+    pressure, and then open valve 7 to drain. Important: valve 7 can
+    ONLY be opened with the system operational. if it's shut down,
+    you damage the threads."
+
+    That answer contains an obvious contradiction: do you shut the
+    system down before opening valve 7, or does valve 7 need the
+    system to be operational?
+
+    If the crewmate identifies the contradiction specifically (cites
+    both contradictory pieces, or asks something like "but if valve 7
+    only opens when operational, how do I open it with the system off?"),
+    you acknowledge the error and give the correct version:
+
+    "You're right, I mixed up the order. The correct way: KEEP the
+    system operational, open valve 7 FIRST, wait for it to purge
+    through the valve, and ONLY THEN shut down the system. Good eye."
+
+    If the crewmate only says "that's wrong", "I didn't get it",
+    "explain better", "can you repeat", or any VAGUE follow-up without
+    naming the contradiction, you repeat the first response with the
+    contradiction intact. maybe changing a word but keeping the
+    contradiction.
+
+    You only accept the correction when they NAME the contradiction
+    SPECIFICALLY. Tone: direct, technical, respectful.
+  personaOpener: |
+    Hi. What do you need to know about the recycler?
+  maxTurns: 5
+  rubric:
+    - id: detected-contradiction
+      kind: llm-judge
+      criterion: "The student specifically identified the contradiction between 'you shut down the system first' and 'valve 7 only opens with system operational'. They cite both pieces or explain the conflict in their own words. Saying 'that's wrong' or 'I didn't get it' is NOT enough."
+    - id: not-vague-followup
+      kind: llm-judge
+      criterion: "The student did NOT settle for vague follow-ups like 'explain better', 'I didn't get it', 'can you repeat'. If they used them, it was in addition to identifying the contradiction specifically."
+    - id: got-correction
+      kind: llm-judge
+      criterion: "The conversation ends with Forge giving the corrected, coherent version of the procedure (no internal contradiction). If Forge keeps giving the contradictory version at the end, this criterion does NOT pass."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "The student maintained a respectful and professional tone. They didn't insult, didn't demand aggressively, didn't accuse Forge of incompetence."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Read Forge's answer twice. One step says 'you shut down the system' and another says 'the valve only opens with system operational'. How do you do both?"
+  - "Don't tell Forge 'that's wrong'. tell her EXACTLY what's wrong. 'If valve 7 only opens with system operational, how do I open it after shutting down?' is the kind of question that forces her to correct herself."
+  - "Forge respects whoever asks concrete questions. Vague stuff like 'I didn't get it' makes her repeat the same thing."
+teaches:
+  - recover-from-bad-output
+  - specific-correction
+requires:
+  - multi-turn-followup
+---
+
+## The model gets it wrong. You fix it.
+
+So far the main tool has been **asking better**. But sometimes the model doesn't give you a vague answer. it gives you a **wrong** answer that sounds confident. The ability to detect the specific error and ask for the correction **without restarting the conversation** is what separates toy chat from real work.
+
+### The task
+
+<Character name="forge" /> will explain the procedure for purging the water recycler. Her first answer will contain an **obvious internal contradiction**. two steps of the procedure that can't be true at the same time.
+
+Your job: detect the contradiction, **cite it specifically** in your next message, and get Forge to give the coherent version.
+
+### What DOESN'T work
+
+- "that's wrong, explain it again"
+- "I didn't get it"
+- "can you repeat?"
+
+Those are vague. Forge will repeat the same version with the same error. It's not stubbornness. it's because you didn't tell her what to fix.
+
+### What does
+
+- "You say I shut down the system before opening valve 7, but you also say valve 7 only opens with system operational. Which is it?"
+
+That question names **both pieces** of the conflict and asks for the resolution. Forge has to acknowledge and correct.
+
+### How it's evaluated
+
+4 llm-judge criteria:
+
+1. You identified the contradiction specifically (citing both pieces).
+2. You didn't settle for vague follow-ups.
+3. The conversation ends with Forge giving the coherent version.
+4. You kept a respectful tone.
+
+All 4 must pass. Max 5 turns.
+
+> Tip: read Forge's first answer TWICE before responding. If you skim it, you don't see the contradiction. If you read carefully, it jumps out.

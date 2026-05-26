@@ -1,0 +1,115 @@
+---
+title: "Length constraints: forcing short output"
+order: 13
+estimatedMinutes: 7
+characters:
+  - vega
+exercise:
+  kind: prompt-task
+  task: |
+    Vega needs ultra-short notifications for the bridge display. Each
+    notification must be **exactly one sentence**, max 120 characters,
+    ending with a period. No exclamation or question marks. No lists.
+    No paragraphs.
+
+    Write a prompt that takes a shift event (`{{input}}`) and returns
+    that notification. The output must be ONLY the sentence.
+  starter: |
+    <task>
+      Generate a notification for the bridge display.
+
+      Strict rules:
+      - Exactly ONE sentence.
+      - Max 120 characters.
+      - Ends with a period (not ! or ?).
+      - No preamble, no quotes, no lists.
+    </task>
+
+    <event>
+      {{input}}
+    </event>
+  testCases:
+    - input: "Leak detected in bay 7 at 02:14. Coolant spilling at 5L/min. Forge en route with sealing kit. Containment estimate: 6 minutes. No risk to adjacent crew."
+    - input: "Deck 3 water recycler completed its scheduled maintenance cycle without incident."
+    - input: "Three events in the night shift: bay 2 communications panel rebooted, meal scheduled for 06:00, and Atlas approved an early shift change."
+  rubric:
+    - id: one-sentence
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^[^.!?\\n]+\\.\\s*$"
+        flags: "s"
+      criterion: "Exactly one sentence. ends with a period, no ! or ?, no internal line breaks, no second sentence."
+    - id: within-length
+      kind: deterministic
+      check: length-between
+      args:
+        min: 20
+        max: 120
+      criterion: "Between 20 and 120 characters."
+    - id: captures-essence
+      kind: llm-judge
+      criterion: "The sentence captures the core fact of the event (not secondary details). For reports with multiple events, it picks the one with highest operational priority. Doesn't invent information not in the input."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Specify the limit **in characters**, not words. Models count characters better than words."
+  - "Explicitly say: 'DO NOT use exclamation marks. DO NOT use questions.' Without that hard constraint, the model will insert ! for emphasis."
+  - "For case 3 (multiple events), add to the prompt: 'If there are several events, pick the most operationally critical one.' Without that rule, the model will try to mention all three and bust the 120 chars."
+teaches:
+  - length-constraints
+requires:
+  - prompt-task-basics
+---
+
+## Why models are bad at counting
+
+LLMs **don't count well**. They don't have an internal calculator. When you tell them "max 50 words", they're approximating, not measuring. That's why length constraints need more care than other rules.
+
+### Three constraints that work better than "max N words"
+
+**1. Characters instead of words.**
+
+```
+"Max 120 characters."
+```
+
+Better than words because models are more consistent with the unit. Still not exact, but the error is ±20% rather than ±50%.
+
+**2. Forced structure instead of length.**
+
+```
+"Exactly one sentence."
+"A list of 3 items, no more, no fewer."
+"Two paragraphs: first the what, second the why."
+```
+
+Structure is easier to respect than a number. If your prompt says "exactly 3 bullets", the model almost always returns 3.
+
+**3. Specific prohibitions.**
+
+```
+"DO NOT use exclamation marks."
+"DO NOT include explanations after the answer."
+"DO NOT use bullet lists."
+```
+
+Each specific prohibition cuts off a common "elaboration" branch the model would take.
+
+### The scaffold trick
+
+If you want exactly one sentence, **end the prompt with a visual cue**:
+
+```
+Notification: 
+```
+
+(with the space and the colon, no value). The model treats that as the "scaffold" to write on top of and tends to respect the format.
+
+### Why vague lengths fail
+
+*"Be concise"* is completely subjective. *"One sentence"* is precise. The difference is what the model can check against its output as it generates. Rules that can be verified in real time work; aesthetic rules don't.
+
+> Practical validation: use regex to check structure (sentence count, presence of bullets, line breaks). Use length-between N and M characters as a hard limit. Leave the judge for content quality.
+
+On the right, three events of varying size. Write a prompt that returns a single short sentence for all three, including the multi-event case.

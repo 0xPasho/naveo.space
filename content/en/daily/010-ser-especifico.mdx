@@ -1,0 +1,134 @@
+---
+title: "Quick mission: vague vs specific"
+intro: |
+  If your prompt accepts 10 interpretations, you will see 10 different outputs. Specificity is what closes the door.
+station: vega
+teaches:
+  - prompt-specificity
+  - ambiguity-resolution
+characters:
+  - atlas
+scenes:
+  - kind: prompt-AB
+    question: |
+      Atlas needs the model to write a welcome email for a new
+      crewmate. Which prompt leaves less room to improvise?
+    optionA: |
+      ```
+      Write me a nice welcome email for someone joining the team.
+      ```
+    optionB: |
+      ```
+      Write a welcome email for Hex, a new engineer starting Monday at
+      9:00. Tone warm but professional, max 6 lines, mention: the
+      bridge watch, the #bridge channel, and the daily stand-up at 10:00.
+      ```
+    correct: B
+    explanation: |
+      Option A allows any tone, any length, any content. "Nice" means
+      different things to different people. You will iterate three
+      times before it gets close.
+
+      Option B names the person, start day, tone, length, and the
+      info to include. The model has no room to invent. One pass and
+      it is usable.
+
+      Rule: every vague word ("nice", "clear", "complete") is a
+      decision you hand to the model. Sometimes that is fine, most of
+      the time it is not.
+  - kind: slot-fill-dnd
+    task: |
+      Atlas reviews requests from the team. Sort each one: is it
+      specific enough to send to the model as is, or still ambiguous?
+    slots:
+      - id: specific
+        label: "Specific enough"
+      - id: vague
+        label: "Still ambiguous"
+    pieces:
+      - id: p1
+        label: "Write a summary of what is important."
+        correctSlot: vague
+      - id: p2
+        label: "Summarize the 3 incidents with severity high from the last 24 hours, in bullets."
+        correctSlot: specific
+      - id: p3
+        label: "Return JSON with fields id, severity, summary for open incidents from the last shift."
+        correctSlot: specific
+      - id: p4
+        label: "I want to see how things are going."
+        correctSlot: vague
+      - id: p5
+        label: "Generate a 100-word internal note about the policy change, for night-shift staff."
+        correctSlot: specific
+      - id: p6
+        label: "Tell me if this is okay."
+        correctSlot: vague
+  - kind: step-order-dnd
+    task: |
+      Your prompt came out vague and the output is useless. Order the
+      steps to rewrite it more specific, top to bottom.
+    steps:
+      - id: s1
+        label: "Re-read your prompt and underline every vague word."
+        detail: "'Nice', 'clear', 'important', 'complete', 'better'. Those are the open doors."
+      - id: s2
+        label: "For each vague word, write down what you actually wanted."
+        detail: "If 'nice' meant 'warm but professional tone', say so."
+      - id: s3
+        label: "Add the missing numbers: length, count, dates."
+        detail: "'Max 6 lines' beats 'short'. '3 bullets' beats 'some'."
+      - id: s4
+        label: "Name the actors and the specific context."
+        detail: "Who receives, who sends, which shift, which customer."
+      - id: s5
+        label: "Show an example of the expected output if you can."
+        detail: "One concrete example beats three adjectives."
+  - kind: prompt-AB
+    question: |
+      You need the model to draft a Slack message announcing an
+      incident. Which prompt closes the operational ambiguities best?
+    optionA: |
+      ```
+      Make a message to announce the server incident.
+      ```
+    optionB: |
+      ```
+      Draft a Slack message for the #incidents channel saying the
+      api-prod-02 server is down since 14:32 UTC. Include: severity
+      (high), next update in 15 minutes, and @oncall mention. Max 4
+      lines, no emojis.
+      ```
+    correct: B
+    explanation: |
+      Option A assumes the model knows which incident, which channel,
+      which key info, and which audience. It will invent all of that,
+      and you will rewrite from scratch.
+
+      Option B names the exact channel, the down server, the UTC time,
+      the fields to include, the length, and the no-emoji rule. The
+      output comes ready to copy and paste.
+
+      Useful rule: if you edit more than 30 percent of the output, the
+      prompt was ambiguous. Go back to the prompt, not the output.
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of this specific prompt. Notice how each piece
+      closes a concrete ambiguity.
+    parts:
+      - id: who
+        label: "Who receives (closes audience ambiguity)"
+        text: "The message goes to the internal Slack #incidents channel, read by on-call and SRE."
+      - id: what
+        label: "What happened (closes event ambiguity)"
+        text: "Server api-prod-02 has been down since 14:32 UTC. Severity high."
+      - id: when
+        label: "When it continues (closes timing ambiguity)"
+        text: "Next update in 15 minutes or when there is a relevant change, whichever comes first."
+      - id: how
+        label: "How it is returned (closes form ambiguity)"
+        text: "Max 4 lines, operational tone, no emojis, @oncall mention at the end."
+---
+
+Mission of the day: every vague word is a decision you hand to the
+model. If you care about the output, do not hand over the decisions.

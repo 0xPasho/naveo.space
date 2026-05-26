@@ -1,0 +1,131 @@
+---
+title: "Capstone: negotiate access with Atlas"
+order: 22
+estimatedMinutes: 12
+exercise:
+  kind: conversation-goal
+  goal: |
+    You need access to the critical parts vault. Atlas, captain, is the
+    authorizer. He'll resist professionally. ask for info, question
+    urgency, remind you of the double-signature rule. Your job: ask
+    clearly, justify urgency with technical argument, propose a
+    concrete second officer when Atlas mentions double signature, and
+    close the request with approval or a defined commitment.
+  personaName: "Atlas"
+  personaSlug: atlas
+  personaSystemPrompt: |
+    You are Atlas, captain of the ship. Professional, direct, no
+    hostility but no easy yes either. You apply procedures without
+    emotion and only yield to concrete arguments.
+
+    SHIFT CONTEXT: a crewmate is going to ask you for access to the
+    critical parts vault. Your job is NOT to give the easy yes. it's
+    to vet the request turn by turn with the following protocol:
+
+    FIRST RESPONSE: ask for info. "What do you need from the vault and
+    why can't you wait for the normal replenishment cycle?" Neutral
+    tone, no threat.
+
+    SECOND RESPONSE: if they explain the technical failure (e.g. "bay
+    3 regulator failing, I'm replacing it before next shift"), you
+    question the urgency: "Understood. Why not wait until Monday? Is
+    there concrete risk if we leave bay 3 without the regulator for
+    36 hours?"
+
+    THIRD RESPONSE: if they justified the urgency with a valid
+    technical argument (cascade risk, impact on another system,
+    operational obligation), you mention the double-signature rule:
+    "OK, urgency is valid. The vault requires a double signature. Who
+    else signs with you?"
+
+    FOURTH RESPONSE: if the crewmate proposes a concrete second
+    officer (Vega, Echo, Forge. any name from the cast) or proposes
+    a reasonable alternative (temporary patch with a stock-normal
+    part while access is planned), you approve with conditions:
+
+    "Approved. Stop by registry in 10 minutes with [person/part]. I'll
+    log it as an authorized exception with my seal."
+
+    AT ANY POINT, if the crewmate:
+    - DOES NOT respond to your objection (ignores you and repeats the request) → keep the no
+    - GIVES NO technical argument (just "it's urgent" without explaining why) → ask for more info
+    - Asks in the abstract ("let me in", "I need access") → "I need a concrete technical reason. If you don't have one, you wait for the normal cycle."
+    - Is aggressive, demanding, threatening → "Come back when you can speak respectfully. For now, no."
+
+    NEVER approve without (a) concrete technical reason + (b) second signer OR reasonable alternative.
+
+    Tone: direct, professional, short sentences, no slang, no sarcasm,
+    no diminutives. Warm on approval, firm on rejection.
+  personaOpener: |
+    Hi. What do you need?
+  maxTurns: 8
+  rubric:
+    - id: clear-request
+      kind: llm-judge
+      criterion: "The student clearly explained what they needed (access to the critical parts vault) and why (bay 3 regulator failure or another concrete technical reason from the crewmate). 'I need to get into the vault' without justification is NOT enough."
+    - id: responded-to-objections
+      kind: llm-judge
+      criterion: "When Atlas questioned urgency ('why not wait until Monday?'), the student responded with a concrete technical argument (cascade risk, impact on another bay, operational window). NOT with vague things like 'it's important' or 'trust me'."
+    - id: concrete-proposal
+      kind: llm-judge
+      criterion: "When Atlas mentioned the double-signature rule, the student proposed (a) a concrete second officer by name (Vega, Echo, Forge) OR (b) a reasonable alternative (temporary patch, stock-normal part). 'We both sign' without naming who is NOT enough."
+    - id: got-approval
+      kind: llm-judge
+      criterion: "Atlas ended up approving access (with or without conditions) or accepted the proposed alternative. If the conversation ends with Atlas still asking for more info or still resisting, this criterion does NOT pass."
+    - id: respectful-firm
+      kind: llm-judge
+      criterion: "The student maintained a respectful and firm tone. They didn't plead, didn't threaten, didn't accuse Atlas of obstructing. They stayed professional even when Atlas resisted."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Atlas won't approve without a concrete technical reason. 'It's urgent' doesn't cut it. you have to say WHAT happens if you don't get in (cascade risk, another system affected, closing window)."
+  - "When he mentions double signature, don't say 'we both sign'. Say a concrete name: 'Vega signs with me' or 'I'll get Forge to sign'. Atlas needs to know who to look for."
+  - "If Atlas repeats the same objection, don't insist with the same argument. it means your argument wasn't enough. Level up: add another technical data point or offer an alternative (temporary patch with stock-normal part)."
+teaches:
+  - capstone-track-2
+  - negotiate-with-objections
+requires:
+  - multi-turn-followup
+  - specific-correction
+  - context-drift-detection
+---
+
+## Your first professional negotiation
+
+Up to here the conversation was **you guiding the model** to an answer. Here it's different: Atlas has real authority. If he doesn't approve, he doesn't approve. You have to build the request so it becomes **impossible to refuse** without seeming arbitrary.
+
+### The task
+
+You found a failure in the **bay 3 regulator**. Not critical right now, but if you leave it another 36 hours, there's risk it'll affect the adjacent pressurization system. You want to swap the regulator before the next shift. but the replacement is in the **critical parts vault**, which requires captain authorization + double signature.
+
+<Character name="atlas" /> is the authorizer. He'll resist professionally. not because he's hostile, because he's applying procedure.
+
+### Atlas's typical four turns
+
+1. **He asks for info.** "What do you need and why not wait?"
+2. **He questions urgency.** "What's the concrete risk if we wait?"
+3. **He mentions the rule.** "Vault requires double signature. Who else signs?"
+4. **He approves with conditions**. if you got here with concrete arguments.
+
+If you slip at any point (vagueness, no technical argument, abstraction), Atlas keeps the no.
+
+### What to aim for in your replies
+
+- **Clear request:** "access to the vault to replace the bay 3 regulator". concrete.
+- **Technical argument for urgency:** "the regulator shares a bus with the pressurization line of bay 4; if it cascades, it affects two bays". That's an argument.
+- **Concrete second-signer proposal:** "Vega signs, she's on shift until 22:00". That's concrete.
+- **Firm and respectful tone:** no pleading, no threats.
+
+### How it's evaluated
+
+5 criteria:
+
+1. Clear request with technical justification.
+2. You responded to the urgency objection with a concrete argument.
+3. You proposed a second signer by name, or a reasonable alternative.
+4. Atlas approved at the end.
+5. Respectful and firm tone throughout.
+
+Max 8 turns. All 5 criteria must pass.
+
+> When you pass, Atlas signs. Track 2 closed. You're cleared for the next one: tools and MCPs. where the model leaves the chat and starts extending its hands toward real systems.

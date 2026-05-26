@@ -1,0 +1,109 @@
+---
+title: "Start over vs keep pushing"
+order: 19
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    You're 10 turns in trying to get the model to understand your
+    intent. You clarified 3 times. It keeps drifting: uses terms you
+    discarded, assumes things you denied, proposes solutions you
+    already rejected. What do you do?
+  optionA: |
+    ```
+    Stay in the same conversation. Make follow-up number 4 with more
+    context, more clarifications, more detail of what you DON'T want.
+    Eventually it'll understand.
+    ```
+  optionB: |
+    ```
+    Stop. Open a new conversation. Write ONE prompt containing: the
+    goal, the 3 things you already discarded made explicit upfront,
+    and the concrete question. The dirty context from the previous
+    conversation is poisoning every new turn. You start clean.
+    ```
+  correct: B
+  explanation: |
+    The beginner's instinct: the more the model drifts, the more
+    clarifications to add. The intuitive logic is that more info =
+    better. In multi-turn, past a certain threshold, **it's the
+    opposite**.
+
+    The model reads the WHOLE history each turn. If the first 5 turns
+    are full of misunderstandings, wrong assumptions, and
+    contradictory corrections, you can add 10 more clarifications. the
+    statistical weight of "this conversation is going that way" has
+    already won. The model will keep drifting because most of the
+    context tells it to drift.
+
+    The fix is counterintuitive: **start over**. A new conversation
+    doesn't have the 10 dirty turns. If you capture what was learned
+    in ONE clean prompt (goal + explicit discards + question), the
+    model starts aligned.
+
+    When to apply the reset rule:
+
+    - **After 3+ corrections of the same thing.** If you had to say
+      3 times "no, I don't want JSON, I want YAML", the conversation
+      is poisoned.
+    - **When the model assumes things you denied.** Sign the
+      contradictory context outweighs your latest correction.
+    - **When you lost track of what was decided.** If you can't sum
+      up the state, the model can't either.
+
+    Golden rule: **pushing on is more expensive than starting over**.
+    3 extra follow-up turns = $0.05 + 10 minutes of frustration. 1
+    well-crafted new prompt = $0.001 + 30 seconds.
+
+    This does NOT contradict earlier lessons about insisting with
+    specific follow-ups. Those apply when the model is still willing
+    to correct. This applies when you've already passed the point of
+    no return.
+teaches:
+  - reset-vs-continue
+requires:
+  - context-compression
+---
+
+## Sometimes the right button is "new conversation"
+
+The whole first half of the track taught you to **sustain** a conversation: insist, correct, reaffirm. That works to a point. Past that point, the conversation is contaminated and the best move is **to throw it out**.
+
+The criterion for detecting the reset moment is practical, not philosophical.
+
+### The 3 reset signals
+
+1. **You repeated the same correction 3+ times.** If you had to say three times "I don't want JSON, I want YAML", the model is not going to start understanding on the fourth try. previous context is outweighing you.
+
+2. **The model assumes things you explicitly denied.** Sign that the weight of "the user probably wants X" beats the weight of "the user said NOT X".
+
+3. **You lost track of state.** If you can't sum up in 3 lines what was agreed, the model can't either.
+
+### How to start over well
+
+It's not throwing everything out. It's **distilling what you learned** into a clean prompt:
+
+```
+I want <final goal>.
+I do NOT want: <discard 1>, <discard 2>, <discard 3>.
+I need: <concrete spec>.
+Question: <one clear question>.
+```
+
+That recipe loads the useful context of the 10 old turns into 4 lines, without dragging the misunderstandings.
+
+### The opposite error: starting over too fast
+
+If you reset every time the model drifts a single turn, you lose the incremental learning. The rule isn't "first doubt, reset". It is:
+
+| Situation | Action |
+|---|---|
+| First drift | Specific follow-up (lessons 1-9). |
+| Second drift of the same thing | Reaffirm with emphasis (lessons 11-12). |
+| Third drift of the same thing | Summarize and restart conversation. |
+
+> This is the opposite of the beginner instinct, which is "I already invested 10 turns, it'd be a waste to throw them out". That's sunk-cost fallacy. the 10 turns are already gone. The only thing that decides future cost is how clean you start the next turn.
+
+On the right, the decision moment: keep going or restart?

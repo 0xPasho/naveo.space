@@ -1,0 +1,92 @@
+---
+title: "Por qué responde distinto cada vez"
+order: 17
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Mandás el mismo prompt al modelo dos veces seguidas, exactamente igual.
+
+    Primera respuesta: *"El protocolo de despegue tiene seis pasos."*
+    Segunda respuesta: *"Un despegue estándar requiere seis pasos."*
+
+    Mismo significado, distinta redacción. ¿Por qué?
+  optionA: |
+    **El modelo tiene un bug que lo hace responder distinto.** Para
+    consistencia hay que rezar o pedirle explícitamente que repita.
+  optionB: |
+    **El modelo no elige siempre el token más probable. Muestrea** de la
+    distribución de probabilidades. Si el token mejor candidato tiene 60%
+    y el segundo tiene 35%, no siempre gana el primero. Un parámetro
+    llamado **temperature** controla cuánto explora.
+  correct: B
+  explanation: |
+    El modelo es **muestrador, no maximizador**. En la lección 14 viste
+    que calcula una distribución de probabilidad sobre el siguiente token.
+    Lo que no te dije: no siempre elige el de mayor probabilidad.
+
+    El parámetro `temperature` controla qué tan "exploratorio" es el
+    muestreo. Con `temperature = 0` es (casi) determinístico, elige el
+    más probable. Con `temperature = 1.0` o más, explora alternativas con
+    frecuencia, devolviendo respuestas más variadas.
+
+    Por default, la mayoría de las APIs tienen temperature entre 0.7 y 1.0
+    (para que las respuestas se sientan naturales). Si necesitás
+    consistencia (extracción de datos, clasificación, código), bajala.
+hints:
+  - "El modelo no es determinístico por default. Tiene aleatoriedad controlada en el muestreo."
+  - "Temperature alta significa más exploración. Temperature baja significa más consistencia."
+  - "La pregunta no es 'por qué falla', sino 'por qué el muestreo hizo lo que hizo en cada corrida'."
+teaches:
+  - temperature-sampling
+requires:
+  - llm-mental-model
+---
+
+## Misma entrada, distinta salida
+
+Le mandás el mismo prompt al modelo dos veces y te devuelve dos respuestas distintas. ¿Bug? No: **diseño**.
+
+### El modelo no elige el "mejor" token
+
+En la lección 14 viste que el modelo calcula una **distribución de probabilidad** sobre el siguiente token. Algo como:
+
+```
+La capital de Francia es ___
+  París      93%
+  Lyon        2%
+  Marsella    1%
+  Berlín      1%
+  ...
+```
+
+Lo que no te dije: **no siempre elige el más probable**. Por default, el modelo **muestrea** de esa distribución. Es como tirar un dado cargado: el 93% de las veces sale París, pero a veces sale Lyon o Marsella.
+
+### El control: temperature
+
+El parámetro `temperature` controla qué tan "loco" es el muestreo:
+
+| Temperature | Comportamiento | Cuándo usar |
+| --- | --- | --- |
+| `0.0` | (Casi) determinístico. Siempre el más probable. | Clasificación, extracción de datos, código |
+| `0.3` | Conservador. Casi siempre el más probable. | Resúmenes, respuestas factuales |
+| `0.7` | Default. Balance entre consistencia y variedad. | Conversación general |
+| `1.0+` | Creativo. Explora respuestas menos obvias. | Brainstorming, escritura creativa |
+
+### Por qué importa: consistencia vs creatividad
+
+Si estás haciendo extracción de datos (*"sacame el email de este bio"*), querés que la misma entrada dé la misma salida. **Temperature baja.**
+
+Si estás generando ideas (*"dame 5 nombres para esta nave"*), querés variedad. **Temperature alta.**
+
+Si te aparece "el modelo es inconsistente" en producción y todo es extracción, probablemente la temperature está demasiado alta. Bajala.
+
+### Lo que NO resuelve
+
+Bajar la temperature te da consistencia, pero **no garantiza que la respuesta sea correcta**. El modelo puede ser muy consistente diciendo algo equivocado (eso es la alucinación, próxima lección). La consistencia es una propiedad **ortogonal** a la corrección.
+
+> Cuando arranques a usar APIs en serio, vas a ver `temperature` como uno de los primeros parámetros de cada llamada. Acordate de esta lección: el default de la mayoría de los SDKs (0.7-1.0) es para conversación. Para tareas estructuradas, bajalo.
+
+A la derecha, dos respuestas distintas a la misma pregunta. ¿Qué explica realmente lo que pasó?

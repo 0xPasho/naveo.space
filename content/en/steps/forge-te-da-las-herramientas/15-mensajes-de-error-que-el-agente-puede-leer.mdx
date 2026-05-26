@@ -1,0 +1,144 @@
+---
+title: "Error messages that help the agent recover"
+order: 15
+estimatedMinutes: 10
+exercise:
+  kind: tool-handler-implement
+  toolName: book_room
+  toolSchema: |
+    {
+      "name": "book_room",
+      "description": "Books a room on the ship for a crewmate, in a time window, with a minimum required capacity.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "room_id": { "type": "string", "description": "Room id. Format 'room-DECK-NN'." },
+          "crewmate_alias": { "type": "string" },
+          "starts_at": { "type": "string", "format": "date-time" },
+          "ends_at": { "type": "string", "format": "date-time" },
+          "required_capacity": { "type": "integer", "minimum": 1 }
+        },
+        "required": ["room_id", "crewmate_alias", "starts_at", "ends_at", "required_capacity"]
+      }
+    }
+  starter: |
+    // Handler for book_room.
+    // Available:
+    //   db.rooms.get(room_id) → {room_id, capacity, deck} | null
+    //   db.bookings.findOverlapping(room_id, starts_at, ends_at) → [{booking_id, crewmate_alias, starts_at, ends_at}, ...]
+    //   db.bookings.create({room_id, crewmate_alias, starts_at, ends_at}) → {booking_id}
+    //
+    // Your job: implement the handler so EVERY error contains the info
+    // the agent needs to suggest a next step to the user. It's not enough
+    // to return `{ ok: false, error: "didn't work" }`.
+
+    async function handle({ room_id, crewmate_alias, starts_at, ends_at, required_capacity }) {
+      // TODO
+      const booking = await db.bookings.create({ room_id, crewmate_alias, starts_at, ends_at });
+      return { ok: true, booking_id: booking.booking_id };
+    }
+  language: javascript
+  scenarios:
+    - description: "Room not found: room_id is not in the DB."
+      expected: "ok: false, error with code='room_not_found' and a suggestion (e.g. 'list available rooms')."
+    - description: "Insufficient capacity: room has capacity 4, asked for 8."
+      expected: "ok: false, error with code='capacity_too_small', includes actual capacity and required, suggestion to look for bigger rooms."
+    - description: "Time conflict: an existing booking overlaps."
+      expected: "ok: false, error with code='time_conflict', includes the occupied slot (starts/ends) and the alias who booked it, suggestion of alternate slot."
+    - description: "Invalid range: ends_at before starts_at."
+      expected: "ok: false, error with code='invalid_time_range', clear message about which date is which."
+    - description: "Happy path: room exists, capacity ok, no conflict, valid range."
+      expected: "ok: true with booking_id."
+  rubric:
+    - id: validates-time-range
+      kind: llm-judge
+      criterion: "Validates BEFORE touching the DB that ends_at > starts_at. If not, returns { ok: false, error: { code: 'invalid_time_range', message: ... } }."
+    - id: room-not-found-has-suggestion
+      kind: llm-judge
+      criterion: "If the room doesn't exist, returns code='room_not_found' AND the error includes a `suggestion` or `recovery_hint` (string) suggesting the agent list rooms or ask for another. Does NOT return just 'not found'."
+    - id: capacity-error-has-numbers
+      kind: llm-judge
+      criterion: "If capacity is insufficient, the error includes the NUMBERS: actual room capacity and requested capacity. Without those numbers, the agent can't explain to the user why it failed."
+    - id: conflict-error-has-context
+      kind: llm-judge
+      criterion: "If there's a time conflict, the error includes the occupied slot (existing booking's starts_at + ends_at) and optionally the alias who owns it. The agent can then suggest a different time to the user."
+    - id: error-structure-consistent
+      kind: llm-judge
+      criterion: "All errors follow { ok: false, error: { code, message, ...extra } }. The `code` is an identifiable string (snake_case), not narrative text. The `message` is human-readable."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Each error should have: `code` (machine-readable), `message` (human-readable), and extra data the agent needs to reason (capacities, slots, suggestions)."
+  - "Optimal validation order: cheapest first. valid range → room exists → capacity → conflict. Cut early whenever you can."
+  - "For `room_not_found`, add `recovery_hint: 'Use list_available_rooms() to find another room.'`. The agent reads the sentence and usually does exactly that."
+teaches:
+  - error-message-design
+requires:
+  - mcp-error-handling
+---
+
+## An error is information, not an ending
+
+In the previous step you learned to **not throw exceptions**. you return `{ ok: false, error: ... }` instead of crashing. That was the first 50%. the second 50% is **what you put inside `error`**.
+
+There's a huge difference between these two errors:
+
+```js
+// Useless
+{ ok: false, error: "didn't work" }
+
+// Actionable
+{
+  ok: false,
+  error: {
+    code: "capacity_too_small",
+    message: "Room room-B-04 has capacity 4, but you requested 8 people.",
+    available_capacity: 4,
+    requested_capacity: 8,
+    recovery_hint: "Try list_rooms({ min_capacity: 8 }) to find a bigger room."
+  }
+}
+```
+
+With the second, the agent can:
+
+1. Tell the user why it didn't work (with real numbers).
+2. Invoke the next tool with the right parameters (`list_rooms` with `min_capacity: 8`).
+3. Not retry the same book with the same params (it knows it'll fail anyway).
+
+With the first, the agent knows nothing. most likely it retries, or tells the user "didn't work" and cuts the conversation.
+
+### The canonical error schema
+
+```js
+{
+  ok: false,
+  error: {
+    code: string,           // machine-readable, snake_case
+    message: string,        // human-readable
+    ...extra_context        // data to reason with
+  }
+}
+```
+
+**The extra fields are what distinguish a useful error from a useless one.** Every `code` should carry case-specific info:
+
+- `not_found` → what you were looking for (`looked_up: "room-B-04"`).
+- `permission_denied` → which permission is missing (`required_role: "admin"`).
+- `validation_failed` → which field and which rule (`field: "amount", rule: "min:1"`).
+- `conflict` → what it conflicts with (`conflicts_with: {...}`).
+- `rate_limited` → when retry is allowed (`retry_after: "30s"`).
+
+### The `recovery_hint` field
+
+A technique that pays off: add `recovery_hint` as a free string, suggesting the next step. The agent reads that sentence and almost always follows it. It's like giving it advice from your side.
+
+```js
+recovery_hint: "Try list_available_rooms({ min_capacity: 8, deck: 'B' }) to find a fitting room."
+```
+
+### Your task
+
+On the right you have `book_room`. The starter works on the happy path. Your job: cover 4 error cases with rich messages, **each with its specific `code` and extra data so the agent can act**.
+
+> The agent is only as smart as the information you give it. Poor errors = poor agent. Rich errors = agent that self-corrects.

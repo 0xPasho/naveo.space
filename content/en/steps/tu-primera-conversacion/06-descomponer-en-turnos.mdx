@@ -1,0 +1,75 @@
+---
+title: "Break a task across multiple turns"
+order: 6
+estimatedMinutes: 7
+characters:
+  - hex
+exercise:
+  kind: step-order-dnd
+  task: |
+    Hex handed you a big task: assemble an incident report to send to
+    the captain. If you throw it all in one prompt, the output comes
+    back mediocre on five things at once. If you decompose into turns
+    and review each output before continuing, every part comes back
+    solid.
+
+    Put the 6 turns it pays to chain in the right order.
+  steps:
+    - id: scope
+      label: "1. Define the report scope"
+      detail: "Ask the model to first enumerate the sections an incident report needs (summary, timeline, root cause, impact, actions). You confirm or adjust before continuing."
+    - id: timeline
+      label: "2. Ask for the raw timeline"
+      detail: "Pass the logs and ask for ONLY an ordered timeline, no interpretation. You check the timestamps are right before the next turn."
+    - id: cause
+      label: "3. Ask for the root cause analysis"
+      detail: "With the timeline confirmed, ask for the analysis of which event triggered what. One answer, one analysis. Not mixed with impact."
+    - id: impact
+      label: "4. Ask for operational impact"
+      detail: "With root cause locked, ask which systems/people were affected. Still one question per turn."
+    - id: actions
+      label: "5. Ask for recommended actions"
+      detail: "Only with cause and impact clear, ask for recommendations. The model now proposes from solid context, not invention."
+    - id: assemble
+      label: "6. Ask for the final assembly"
+      detail: "Ask it to merge the 4 parts into a coherent single report. Since each part was reviewed separately, the assembly doesn't introduce new errors."
+hints:
+  - "Before asking for any data, lock the scope. Otherwise on turn 3 you'll discover you forgot an entire section."
+  - "Timeline comes before cause: you can't analyze root cause without first agreeing on what happened when."
+  - "Impact comes after cause and before actions: actions are justified against impact, not against timeline."
+teaches:
+  - multi-turn-task-decomposition
+requires:
+  - multi-turn-followup
+---
+
+## A big task doesn't get done in a single turn
+
+In the previous Track you learned to decompose a task **inside a single prompt**: role + context + examples + format, all together. For small, well-scoped tasks, that's enough.
+
+But for big tasks (an incident report, a migration plan, a technical proposal) a single prompt brings back a mediocre output on five things at once. The timeline comes out weak because the model spent tokens thinking root cause. The impact comes out generic because it ran out of attention.
+
+**The multi-turn equivalent technique:** decompose the task into a sequence of turns, where each turn delivers ONE piece and you review it before asking for the next.
+
+### Why it works
+
+In a single prompt, the model has to satisfy 5 objectives at the same time. Quality per objective drops. In separate turns, each turn has ONE objective. the model puts all its tokens on it. and you review it before the error propagates to the next.
+
+> Same idea as in software: a function doing 5 things is hard to test. 5 functions doing 1 thing each are easy. Multi-turn is the "one function at a time" version of prompt engineering.
+
+### The 4 rules for decomposing well
+
+1. **One piece per turn.** If your ask has an "and" in the middle, split it.
+2. **Review before continuing.** Each turn is a checkpoint. If the timeline has wrong timestamps, **don't move on**. fix it right there.
+3. **Order matters.** What comes later depends on what came before. Timeline → cause → impact → actions, not the other way.
+4. **Close with an explicit assembly.** The last turn asks to merge the pieces into a coherent output.
+
+### When NOT to decompose
+
+For small tasks (classify a message, extract a date), decomposing is **overkill**. A solid prompt is enough. Multi-turn decomposition pays off when:
+
+- The task has 3+ independent pieces.
+- Early errors propagate to later pieces.
+- You can add value reviewing between turns.
+
+On the right you have an incident report for the captain. <Character name="hex" /> put the 6 turns out of order. Put them in order.

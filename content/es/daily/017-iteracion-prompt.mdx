@@ -1,0 +1,148 @@
+---
+title: "Misión exprés: iterar el prompt sin perderse"
+intro: |
+  El output salió mal. ¿Cambias todo el prompt o sólo una cosa? La diferencia decide si vas a aprender algo de la iteración.
+station: vega
+teaches:
+  - prompt-iteration-loop
+  - recover-from-bad-output
+characters:
+  - vega
+  - echo
+scenes:
+  - kind: prompt-AB
+    question: |
+      Vega tiene un prompt para clasificar tickets. La precisión cayó.
+      Mira el prompt y le ve tres cosas para cambiar: el orden de los
+      labels, agregar dos ejemplos, y subir la temperatura. ¿Cómo
+      itera la próxima vuelta?
+    optionA: |
+      ```
+      Cambiar las tres cosas a la vez y volver a medir. Si mejora,
+      listo, si no, probar otra cosa.
+      ```
+    optionB: |
+      ```
+      Cambiar UNA cosa, medir, anotar el resultado. Despues otra. La
+      tercera al final. Asi vas a saber cual de las tres movio la
+      precision.
+      ```
+    correct: B
+    explanation: |
+      La A es la trampa del "más cambios, más chances de mejorar". Si
+      moves tres variables y la precisión sube, no sabés cuál ayudó.
+      Si baja, tampoco sabés cuál rompió. La próxima vez vas a estar
+      en el mismo lugar, adivinando.
+
+      La B es la regla de iteración sana: una variable por vuelta. Es
+      más lento por ciclo, pero acumula conocimiento. Después de tres
+      iteraciones tenés tres datos: "los ejemplos sumaron 4%", "el
+      orden no cambió nada", "la temperatura más alta bajó 2%". Eso
+      es aprendizaje, no suerte.
+
+      Excepción: si tenés un cambio grande de framing (todo el system
+      prompt, otro modelo), arrancá una experiencia nueva. Pero
+      adentro de un mismo prompt, una variable a la vez.
+  - kind: step-order-dnd
+    task: |
+      Una vuelta de iteración bien hecha. Ordená los pasos, de arriba
+      hacia abajo.
+    steps:
+      - id: s1
+        label: "Mirá el output que falló y nombrá el síntoma concreto."
+        detail: "'Está mal' no sirve. 'Confunde urgente con normal en mensajes ambiguos' sí."
+      - id: s2
+        label: "Pickeá UNA hipótesis de qué parte del prompt es probable causante."
+        detail: "Una. Si tenés tres, anotalas, pero atacá una a la vez."
+      - id: s3
+        label: "Cambiá esa parte y volve a correr el prompt sobre el mismo input que falló."
+        detail: "Mismo input es clave. Si cambias el input, no estás midiendo el cambio."
+      - id: s4
+        label: "Anotá el resultado: mejoro, no cambio, o empeoro. Y por que crees que paso."
+        detail: "El log de iteraciones es lo que te salva la próxima vez."
+      - id: s5
+        label: "Si mejoró, dejá el cambio y volvé al paso 1 con el próximo síntoma."
+        detail: "Iterás hasta que el síntoma se resuelve. No hasta que el prompt es perfecto."
+  - kind: slot-fill-dnd
+    task: |
+      Después de un output malo, mirás señales. Clasificá cada una:
+      ¿te dice "patch chico" (un detalle) o "discard" (el prompt
+      arrancó por mal camino)?
+    slots:
+      - id: patch
+        label: "Patch chico (iterar)"
+      - id: discard
+        label: "Discard (rearmar desde cero)"
+    pieces:
+      - id: p1
+        label: "El output tiene la estructura que querías, sobra una frase de preamble."
+        correctSlot: patch
+      - id: p2
+        label: "El modelo entendio una tarea totalmente distinta (le pediste resumen, te dio traduccion)."
+        correctSlot: discard
+      - id: p3
+        label: "El JSON está bien, pero un campo tiene el formato incorrecto."
+        correctSlot: patch
+      - id: p4
+        label: "El modelo está rolepleando un personaje que vos nunca pediste."
+        correctSlot: discard
+      - id: p5
+        label: "Un ejemplo del few-shot lo confunde, sin él anda mejor."
+        correctSlot: patch
+      - id: p6
+        label: "Después de 5 iteraciones el output sigue tan mal como en la primera."
+        correctSlot: discard
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de una entrada limpia en tu log de
+      iteraciones. Un log bueno te deja replicar y aprender despues.
+    parts:
+      - id: input
+        label: "Input que fallo (concreto, copiado tal cual)"
+        text: "Ticket: 'el cobro me salio mal, devuelvanme la plata YA o llamo a mi abogado'."
+      - id: symptom
+        label: "Sintoma observado (que salio mal en el output)"
+        text: "El modelo lo clasifico como `normal`. Esperaba `urgente` por el tono y la mencion legal."
+      - id: hypothesis
+        label: "Hipotesis (una variable que probablemente lo cause)"
+        text: "El few-shot no tiene ningun ejemplo con tono agresivo + mencion legal. El modelo no tiene referencia para esto."
+      - id: change
+        label: "Cambio aplicado (lo concreto que toque)"
+        text: "Sume un ejemplo: 'voy a denunciarlos -> urgente'. No toque mas nada del prompt."
+  - kind: prompt-AB
+    question: |
+      Echo te muestra dos formas de loguear una iteración del prompt
+      después de un test fallido. ¿Cuál te va a servir más cuando
+      vuelvas dentro de una semana?
+    optionA: |
+      ```
+      v3: probe varias cosas, agregue ejemplos y baje temperatura.
+      Algo mejoró pero falta. Seguir probando.
+      ```
+    optionB: |
+      ```
+      v3 (cambio: agregue ejemplo 'denunciar -> urgente'). 
+      Input: ticket #4421. Antes: clasifico `normal`. Ahora:
+      `urgente`. Resultado: bien. Side effect: en ticket #4400
+      (consulta tranquila) tambien dio `urgente` ahora. Hay que
+      revisar.
+      ```
+    correct: B
+    explanation: |
+      El A es la nota de quien itera sin método. "Probé varias cosas"
+      no se puede reproducir. "Algo mejoró" no se puede medir. En una
+      semana no te acordás qué probaste ni por qué.
+
+      El B es un log que sirve: nombra el cambio exacto (una sola
+      variable), el input concreto, el antes/después, y nombra un
+      efecto colateral que apareció. Esa última línea es oro, porque
+      te dice que la próxima iteración tiene que cuidar de no
+      sobre-disparar el `urgente` en casos tranquilos.
+
+      Regla: el log se escribe para vos en 7 días, no para el yo de
+      ahora que se acuerda de todo. Si la entrada no permite
+      reproducir, no aporta.
+---
+
+Misión del día: iterás mejor cuando movés una variable a la vez y dejás
+rastro. Si cambias todo cada vuelta, estás adivinando, no aprendiendo.

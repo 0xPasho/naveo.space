@@ -1,0 +1,72 @@
+---
+title: "Reconstruct lost context"
+order: 20
+estimatedMinutes: 6
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Bridge shift change. <Character name="vega" /> has been on three other
+    incidents and lost the thread of your conversation. You need to
+    **reconstruct the context** for her in a single message before asking
+    your next question.
+
+    Drag each fact into the right slot of the context recap. Missing
+    slots = Vega still doesn't know enough to help.
+  slots:
+    - id: who-i-am
+      label: "Who I am"
+    - id: what-i-need
+      label: "What I'm trying to do"
+    - id: what-decided
+      label: "What we already decided"
+    - id: where-stuck
+      label: "Where I'm stuck"
+    - id: what-i-need-from-her
+      label: "What I need from you"
+  pieces:
+    - id: alias
+      label: "I'm Bruno, new crewmate, second day."
+      correctSlot: who-i-am
+    - id: goal
+      label: "I'm filing my first shift report."
+      correctSlot: what-i-need
+    - id: prior
+      label: "You walked me through steps 1–3 already."
+      correctSlot: what-decided
+    - id: blocker
+      label: "Step 4 (sign with alias) is failing. system rejects my alias."
+      correctSlot: where-stuck
+    - id: ask
+      label: "Tell me whether the alias has to match my ID, or just my crew nickname."
+      correctSlot: what-i-need-from-her
+hints:
+  - "Read each label carefully. 'Where I'm stuck' is about the blocker, not the goal."
+  - "The piece *'You walked me through steps 1–3 already'* belongs to what you already covered. the prior state."
+  - "Without the **ask** slot filled, Vega still won't know what to do for you. The recap is useless without the question at the end."
+teaches:
+  - multi-turn-context-recovery
+requires:
+  - multi-turn-followup
+---
+
+## The model has no memory unless you give it one
+
+Outside of the active conversation buffer, the model remembers nothing. <Character name="vega" /> can't pull up "what we were discussing yesterday". there is no yesterday for her, only the tokens currently in context.
+
+When you come back to a conversation, **you** are the memory. Re-establishing context takes 60 seconds of effort up front and saves five turns of confusion. The shape is always the same:
+
+1. **Who I am.** One sentence, identifying yourself.
+2. **What I'm trying to do.** The goal, in one sentence.
+3. **What we already decided.** The state the prior conversation left things in.
+4. **Where I'm stuck.** The specific blocker.
+5. **What I need from you.** The exact next question.
+
+Skip any of these and the model has to guess. Guessing is where hallucination starts.
+
+> This is also the right shape for handing off to a human teammate, a support agent, or a coworker after a long weekend. You're not formatting for the model. you're formatting for *anyone who lost the thread*.
+
+### Your exercise
+
+On the right: five labeled slots, five facts in the bank. Drag each fact into the slot it belongs in. When you click **Check**, <Character name="vega" /> verifies the recap is complete enough to act on.

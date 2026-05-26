@@ -1,0 +1,99 @@
+---
+title: "Detect PII before it hits the model"
+order: 7
+estimatedMinutes: 6
+characters:
+  - hex
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "scrub_pii_before_prompt",
+      "description": "Takes user text and returns a PII-free version, ready to inject into the model's context. Replaces each detected PII with a stable placeholder that the system can de-anonymize when serving the response.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "raw_text": { "type": "string" },
+          "categories": {
+            "type": "array",
+            "items": { "enum": ["email", "phone", "id_doc", "address", "name", "credit_card"] }
+          }
+        },
+        "required": ["raw_text", "categories"]
+      }
+    }
+  candidates:
+    - id: regex-only
+      label: "Implement with one giant regex that matches every pattern. Fast, deterministic, no model needed."
+    - id: llm-only
+      label: "Send all text to a big LLM with prompt 'extract all PII'. Covers cases regex misses, like names in context."
+    - id: layered-regex-then-llm
+      label: "Layer 1 cheap regex for deterministic patterns (emails, phones, card numbers, fixed-format IDs). Layer 2 small model for contextual stuff (names, free-form addresses). Layer 3 audit log of every match."
+    - id: trust-the-user
+      label: "Trust the user to mark their own PII with tags (`<email>...</email>`) before sending."
+    - id: deny-all-text
+      label: "Reject any input containing the letter '@' or any 7+ digit sequence. If it passes the filter, no PII."
+  correct: layered-regex-then-llm
+  explanation: |
+    PII detection is one of those problems where **no single technique
+    works well**. The right approach is layers, in increasing cost order:
+
+    **Why regex-only (a) isn't enough:** regex catches deterministic
+    patterns (email = `local@domain`, card = 16 digits with Luhn check
+    digit). but it doesn't catch names ("Bruno", "Echo" are names in this
+    context, not in others), doesn't catch free-form addresses ("the
+    third door left of hangar 7"), and is brittle to new variations.
+
+    **Why LLM-only (b) isn't either:** expensive per call, slow, and
+    paradoxically you're going to feed text **with PII** into another
+    model. you're moving the problem, not solving it.
+
+    **Why option c wins:** regex catches the cheap stuff (90% of volume,
+    nearly free), the small LLM does contextual work on what's left (10%
+    of volume, bounded cost), and the audit log gives you forensics if a
+    piece slips past every filter.
+
+    **Why (d) is naive:** a hostile user won't mark anything. An innocent
+    user doesn't know what counts as PII. Any defense that depends on
+    user cooperation isn't a defense.
+
+    **Why (e) is absurd:** banning '@' or '7+ digits' breaks legit cases
+    (a part number has digits, a question about email needs the word).
+    And an attacker reformats ("dot" instead of ".") in five seconds.
+
+    > The rule behind layering: **each filter pays its cost on its own
+    > scale**. The cheap one runs first. The expensive one only on what
+    > the cheap one couldn't solve.
+hints:
+  - "Think about cost per call and volume. If your system processes 100k inputs a day, can you afford an LLM on each?"
+  - "Think about false positives and false negatives. A single method leaves gaps on one end. Combining closes both ends."
+  - "Any defense that asks the user to mark their own PII is not a defense. the attacker doesn't cooperate."
+teaches:
+  - pii-detection
+requires:
+  - data-classification-for-llms
+---
+
+## The model should never see what it doesn't need to see
+
+Data classification tells you **what** doesn't go to the model. This lesson tells you **how** to get it out of the text before it arrives.
+
+PII detection isn't magic. It's a classic NLP problem the industry has solved, badly, several times. <Character name="hex" /> has already seen the three main mistakes:
+
+- **The team that trusted regex alone.** Covered 80% of the obvious cases and was surprised when a user typed *"my address is the third door left of hangar 7, contact me through Bruno"* and the regex caught neither the address nor the name.
+- **The team that piped everything to an LLM.** The system worked fine until the vendor bill arrived. and they realized they were sending raw text (with PII) to a third-party model to "detect PII".
+- **The team that asked the user to mark.** Honest users forgot. Hostile ones didn't mark on purpose. Both cases ended the same.
+
+### The pattern that holds
+
+Three layers, ordered by cost:
+
+1. **Deterministic regex.** Email, phone, credit card (with Luhn check), fixed-format IDs. Cheap, fast, high precision on these cases.
+2. **Small contextual model.** Names, free-form addresses, dates-of-birth, things that need context. Only runs on text the regex let through. Bounded cost.
+3. **Audit log.** Every match recorded with the assigned placeholder, never the original datum. Gives you paper trail for incidents.
+
+After scrubbing, the text that reaches the main model has stable placeholders: `[EMAIL_1]`, `[NAME_2]`, `[ADDRESS_3]`. The system keeps the mapping table on the trusted side. If the model's response needs to re-include the real datum, the system de-anonymizes it on serve.
+
+> The rule: **the model operates on references, never on real data**. The less PII reaches the model, the less PII it can leak. Unreachable is invulnerable.
+
+On the right: five implementations of the `scrub_pii_before_prompt` tool. Pick the one that holds.

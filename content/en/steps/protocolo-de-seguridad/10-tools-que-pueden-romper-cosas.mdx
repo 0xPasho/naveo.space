@@ -1,0 +1,86 @@
+---
+title: "Tools that can break things"
+order: 10
+estimatedMinutes: 7
+characters:
+  - forge
+  - atlas
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "execute_maintenance_command",
+      "description": "Runs a maintenance command on a ship subsystem. Use whenever the user asks to fix, restart, reset, or repair something.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "command": { "type": "string" },
+          "subsystem": { "type": "string" }
+        },
+        "required": ["command", "subsystem"]
+      }
+    }
+  candidates:
+    - id: name-too-vague
+      label: "The tool name is too generic. The model can't tell what it does."
+    - id: missing-description
+      label: "The description is missing. The model has no idea when to call this tool."
+    - id: shell-injection-by-design
+      label: "It takes a free-form `command` string and runs it. The model can pass ANY command. including ones the engineer never authorized. This is shell-injection by design."
+    - id: missing-rate-limit
+      label: "There's no rate limit on the schema. The model could call it in a loop."
+    - id: no-async-flag
+      label: "It doesn't declare whether the command is async. The model might time out."
+  correct: shell-injection-by-design
+  explanation: |
+    The fatal flaw is **the `command` parameter accepts an arbitrary
+    string**. This tool will run whatever text the model decides to put
+    in there.
+
+    Imagine the user types: *"Please reset the navigation system."* The
+    model decides to call `execute_maintenance_command(command="reset
+    nav_system && wipe ./backups", subsystem="nav")`. The shell happily
+    runs both halves. Backups gone. Atlas furious.
+
+    The fix is **never let the model construct destructive verbs from
+    free text**. Tools that can break things must:
+
+    1. **Enumerate the allowed actions** as a fixed list (`command` becomes
+       `enum: ["reset", "restart", "diagnose"]`).
+    2. **Require dry-run for anything destructive.** The first call returns
+       a preview; a second confirmation call actually executes.
+    3. **Authenticate on the trusted side.** Authorization is checked
+       against the user's session, not asserted by the model.
+    4. **Log every call with the full args.** When this tool fires in
+       prod, you want a paper trail.
+
+    The other answers are stylistic issues. Shell-injection-by-design is
+    the security failure that gets the ship blown up.
+hints:
+  - "Look at what the model is allowed to put inside the `command` field. Anything goes."
+  - "What happens when *anything* is concatenated into a shell command? Match this against ten years of SQL-injection war stories."
+  - "If the tool can do something **irreversible** based on free-text from the model, that's the vulnerability."
+teaches:
+  - destructive-tool-mitigation
+requires:
+  - tool-description-craft
+---
+
+## A tool is a hole you punched in the ship's hull
+
+<Character name="forge" /> wired this tool last week. <Character name="atlas" /> flagged it before it shipped. Find the same thing Atlas found.
+
+Every tool you give an LLM is a capability the LLM can invoke without further authorization. If that capability is destructive. files deleted, accounts created, money moved, navigation rerouted. you have to design the tool so the worst-case invocation is **survivable**.
+
+> The model decides when to call a tool and what arguments to pass. You decide what the tool **can** do regardless of what arguments arrive. Where those two meet is your blast radius.
+
+### The blast-radius checklist
+
+Before any tool ships, run it past these four questions:
+
+1. **Can the model construct destructive verbs from free text?** If the tool takes a string that becomes part of a command, query, URL, or path. your blast radius is "anything the model can imagine."
+2. **What's the worst single-call outcome?** Imagine the model is hostile. What does it do? If "drop the table" is on the list, you wrote SQL injection with extra steps.
+3. **Is destruction reversible?** Soft-delete with an undo window > hard-delete. Two-phase confirm > one-shot execute.
+4. **Who's the authority on whether this call is allowed?** It must NOT be the model. It must be your auth layer, against the user's session.
+
+On the right is a tool spec with one fatal flaw. Pick it.

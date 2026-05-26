@@ -1,0 +1,161 @@
+---
+title: "Misión exprés: constraints duros vs blandos"
+intro: |
+  No es lo mismo "el modelo NO puede" que "el modelo prefiere". Saber cuándo aplicar cuál cambia el output.
+station: vega
+teaches:
+  - length-constraints
+  - strict-output-format
+characters:
+  - orbit
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Orbit te pide ayuda con un prompt: el resumen tiene que entrar en
+      una notificación push de máximo 50 palabras. ¿Cuál de las dos
+      formulaciones le da el output que necesita?
+    optionA: |
+      ```
+      Trata de ser breve y conciso. El resumen es para una notificación
+      push, así que mantenelo corto.
+      ```
+    optionB: |
+      ```
+      MAX 50 palabras. Cortar antes que pasarse. Si no entra en 50,
+      eliminá detalles secundarios. Devolveme solo el resumen, sin
+      contar palabras al final.
+      ```
+    correct: B
+    explanation: |
+      El A es un constraint blando: "trata", "conciso", "corto". El
+      modelo va a interpretar eso como una sugerencia y te puede
+      devolver entre 30 y 120 palabras, dependiendo del contenido.
+      Algunos van a entrar en la notificación, otros no.
+
+      El B es duro: dice el numero exacto, dice qué hacer si no entra
+      ("cortar antes que pasarse", "eliminar detalles secundarios"), y
+      previene un efecto comun ("sin contar palabras al final" evita que
+      el modelo agregue "Total: 47 palabras" abajo).
+
+      Regla: si el constraint es operacional (entra o no entra), tiene
+      que ser duro. Si es preferencia (mejor mas corto, pero no se
+      rompe nada si es largo), puede ser blando.
+  - kind: slot-fill-dnd
+    task: |
+      Clasificá cada regla: ¿es un constraint duro (operacional, romperlo
+      rompe algo) o blando (preferencia, romperlo no rompe nada
+      grave)?
+    slots:
+      - id: hard
+        label: "Constraint duro"
+      - id: soft
+        label: "Constraint blando"
+    pieces:
+      - id: p1
+        label: "El JSON tiene que tener exactamente los campos id, name, status."
+        correctSlot: hard
+      - id: p2
+        label: "Preferimos un tono empatico, pero adaptate al contexto."
+        correctSlot: soft
+      - id: p3
+        label: "Nunca mostrar precios sin el simbolo de moneda."
+        correctSlot: hard
+      - id: p4
+        label: "Si es posible, evitar repetir la misma palabra dos veces."
+        correctSlot: soft
+      - id: p5
+        label: "No incluir datos personales del cliente en ningun caso."
+        correctSlot: hard
+      - id: p6
+        label: "Trata de usar bullets para listas largas."
+        correctSlot: soft
+  - kind: wiring-dnd
+    task: |
+      Conectá cada tipo de constraint con la forma de expresarlo en el
+      prompt para que el modelo lo entienda como duro o blando.
+    sources:
+      - id: src-cap
+        label: "Cap absoluto (ej: máximo 50 palabras)."
+        detail: "Si pasa, rompe algo aguas abajo."
+      - id: src-pref
+        label: "Preferencia de estilo (ej: tono empático)."
+        detail: "No es crítico, pero mejora el output."
+      - id: src-format
+        label: "Forma estricta de salida (ej: JSON con campos exactos)."
+        detail: "Si se rompe, el parser falla."
+      - id: src-taboo
+        label: "Tabú absoluto (ej: no mencionar al competidor)."
+        detail: "Romperlo tiene consecuencias legales o de marca."
+    targets:
+      - id: tgt-must
+        label: "Lenguaje DURO (MUST / NUNCA / EXACTO)"
+        detail: "Imperativo y verificable."
+      - id: tgt-should
+        label: "Lenguaje BLANDO (preferí / trata / si es posible)"
+        detail: "Sugerencia con flexibilidad."
+    correctConnections:
+      - from: src-cap
+        to: tgt-must
+      - from: src-pref
+        to: tgt-should
+      - from: src-format
+        to: tgt-must
+      - from: src-taboo
+        to: tgt-must
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de este prompt. Fijate especialmente cómo cada
+      constraint usa un nivel de fuerza distinto según lo que protege.
+    parts:
+      - id: task
+        label: "Task (la tarea concreta)"
+        text: "Resumi este reporte de turno para enviar como notificacion push."
+      - id: hard
+        label: "Constraint duro (operacional, no se rompe)"
+        text: "MAX 50 palabras. Devolve solo el resumen, sin contar palabras ni meta-comentarios."
+      - id: soft
+        label: "Constraint blando (preferencia de estilo)"
+        text: "Preferi frases cortas si es posible. Evita repetir la misma palabra dos veces si se puede."
+      - id: taboo
+        label: "Tabú absoluto (regla inviolable)"
+        text: "Nunca menciones nombres de la tripulacion. Si tenes que referirte a alguien, usa el cargo (capitan, ingeniero de turno)."
+  - kind: prompt-AB
+    question: |
+      Le pediste al modelo: "MAX 30 palabras, no te pases por nada". El
+      reporte original tiene un detalle critico de seguridad que no
+      entra en 30 palabras. ¿Cuando un constraint duro es
+      contraproducente?
+    optionA: |
+      ```
+      Mantené el constraint duro de 30 palabras. Si no entra todo,
+      mejor que el modelo decida qué cortar.
+      ```
+    optionB: |
+      ```
+      Subi el limite a 60 palabras o agregá una excepcion: "MAX 30
+      palabras EXCEPTO si hay detalles de seguridad, en cuyo caso
+      mencionarlos completos."
+      ```
+    correct: B
+    explanation: |
+      Un constraint duro es util cuando la regla es razonable para todos
+      los inputs. Cuando hay un input donde la regla compite con algo
+      mas importante (seguridad, accuracy, compliance), el modelo tiene
+      dos malas opciones: respetar el constraint y omitir info critica,
+      o ignorar el constraint y romper tu confianza.
+
+      Cuando esto pasa repetido, el constraint duro empieza a fallar de
+      formas raras: el modelo "rompe" el limite cuando le parece
+      importante, o trunca el detalle critico sin avisar. Ninguna es
+      buena.
+
+      Solucion: o subis el limite a uno que cubra el peor caso, o
+      escribis la excepcion explicitamente. "MAX X palabras EXCEPTO en
+      caso Y" es legal y el modelo lo respeta mejor que un limite
+      universal contra el que pelea cada tanto.
+---
+
+Misión del día: el constraint duro es tu cinturón de seguridad para lo
+crítico. El blando es para el estilo. Si los confundís, el modelo gana
+y vos perdés.

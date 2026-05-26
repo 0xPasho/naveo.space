@@ -1,0 +1,87 @@
+---
+title: "Surgical corrections, not rewrites"
+order: 4
+estimatedMinutes: 5
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    Echo gave you a coordination message to send to another shift.
+    Almost all of it is fine. you just want it to (1) drop the
+    greeting, (2) swap "yesterday" for "last shift", and (3) leave
+    the rest as-is. Which follow-up has the better chance of keeping
+    the rest intact?
+  optionA: |
+    ```
+    Same again but without the greeting and with "last shift" instead
+    of "yesterday". The rest is fine.
+    ```
+  optionB: |
+    ```
+    Rewrite it but more professional and clearer, and fix the greeting
+    and the date thing.
+    ```
+  correct: A
+  explanation: |
+    Prompt A is a **surgical diff**. It tells the model exactly WHAT
+    to change (two things, named) and WHAT NOT to touch ("the rest is
+    fine"). The output will come with those two changes and the rest
+    intact.
+
+    Prompt B is a **rewrite disguised as a correction**. You say "more
+    professional and clearer" + "fix the greeting and the date thing".
+    The model doesn't know which part is the "good" part it has to
+    preserve, so it rewrites EVERYTHING. What was fine yesterday is a
+    different sentence today. And now you have to compare two long
+    versions to see what was lost.
+
+    The correction-prompt rule:
+
+    1. List the specific changes (numbered helps).
+    2. Say explicitly what NOT to touch ("rest same" / "don't touch
+       the body" / "preserve structure").
+    3. Don't use vague adjectives ("clearer", "more professional"). each
+       adjective is a license to rewrite.
+
+    This is the difference between **editing** and **regenerating**.
+    Editing preserves the good. Regenerating throws the baby out with
+    the bathwater.
+teaches:
+  - surgical-correction-prompt
+requires:
+  - multi-turn-followup
+---
+
+## Edit, don't regenerate
+
+Once the model gives you an output that's **almost** good, the temptation is to say "rewrite it better". Bad move. Every vague word ("clearer", "more professional", "more concise") is a license to rewrite the whole thing, including the parts that were already fine.
+
+The surgical correction prompt works the other way: you name the changes and you name what's **not** to be touched.
+
+### The 3-line pattern
+
+```
+Same response but with these changes:
+1. <specific change>
+2. <specific change>
+Don't touch the rest.
+```
+
+Three lines. Numbered list so the model doesn't get lost. Explicit "don't touch the rest" close to prevent the silent rewrite.
+
+### What DOESN'T work
+
+- "Rewrite it, it's kinda weird." You gave it a blank check. It'll change everything.
+- "More professional." Three vague words, three open doors. It'll inject formalism where you didn't want it.
+- "Improve this." The model picks what to "improve". Spoiler: not what you had in mind.
+
+### What does
+
+- "Drop the greeting and swap 'yesterday' for 'last shift'. Rest as is."
+
+Two named changes. A protective closing line. The output comes back with those two changes and nothing else.
+
+> This technique also helps when you pass code to the model and want it to fix ONE bug without touching the rest. *"Change only line 12 so it returns null when the input is empty. Don't reformat the rest."* If you don't say so, you get back the whole file with five cosmetic changes you didn't ask for.
+
+On the right, the same follow-up in two shapes. Which one preserves the rest of the output?

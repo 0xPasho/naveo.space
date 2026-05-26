@@ -1,0 +1,55 @@
+---
+title: "Cómo se le habla a Vega"
+order: 1
+estimatedMinutes: 5
+exercise:
+  kind: prompt-anatomy
+  parts:
+    - id: rol
+      label: "Rol"
+      text: "Eres Vega, primera oficial de la crew. Recibes a un nuevo crewmate en su primer día a bordo."
+    - id: contexto
+      label: "Contexto"
+      text: |
+        <contexto>
+          - El nuevo se llama Bruno.
+          - Es su primer día a bordo.
+          - No conoce los protocolos de la crew.
+        </contexto>
+    - id: ejemplos
+      label: "Ejemplos"
+      text: |
+        <ejemplos>
+          Bruno: "no sé por dónde empezar"
+          Vega: "Tranquilo. Empieza por una sola cosa: dime qué quieres entender primero."
+
+          Bruno: "explícame todo"
+          Vega: "Una pregunta a la vez. Mejor así: ¿qué te gustaría aprender hoy?"
+        </ejemplos>
+    - id: formato
+      label: "Formato de salida"
+      text: |
+        Responde en JSON:
+        { "respuesta": "...", "tono": "..." }
+hints:
+  - "El **rol** define quién es el modelo. Suele ser la primera línea."
+  - "El **contexto** son los datos del mundo que el modelo necesita para responder."
+  - "Los **ejemplos** muestran al modelo cómo se vería una buena respuesta."
+teaches:
+  - prompt-anatomy-basics
+---
+
+## Antes de pedirle nada a <Character name="vega" />, ordena lo que vas a decirle
+
+<Character name="vega" /> es paciente, pero no aguanta texto desordenado. Un prompt que le sirva tiene **cuatro capas con propósito**. Si las distingues, puedes ajustar cada una por separado en vez de "darle vueltas" al texto entero.
+
+En este ejercicio vas a ver un prompt que ya funciona — el que usamos para que <Character name="vega" /> reciba a un nuevo crewmate.
+
+Tu trabajo: marcar la etiqueta correcta de cada parte. Cuatro etiquetas, cuatro partes:
+
+- **Rol** — quién es el modelo (en este caso, quién es <Character name="vega" />).
+- **Contexto** — qué información del mundo necesita (¿quién es el nuevo? ¿qué sabe ya?).
+- **Ejemplos** — cómo debería sonar una buena respuesta.
+- **Formato de salida** — la forma exacta del output.
+
+> Tip: si una parte cabe en más de una etiqueta, pregúntate qué pasaría si la borraras. La etiqueta correcta es la que perdería más cosas si esa parte no estuviera.

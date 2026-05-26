@@ -1,0 +1,156 @@
+---
+title: "Quick mission: structured output without preamble"
+intro: |
+  The JSON is fine, but the model started with "Sure, here you go...". Time to cut the preamble from the prompt itself.
+station: vega
+teaches:
+  - structured-output
+  - suppress-preamble
+characters:
+  - orbit
+  - vega
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      You are reviewing outputs from a model after asking for JSON.
+      Sort each one: is it parseable as is (good), or does it need
+      manual cleanup (bad)?
+    slots:
+      - id: good
+        label: "Good: parseable directly"
+      - id: bad
+        label: "Bad: needs cleanup"
+    pieces:
+      - id: p1
+        label: '{"name": "Pasho", "role": "engineer"}'
+        correctSlot: good
+      - id: p2
+        label: 'Sure, here is the JSON: {"name": "Pasho", "role": "engineer"}'
+        correctSlot: bad
+      - id: p3
+        label: "```json\n{\"name\": \"Pasho\"}\n```"
+        correctSlot: bad
+      - id: p4
+        label: '{"items": [{"id": 1}, {"id": 2}]}'
+        correctSlot: good
+      - id: p5
+        label: 'Sure! Here is the structured response:\n{"ok": true}'
+        correctSlot: bad
+      - id: p6
+        label: '{"status": "ok", "count": 3}'
+        correctSlot: good
+  - kind: prompt-AB
+    question: |
+      Orbit needs JSON shaped like `{title, summary, tags[]}`. He is
+      trying two ways to ask. Which one will give him a parseable
+      output more often?
+    optionA: |
+      ```
+      Reply with JSON containing title, summary and tags.
+      ```
+    optionB: |
+      ```
+      Reply ONLY with a JSON object matching this schema. Do not
+      write text before or after. Do not use code fences. Do not
+      comment on the output.
+      
+      Schema:
+      {
+        "title": string (max 80 chars),
+        "summary": string (max 200 chars),
+        "tags": string[] (3 to 6 tags, lowercase)
+      }
+      ```
+    correct: B
+    explanation: |
+      Option A is ambiguous about things that matter: what are the
+      types? Can the model add fields? Can it write "Here is the
+      JSON: ..." before? Different models will interpret it
+      differently, and the same model will interpret it differently
+      across runs.
+
+      Option B does three things: declares an explicit schema (with
+      types and limits), forbids the typical wrapping ("text before
+      or after", "code fences"), and says what each field is. The
+      model has less room to improvise.
+
+      Rule: asking "as JSON" is an invitation to preamble. Asking
+      "ONLY a JSON object matching this schema, no text before or
+      after" is an executable order.
+  - kind: step-order-dnd
+    task: |
+      You are designing an endpoint that will consume the model's
+      output as JSON. Order the steps to make sure the output is
+      robust, from top to bottom.
+    steps:
+      - id: s1
+        label: "Define the schema before writing the prompt."
+        detail: "If you do not know what shape you want, the model will pick for you."
+      - id: s2
+        label: "In the prompt, declare the schema explicitly (fields, types, limits)."
+        detail: "Per-field descriptions prevent silly errors."
+      - id: s3
+        label: "Forbid preamble, code fences, and extra text in an explicit line."
+        detail: "Without this line, the model will greet you."
+      - id: s4
+        label: "Show an example of a well-formed output inside the prompt."
+        detail: "One concrete example beats three descriptions."
+      - id: s5
+        label: "Validate the output with a real parser (JSON.parse + schema check) before using it."
+        detail: "The prompt does not guarantee shape, the validation does."
+      - id: s6
+        label: "If validation fails, have a fallback: retry once with a correction message, or return an error."
+        detail: "Infinite retry or silence are the two worst options."
+  - kind: prompt-anatomy
+    task: |
+      Label the parts of a well-built structured-output spec. The
+      pieces you cannot skip: schema, constraints, example, and the
+      anti-preamble rule.
+    parts:
+      - id: schema
+        label: "Explicit schema (fields and types)"
+        text: "Reply with a JSON: `{\"title\": string, \"summary\": string, \"tags\": string[]}`."
+      - id: constraints
+        label: "Per-field constraints (concrete limits)"
+        text: "`title` max 80 chars. `summary` max 200. `tags` between 3 and 6, lowercase, no spaces."
+      - id: example
+        label: "Example of a well-formed output"
+        text: "Example: `{\"title\": \"Deploy failed\", \"summary\": \"The deploy job died on step 3.\", \"tags\": [\"deploy\", \"ci\", \"incident\"]}`."
+      - id: noPreamble
+        label: "Anti-preamble rule"
+        text: "Reply ONLY with the JSON object. No text before or after. No code fences. No comments."
+  - kind: prompt-AB
+    question: |
+      Vega is fighting a model that starts every reply with "Sure,
+      here you go...". She has two options to cut the preamble.
+      Which one is effective?
+    optionA: |
+      ```
+      Do not start with "Sure" or with polite phrases.
+      ```
+    optionB: |
+      ```
+      The first character of your response is `{`. Any text before
+      `{` invalidates the response. Start directly with the opening
+      brace.
+      ```
+    correct: B
+    explanation: |
+      Option A is a negative instruction that names the exact phrase
+      you want to avoid. Some models comply, others include it
+      anyway ("Sure, here you go..." is almost a reflex in RLHF
+      models). You are fighting the bias instead of avoiding it.
+
+      Option B defines a positive, verifiable constraint: the first
+      character is `{`. This can be checked by a parser, and gives
+      the model a concrete rule it follows better than "do not be
+      polite". As a bonus, if the output starts with anything else,
+      the validator rejects without ambiguity.
+
+      Rule: to cut preamble, reframe as a condition on the first
+      character. "Start with `{`" is stronger than "do not greet".
+---
+
+Mission of the day: structured output is won in the prompt and made
+safe in the parser. Explicit schema, anti-preamble rule, validation at
+the end.

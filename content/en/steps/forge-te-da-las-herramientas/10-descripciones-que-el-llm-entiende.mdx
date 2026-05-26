@@ -1,0 +1,73 @@
+---
+title: "Descriptions the LLM actually reads. the heart of the Track"
+order: 10
+estimatedMinutes: 10
+exercise:
+  kind: tool-description
+  toolName: file_incident_report
+  context: |
+    {
+      "name": "file_incident_report",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "system_affected": { "type": "string" },
+          "summary": { "type": "string" }
+        },
+        "required": ["severity", "system_affected", "summary"]
+      }
+    }
+  starter: |
+    Files an incident.
+  requiredPhrases:
+    - "opens a ticket"
+    - "when the user reports"
+    - "do not use"
+hints:
+  - "The name 'file_incident_report' already says 'records an incident'. Your description has to say what the model couldn't infer from the name alone."
+  - "Mention: (a) what happens when invoked (opens a persistent ticket. it's not just logging), (b) when to USE it (when the user reports something), (c) when NOT to use it (hypothetical questions, queries)."
+  - "A long, specific description is BETTER than a short generic one. The model reads tool descriptions carefully."
+teaches:
+  - tool-description-craft
+requires:
+  - tool-description-precision
+---
+
+## This is the heart of the Track.
+
+Building a correct schema is engineering. Writing the description the LLM actually understands is **the art**. And it's where almost everyone fails.
+
+We give you the schema for the `file_incident_report` tool ready-made on the right. Your job: **only the description**.
+
+### Why it matters this much
+
+The model has no context about your system. It doesn't know:
+
+- Whether `file_incident_report` **actually opens a ticket** (that someone will have to close) or just logs something.
+- Whether it should invoke it when the user says "I'm having a problem with X" or wait for them to confirm.
+- Whether "filing" an incident to talk about it abstractly counts as using the tool.
+
+Each of those ambiguities costs you **noise in production**: false tickets, oncalls paged for no reason, or the opposite. real incidents that the model "answered" without filing.
+
+### What your description must have
+
+1. **Persistent effect.** "Opens a ticket in the incident system" is different from "files". Say what happens afterwards.
+2. **When YES.** "When the user reports a concrete problem that requires follow-up."
+3. **When NO.** "Do not use for hypothetical questions, queries about past incidents, or when the problem is already being handled by another tool."
+4. **Severity is the model's call.** If you want it to use the `severity` levels well, add a guide: "Mark `critical` only when there's immediate safety risk."
+
+### How it's evaluated
+
+The validator looks for **three key phrases** that show the description has what it needs:
+
+- **"opens a ticket"**. captures the persistent effect.
+- **"when the user reports"**. captures when YES.
+- **"do not use"**. captures when NO (explicit limits).
+
+You don't need to use those exact phrases. the validator is lenient with close synonyms. But the three ideas have to be there.
+
+> A good tool description reads like this: three sentences. One says what it does. One says when to use it. One says when not to.

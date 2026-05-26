@@ -1,0 +1,109 @@
+---
+title: "Falla parcial: degradar, no morir"
+order: 14
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: wiring-dnd
+  task: |
+    Tu sistema "Watch Officer Assistant" (el que vas a armar en el
+    capstone) tiene cinco subsistemas que pueden fallar. Para cada
+    fallo, Orbit ya definió cuatro modos posibles de respuesta. Tu
+    trabajo: conectar cada fallo a su **modo correcto de degradación**.
+
+    La regla: el sistema entero NUNCA debería caer entero por un fallo
+    de UN subsistema. Cada fallo tiene una estrategia "mejor que nada".
+  sources:
+    - id: classifier-down
+      label: "El classifier inicial está caído"
+      detail: "No podés clasificar el mensaje en una de las 4 rutas."
+    - id: rag-empty
+      label: "El RAG no encuentra snippets relevantes"
+      detail: "Retrieval vino vacío o irrelevante."
+    - id: tool-roster-down
+      label: "La API del roster está caída"
+      detail: "El user pidió 'quién está de turno' y no podés consultar."
+    - id: enrichment-slow
+      label: "El paso de enrichment (no crítico) tarda 30s+"
+      detail: "Un paso opcional que agrega contexto está colgado."
+    - id: notification-fails
+      label: "El step de notificar al humano falló"
+      detail: "El user ya recibió respuesta; el log de notificación rompió."
+  targets:
+    - id: route-to-default
+      label: "Rutear al default seguro"
+      detail: "Mandar el mensaje al flow `escalate_to_human` y registrar."
+    - id: answer-without
+      label: "Responder explicitando la limitación"
+      detail: "Devolver respuesta que SÍ tenés + advertir qué falta."
+    - id: skip-and-continue
+      label: "Saltar el paso y seguir"
+      detail: "El paso no era crítico. El sistema sigue sin él."
+    - id: log-and-degrade-silently
+      label: "Loguear y degradar silenciosamente"
+      detail: "El usuario ya recibió valor; el fallo es solo en housekeeping."
+  correctConnections:
+    - from: classifier-down
+      to: route-to-default
+    - from: rag-empty
+      to: answer-without
+    - from: tool-roster-down
+      to: answer-without
+    - from: enrichment-slow
+      to: skip-and-continue
+    - from: notification-fails
+      to: log-and-degrade-silently
+hints:
+  - "Si el sistema NO puede tomar decisión central (clasificar), el default seguro es escalar a humano. Nunca seguir ciegamente."
+  - "Si un dato externo falta (RAG, roster, lookup), el sistema responde con lo que SÍ tiene y AVISA al usuario qué le faltó. 'No pude consultar el roster' es mejor que 'no sé' o que inventar."
+  - "Pasos no críticos (enrichment, analítica, telemetría secundaria) se saltean. Cualquier paso que no afecta la respuesta principal puede degradarse silenciosamente."
+teaches:
+  - graceful-degradation
+requires:
+  - chain-design-basics
+---
+
+## Diseñar para el fallo, no para el happy path
+
+Cuando todo anda bien, cualquier sistema parece bien diseñado. La diferencia se ve cuando UNA pieza se cae: ¿el sistema entero muere, o **degrada gracefully** y sigue siendo útil?
+
+> Regla de <Character name="orbit" />: *un sistema bien diseñado falla con dignidad*. El usuario recibe algo útil incluso cuando una pieza interna está rota. Mal diseñado: el usuario ve un 500 cuando la analítica secundaria estaba colgada.
+
+### Los cuatro modos de degradación
+
+#### 1. Rutear al default seguro
+Cuando el sistema **no puede decidir** (clasificador caído, router perdió contexto), la única salida sensata es escalar a humano. Forzar una decisión sin info es invitar un mis-routing silencioso.
+
+#### 2. Responder explicitando la limitación
+Cuando **falta un dato pero podés responder parcialmente**, devolvé lo que sí tenés y declará qué falta. "No pude consultar el roster del viernes, pero acá está el del jueves" es infinitamente mejor que "no sé" o "[inventando un roster que no es]".
+
+#### 3. Saltar el paso y seguir
+Cuando el paso es **opcional o no crítico**, el sistema lo skipea y sigue. Enrichment, recomendaciones cosméticas, telemetría que decora la respuesta. cualquier cosa que no afecta el output principal puede irse sin ruido.
+
+#### 4. Loguear y degradar silenciosamente
+Cuando el fallo es **post-respuesta o de housekeeping**, no se lo cuentes al usuario. El user ya recibió valor; loguear para fix interno y seguir. Notificaciones secundarias, métricas, follow-up que falla. logueás, alertás al oncall si corresponde, no rompés la experiencia.
+
+### Qué NO hacer
+
+- **Fail-stop al primer error.** Una pieza secundaria falla y el sistema entero devuelve 500. Es lo más fácil de implementar y lo peor para el usuario.
+- **Fail-silent invisible al usuario.** El sistema dice "OK, listo" pero faltó la mitad del trabajo. Peor que fallar visiblemente: el usuario cree que tiene algo que no tiene.
+- **Degradar todo siempre.** Si tu sistema responde "no pude" demasiado seguido, perdés credibilidad. Degradación es la excepción, no la rutina.
+
+### El test mental
+
+Para cada subsistema preguntate: *si esta pieza falla, ¿qué es lo "menos malo" que el sistema puede hacer?*. Esa respuesta es tu modo de degradación. Escribilo en el diseño antes de que pase.
+
+```
+classifier_down  → route to escalate (mejor: humano)
+rag_empty        → answer with disclaimer
+roster_api_down  → answer with disclaimer
+enrichment_slow  → skip (no es crítico)
+notify_fails     → log + alert (user ya tiene valor)
+```
+
+> El usuario no se entera de cuántas piezas internas tienen problemas en un día. Se entera de **cuántas veces el sistema fue inútil**. Las dos cosas pueden no estar correlacionadas. depende de cómo diseñes la degradación.
+
+### Tu ejercicio
+
+A la derecha, cinco fallos posibles del Watch Officer Assistant. Conectá cada fallo a su modo correcto de degradación. Cuando el grafo esté completo, tenés diseñada la mitad invisible del sistema. la mitad que decide si tu sistema sirve o no en producción.

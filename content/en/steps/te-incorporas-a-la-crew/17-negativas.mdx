@@ -1,0 +1,116 @@
+---
+title: "Negatives: how to say NO without reinforcing"
+order: 17
+estimatedMinutes: 5
+characters:
+  - atlas
+exercise:
+  kind: prompt-AB
+  question: |
+    Atlas needs summaries of reports to share externally, without
+    mentioning crewmate names (privacy). He has two prompts. Which one
+    is going to fail less at maintaining anonymization?
+  optionA: |
+    ```
+    Summarize this report.
+
+    DO NOT mention crewmate names.
+    NEVER include names in the response.
+    No names under any circumstances.
+    If a name appears, DO NOT include it.
+
+    Report: {{input}}
+    ```
+  optionB: |
+    ```
+    Summarize this report. To preserve privacy, use generic references
+    instead of proper names:
+    - "the crewmate" or "the officer" instead of names
+    - "the maintenance team" instead of identifying individuals
+    - the role or function instead of the person
+
+    Report: {{input}}
+    ```
+  correct: B
+  explanation: |
+    Prompt A mentions the word **"names" five times** in negative
+    instructions. This triggers what's known as the **pink elephant
+    effect**: the more you tell the model "DON'T think about X", the more
+    likely X is to appear in its output. The word "names" entered the
+    context five times and names are now more available tokens than
+    before.
+
+    Prompt B reframes positively. Instead of saying "don't mention
+    names", it says "use generic references like...". The model gets a
+    **concrete alternative** that replaces the unwanted behavior. The
+    word "names" appears but as a contextual concept, not as a hammered
+    instruction.
+
+    Practical rule: every time you're about to write "DON'T do X", try
+    first to reframe it as "DO do Y" where Y is what the model should do
+    instead of X.
+hints:
+  - "Count how many times the word 'names' appears in prompt A. What happens to a token that repeats a lot?"
+  - "Prompt B reframes positively: instead of 'don't mention names', it says 'use generic references like...'. It gives the model what to do, not what not to do."
+  - "When a negative constraint isn't working, the fix is almost always to express the same thing positively, with a concrete alternative."
+teaches:
+  - negative-instruction-trap
+requires:
+  - prompt-anatomy-basics
+---
+
+## The pink elephant of LLMs
+
+If I tell you *"don't think about a pink elephant"*, what are you thinking about? Exactly. LLMs have a stronger version of the same effect.
+
+Every word you put in the prompt enters the context and becomes a **more available** token for generation. If you repeat "names" five times in negative instructions, the model actually **has "names" more loaded** than if you had never mentioned it.
+
+### The accidental reinforcement rule
+
+The more you insist on *"DON'T say X"*:
+
+- X appears more times in your prompt.
+- X enters the model's context as an available token.
+- The model learns that X is **relevant** (otherwise, why insist so hard).
+- It sometimes ends up saying X **more** than if you had said nothing.
+
+It doesn't always happen. But it's a real risk, especially when the restriction shows up 3+ times.
+
+### How to say NO without reinforcing
+
+**Pattern 1: a single clear mention.**
+
+```
+DO NOT include proper names in the summary.
+```
+
+Once, up front, and never again. More mentions raise the risk without adding clarity.
+
+**Pattern 2: positive reframing.**
+
+```
+Use generic references ('the crewmate', 'the officer') instead of proper names.
+```
+
+Instead of forbidding, state what to do. The model gets a **concrete alternative** that replaces the unwanted behavior.
+
+**Pattern 3: structural constraint.**
+
+```
+The output must not contain any capitalized word except at the start of
+a sentence.
+```
+
+You convert the semantic restriction into a syntactic one. Easier for the model to respect and easier for you to verify.
+
+### When negatives DO work
+
+Not everything is a trap. Negatives work well when:
+
+- They are **a single** mention (not repeated).
+- The forbidden behavior is **very specific** ("don't use double quotes").
+- The negative **doesn't name** the problematic concept by its exact name ("don't add extra context" instead of "don't mention X").
+
+> Quick heuristic: if your prompt has the same negative 3+ times, rethink. There's probably a positive form that says the same thing in one line.
+
+On the right, two prompts. Same goal (anonymize), different strategy. Which one is more likely to respect the rule?

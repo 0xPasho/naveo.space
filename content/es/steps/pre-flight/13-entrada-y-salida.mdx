@@ -1,0 +1,120 @@
+---
+title: "Entrada y salida"
+order: 13
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Tres funciones de la nave, con sus firmas:
+
+    ```
+    calcularCombustibleRestante(distancia, peso) → minutos_disponibles
+    sonarAlarma(intensidad, duracion)            → (sin salida)
+    revisarCasco()                                → estado_casco
+    ```
+
+    Clasificá cada cosa como **entrada** (algo que la función recibe) o
+    **salida** (algo que la función devuelve).
+  slots:
+    - id: input
+      label: "Entrada"
+    - id: output
+      label: "Salida"
+  pieces:
+    - id: distancia
+      label: "distancia (en calcularCombustibleRestante)"
+      correctSlot: input
+    - id: peso
+      label: "peso (en calcularCombustibleRestante)"
+      correctSlot: input
+    - id: minutos
+      label: "minutos_disponibles (de calcularCombustibleRestante)"
+      correctSlot: output
+    - id: intensidad
+      label: "intensidad (en sonarAlarma)"
+      correctSlot: input
+    - id: estado
+      label: "estado_casco (de revisarCasco)"
+      correctSlot: output
+    - id: duracion
+      label: "duracion (en sonarAlarma)"
+      correctSlot: input
+hints:
+  - "**Entrada:** lo que va **entre paréntesis** cuando definís o llamás la función. Lo que la función necesita para trabajar."
+  - "**Salida:** lo que aparece después de la flecha `→` en la firma. Lo que la función te devuelve al final."
+  - "Si dudás, traducí mentalmente: *'la función calcula combustible **a partir de** distancia y peso'*. El 'a partir de' marca las entradas."
+teaches:
+  - function-io-basics
+requires:
+  - functions-basics
+---
+
+## Entrada y salida: el contrato de una función
+
+Una función es una caja negra. Le metés cosas adentro. Te devuelve cosas distintas. Lo que importa entender:
+
+- **Entradas (inputs):** lo que la función necesita para hacer su trabajo. Los parámetros que le pasás cuando la llamás.
+- **Salida (output):** lo que la función devuelve al final. El resultado.
+
+```
+FUNCION calcularCombustibleRestante(distancia, peso):
+  ...cálculos...
+  devolver minutos_disponibles
+```
+
+- Entradas: `distancia`, `peso`
+- Salida: `minutos_disponibles`
+
+### Por qué pensar en entrada/salida importa
+
+Cuando ves una función nueva, antes de leer el cuerpo, mirá la **firma**: nombre + entradas + salida. Eso ya te dice qué hace el 90% de las veces.
+
+Mirá esta:
+
+```
+formatearTimestamp(epoch, zona_horaria) → string
+```
+
+Sin leer una línea de adentro, ya sabés:
+
+- Necesita un `epoch` (número de segundos) y una `zona_horaria` (texto).
+- Te devuelve un `string` formateado.
+- No modifica variables globales por afuera, al menos según su firma.
+
+Esa lectura rápida es lo que te permite usar funciones sin tener que entender cada detalle de la implementación.
+
+### Funciones sin salida (o sin entrada)
+
+Algunas no devuelven nada. Solo **hacen** algo:
+
+```
+sonarAlarma("crítica", 30)   # entradas: 2. salida: ninguna.
+```
+
+Otras no necesitan entradas:
+
+```
+horaActual()                 # entradas: ninguna. salida: timestamp.
+```
+
+Ambas son funciones legítimas. Pero la mayoría útil tiene **al menos una de cada**.
+
+### El LLM también tiene una firma
+
+Esta es la idea más importante para el resto del curriculum:
+
+```
+LLM(prompt) → respuesta
+```
+
+El modelo es una función. **Entrada:** un prompt (texto). **Salida:** una respuesta (texto). Punto. Todo lo que aprendiste sobre funciones aplica al modelo:
+
+- Misma entrada exacta puede dar salida distinta (no es 100% determinista, vas a ver por qué en lecciones 17-18).
+- Diseñar la entrada (el prompt) bien es la mitad del trabajo. La función no puede inventar lo que no le diste.
+- La salida solo es útil si la entrada cubrió todo lo necesario.
+
+> **Esta es la base mental del prompting:** entendés al LLM como una función `texto → texto`. Cuando te frustres porque *"no hace lo que quiero"*, el primer chequeo es siempre la entrada.
+
+A la derecha, seis cosas que aparecen en distintas funciones de la nave. Clasificá cada una como **entrada** o **salida**.

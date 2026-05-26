@@ -1,0 +1,94 @@
+---
+title: "State between steps: what to pass, what to drop"
+order: 5
+estimatedMinutes: 7
+characters:
+  - orbit
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Your ticket-processing chain has 4 steps. Between each pair of steps
+    there's a **shared context** carrying data. If you pass ALL the
+    state every time, prompts choke and costs explode. If you pass TOO
+    LITTLE, downstream steps hallucinate or ask for things they don't
+    have.
+
+    <Character name="orbit" /> marks four slots. For each step
+    transition, drag the piece that describes **what should be in the
+    context when the next step starts**.
+  slots:
+    - id: after-classify
+      label: "After classify → into extract"
+    - id: after-extract
+      label: "After extract → into recommend"
+    - id: after-recommend
+      label: "After recommend → into notify"
+    - id: never-pass
+      label: "NEVER pass to any step"
+  pieces:
+    - id: text-category
+      label: "Original text + category"
+      correctSlot: after-classify
+    - id: fields-category
+      label: "Category + extracted fields (no raw text if it's heavy)"
+      correctSlot: after-extract
+    - id: action-context
+      label: "Recommendation + category + severity (the minimum to notify)"
+      correctSlot: after-recommend
+    - id: secrets
+      label: "API keys, session tokens, raw embeddings from the previous model"
+      correctSlot: never-pass
+hints:
+  - "The original text doesn't always need to reach the final steps. If fields capture everything relevant, pass it only when the next step NEEDS it."
+  - "The notify step only needs just enough to compose the message. Flooding it with the raw text and all fields adds noise and cost."
+  - "Secrets and model embeddings NEVER travel through shared context. Tool access if needed, not payload."
+teaches:
+  - chain-state-management
+requires:
+  - chain-design-basics
+---
+
+## The shared context is a counter, not a trunk
+
+When a step ends and the next one starts, what travels between them? Two opposite sins:
+
+1. **Passing everything always.** The context grows step by step. Raw text, intermediates, metadata, debug logs. By step 6, the prompt has 8K tokens of junk and the cost tripled.
+2. **Passing too little.** Step N needs something step N-1 already discarded. You start doing round-trips to the database, or worse, the model hallucinates because it lacks context.
+
+The rule: **each step receives the minimum it needs to do its job well**. No more, no less.
+
+### What to pass (typically)
+
+- **Relevant output from the previous step.** If extract returned `fields`, the next step receives `fields`. Not the raw text it came from, unless it needs it.
+- **Shared metadata.** Category, severity, trace_id. small values almost every step uses.
+- **References, not payloads.** If you need the full document, pass a `document_id`, not the document. The step that needs it fetches with a tool.
+
+### What NOT to pass
+
+- **Secrets.** API keys, tokens, credentials. Never via context. Runtime-side access, not in the prompt.
+- **Embeddings or binary blobs.** They're heavy and the model doesn't process them.
+- **Raw text if you already extracted the relevant bits.** Pass it only if the next step REALLY reads it. If it just carries it "just in case", you're drowning it in dead tokens.
+- **Intermediate debug steps.** Traces live in the log, not in the model's context.
+
+### An analogy
+
+> Think of shared context as the kitchen counter. You have what you're using now, not the whole pantry. If you work with ALL the pantry open on the counter, you can't find the knife when you need it. The model is the same: with too much context it loses sight of what matters.
+
+### The right way to declare it
+
+In the chain YAML, **explicitly declare** what enters each step. Not "everything in the context", but "these keys, from these steps":
+
+```yaml
+- id: recommend
+  input:
+    category: from chain.steps.classify.output.category
+    severity: from chain.steps.severity.output.score
+    fields: from chain.steps.extract.output.fields
+  # NOT: 'the whole context'
+```
+
+Declarative, auditable, debuggable. If a step receives something, it's written; if it doesn't, that's written too.
+
+### Your exercise
+
+On the right, four transitions in your chain. For each one, drag the piece that describes the correct minimum that should be in the context. One of the pieces is never passed. that one goes in the "never" slot.

@@ -1,0 +1,134 @@
+---
+title: "Asking for structured output, not just text"
+order: 11
+estimatedMinutes: 8
+characters:
+  - forge
+exercise:
+  kind: prompt-task
+  task: |
+    Forge hands you a long maintenance report and needs a structured list
+    of the problems mentioned. Each problem must have `system`, `severity`
+    (high, medium or low) and `action`.
+
+    Write a prompt that takes the report in `{{input}}` and returns a JSON
+    array with one object per problem. If there are no problems, return
+    an empty array `[]`.
+
+    The output must be ONLY the JSON. nothing before, nothing after.
+  starter: |
+    <task>
+      Extract all problems from the following maintenance report.
+      Return a JSON array. Each problem has: system, severity
+      (high/medium/low), action.
+    </task>
+
+    <output_format>
+      [
+        { "system": "string", "severity": "high|medium|low", "action": "string" }
+      ]
+    </output_format>
+
+    <report>
+      {{input}}
+    </report>
+  testCases:
+    - input: "Bay 2: OK. Bay 7: coolant at 15% (critical), purge before next shift. Bay 4: slight vibration on rotational axis, monitor."
+    - input: "Routine inspection of all systems. No problems reported."
+    - input: "Deck 3 communicator with intermittent noise (low priority). Bay 1 water recycler losing 2L/h, medium priority."
+  rubric:
+    - id: starts-with-bracket
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "^\\s*\\["
+      criterion: "The output starts with `[` (is an array, no preamble)"
+    - id: ends-with-bracket
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\\]\\s*$"
+      criterion: "The output ends with `]` (no text after)"
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "The output is valid JSON"
+    - id: schema-correct
+      kind: llm-judge
+      criterion: "Each object in the array has EXACTLY the three keys `system`, `severity` and `action`. The value of `severity` is one of: 'high', 'medium', 'low'. No extra keys."
+    - id: coverage
+      kind: llm-judge
+      criterion: "All problems mentioned in the report appear in the array. If the report mentions no problems, the array is empty `[]` (doesn't contain 'no problems' as a string)."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "Show the model the **exact** schema you want. The `<output_format>` with `[{ \"system\": ..., \"severity\": ..., \"action\": ... }]` pins the format."
+  - "For case 2 (no problems), your prompt has to be explicit: 'If there are no problems, return `[]`'. Without that rule, the model will invent an empty object or a message."
+  - "Restrict `severity` values to 'high', 'medium' or 'low'. If you don't say so, the model might use 'critical', 'urgent', etc."
+teaches:
+  - structured-output
+requires:
+  - prompt-task-basics
+---
+
+## Beyond simple JSON: nested structures and schemas
+
+You've already written a prompt that extracts a flat object (`alias`, `puesto`, `contacto`). The reality is that many tasks need richer structures:
+
+- **Lists** of objects (several items of the same type).
+- **Schemas with enumerated values** (`severity` can only be high, medium, low).
+- **Nested JSON** (an object containing other objects or arrays).
+- **Tables** in markdown (when the output goes to Slack or a docs page).
+
+The technique is the same one you learned: **show the exact schema**. The difference is that now the schema is more complex.
+
+### Pattern 1: array of objects
+
+```
+<output_format>
+  [
+    { "field1": "string", "field2": "number" }
+  ]
+</output_format>
+```
+
+Showing the array with ONE object inside is enough. The model understands it should replicate the structure for each item.
+
+### Pattern 2: enumerated values
+
+```
+"severity": "high|medium|low"
+```
+
+The `|` symbol tells the model the value must be one of the three. Works better than saying "high, medium or low priority" in prose.
+
+### Pattern 3: the empty-array case
+
+If the input might have no items to extract, **say it explicitly**:
+
+```
+If there are no problems, return `[]`.
+```
+
+Without that line, the model will:
+
+- Invent an empty object `[{}]` (worse).
+- Return a prose message saying there are no problems (breaks the parser).
+- Invent a plausible problem.
+
+### Validation: deterministic + judge
+
+When you ask for structure, you can validate a lot with regex/json-parse:
+
+- Does it start with `[`?
+- Is it valid JSON?
+- Does each item have the right keys?
+
+And you leave only two things to the judge:
+
+- Are the values correct for the input?
+- Does it cover every item from the input (coverage)?
+
+> The more deterministic your validation, the more reliable the feedback. Save the judge for what only a model can measure.
+
+On the right, Forge's report. Three cases: with problems, without problems, and mixed. Write a prompt that returns the correct JSON array in all three.

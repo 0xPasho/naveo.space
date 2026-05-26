@@ -1,0 +1,146 @@
+---
+title: "Misión exprés: JSON, bullets o prosa"
+intro: |
+  El formato no es estética. Define qué tan fácil es consumir el output después.
+station: vega
+teaches:
+  - strict-output-format
+  - structured-output
+  - tool-output-shape
+characters:
+  - vega
+  - hex
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Hex te pasa cinco pedidos. Decidí qué formato conviene para cada uno
+      según quién o qué va a consumir el output después.
+    slots:
+      - id: json
+        label: "JSON"
+      - id: bullets
+        label: "Bullets"
+      - id: prosa
+        label: "Prosa"
+    pieces:
+      - id: p1
+        label: "Otro programa va a parsear la respuesta y disparar una acción."
+        correctSlot: json
+      - id: p2
+        label: "Una humana lee el resumen de stand-up del equipo de la mañana."
+        correctSlot: bullets
+      - id: p3
+        label: "Un nuevo crewmate necesita una explicación de por qué cambió la política."
+        correctSlot: prosa
+      - id: p4
+        label: "El dashboard muestra los 3 incidentes top del día en tarjetas."
+        correctSlot: bullets
+      - id: p5
+        label: "Un webhook recibe el resultado y guarda los campos en una base."
+        correctSlot: json
+      - id: p6
+        label: "El reporte ejecutivo de fin de turno se imprime y se firma."
+        correctSlot: prosa
+  - kind: prompt-AB
+    question: |
+      Vega le pide al modelo el resumen de un turno para guardar en la base.
+      Otro servicio va a leer el resultado. ¿Qué prompt mandás?
+    optionA: |
+      ```
+      Resumime el turno y devolveme la info importante de forma clara.
+      ```
+    optionB: |
+      ```
+      Devolveme JSON exacto, sin texto antes ni después:
+      {
+        "shift_id": string,
+        "events_count": number,
+        "incidents": [{ "id": string, "severity": "low"|"med"|"high" }]
+      }
+      ```
+    correct: B
+    explanation: |
+      Si el output lo consume otro programa, "de forma clara" no alcanza. El
+      modelo puede devolverte bullets, prosa, o JSON con prefijo tipo
+      "Aca esta el JSON:". Cualquiera de esas rompe el parser del lado que
+      consume.
+
+      El B no deja espacio. Define el schema campo por campo, dice "sin
+      texto antes ni despues" para matar el preambulo, y los enum
+      ("low"|"med"|"high") evitan que el modelo invente categorias nuevas.
+
+      Regla: si va a maquina, schema explicito. Si va a humano, el formato
+      puede ser mas relajado.
+  - kind: prompt-anatomy
+    task: |
+      Etiqueta las partes de este prompt bien armado. Fijate especialmente
+      en la parte donde se especifica el formato.
+    parts:
+      - id: role
+        label: "Rol del asistente"
+        text: "Sos analista de turno. Resumis eventos operacionales en formato consumible por una API."
+      - id: task
+        label: "Task (lo que hay que hacer)"
+        text: "Resumi el siguiente reporte de turno y extrae los incidentes mencionados."
+      - id: format
+        label: "Format spec (la forma exacta de la salida)"
+        text: "Devolve solo JSON valido con la forma: { \"summary\": string, \"incidents\": [{ \"id\": string, \"severity\": \"low\"|\"med\"|\"high\" }] }. Sin texto antes ni despues."
+      - id: fallback
+        label: "Fallback (que hacer si falta info)"
+        text: "Si no hay incidentes, devolve incidents: []. Nunca omitas el campo."
+  - kind: prompt-AB
+    question: |
+      Necesitas un output predecible para guardar en base. Dos formas de
+      pedirlo: "structured" o JSON con campos exactos. ¿Cual te da mas
+      consistencia?
+    optionA: |
+      ```
+      Devolveme la respuesta de forma structured, con los campos
+      importantes bien organizados.
+      ```
+    optionB: |
+      ```
+      Devolveme JSON con exactamente estos campos:
+      - shift_id (string)
+      - events_count (number)
+      - incidents (array de objetos con id, severity)
+      Nada mas, nada menos.
+      ```
+    correct: B
+    explanation: |
+      "Structured" es una palabra que suena tecnica pero no compromete a
+      nada. El modelo te puede devolver YAML, una tabla markdown, JSON con
+      campos distintos cada vez, o un objeto anidado raro. Todas son
+      "structured" segun alguna interpretacion.
+
+      El B nombra cada campo, le pone tipo, y cierra con "nada mas, nada
+      menos". El modelo no tiene espacio para improvisar. Manana corres el
+      mismo prompt y obtenes el mismo schema.
+
+      Regla operativa: cuando el output va a un parser, mencionar el
+      formato no alcanza. Tenes que listar los campos uno por uno.
+  - kind: step-order-dnd
+    task: |
+      Ordena los pasos para especificar bien el formato de salida cuando
+      vas a parsear el resultado.
+    steps:
+      - id: s1
+        label: "Definí qué campos exactos vas a necesitar del lado que consume."
+        detail: "Si no sabés esto, cualquier formato sirve y ninguno es bueno."
+      - id: s2
+        label: "Escribí el schema completo en el prompt, con tipos por campo."
+        detail: "JSON con tipos, no 'devolveme info estructurada'."
+      - id: s3
+        label: "Agregá un ejemplo del output esperado en el prompt."
+        detail: "Un ejemplo concreto vale mas que tres frases describiendo el formato."
+      - id: s4
+        label: "Validá del lado del cliente con un parser que falle ruidoso."
+        detail: "Si el JSON viene malformado, el sistema tiene que enterarse, no swallowear."
+      - id: s5
+        label: "Definí qué hacer si falla el parse: reintento, fallback, error visible."
+        detail: "Nunca silencies el fallo. Decidí explicitamente cómo se maneja."
+---
+
+Misión del día: el formato lo elige el consumidor del output, no el que
+escribe el prompt. JSON para máquinas, bullets para humanos rápidos,
+prosa para humanos que leen.

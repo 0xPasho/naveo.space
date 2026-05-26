@@ -1,0 +1,90 @@
+---
+title: "Parallel vs sequential: when to fan out"
+order: 4
+estimatedMinutes: 8
+characters:
+  - orbit
+exercise:
+  kind: step-order-dnd
+  task: |
+    A shift report comes in and you want to generate the **captain's
+    digest**: title, severity, technical parts, recommendation, and a
+    follow-up plan. <Character name="orbit" /> already identified which
+    steps can run in parallel (don't depend on each other) and which
+    ones DO depend. Drag the steps into correct execution order.
+
+    Assume a runtime that executes sequentially: each step waits for
+    the previous to finish. **Real dependencies** set the minimum
+    order; the rest you can group as a "parallel batch" represented
+    by their listed order.
+  steps:
+    - id: classify
+      label: "1. classify_incident"
+      detail: "Classifies the type. EVERYTHING else depends on this output."
+    - id: extract-tech
+      label: "2. extract_tech_fields (parallel with #3 and #4)"
+      detail: "Extracts technical fields. Only needs text + category."
+    - id: extract-people
+      label: "3. extract_people (parallel with #2 and #4)"
+      detail: "Extracts crewmates involved. Only needs text + category."
+    - id: severity
+      label: "4. score_severity (parallel with #2 and #3)"
+      detail: "Returns high/medium/low. Only needs text + category."
+    - id: recommend
+      label: "5. recommend_action"
+      detail: "Needs the previous three outputs (tech, people, severity)."
+    - id: digest
+      label: "6. compose_digest"
+      detail: "Assembles everything into the final captain's digest."
+hints:
+  - "If two steps only depend on the same upstream input and don't cross-feed each other, they're **parallelizable**. No reason for the second to wait for the first."
+  - "The bottleneck is always the last step that depends on the previous ones. Here: `recommend_action` doesn't start until all three parallels finish."
+  - "Parallelizing reduces latency, not cost. Three calls are still three calls. But the user sees them as one."
+teaches:
+  - parallel-vs-sequential-chains
+requires:
+  - chain-design-basics
+---
+
+## Not every chain is a straight line
+
+So far you thought of chains as sequences: A → B → C → D. That works when each step **really** depends on the previous one. But often the middle steps are **independent of each other**, all feeding off the same upstream and returning to the same downstream.
+
+When that happens, running them serially is **gifting latency**. The chain becomes a graph: a fan-out that parallelizes the middle, and a fan-in that joins everything.
+
+### When to parallelize
+
+Three conditions, all required:
+
+1. **The steps don't read each other.** B's output doesn't go into C, nor vice versa.
+2. **All depend on the same upstream.** E.g. all wait for `classify` to finish, none waits for another parallel.
+3. **The runtime supports it.** Async, threads, workers. any modern orchestrator allows it.
+
+If all three hold, the middle of the graph runs as a **parallel batch**. Three LLM calls at the same time. Total latency = the slowest of the three, not the sum.
+
+### When NOT to parallelize
+
+- **If outputs interact.** B needs A's result. obviously sequential.
+- **If order matters for auditing.** Sometimes you want the log to show steps in a stable order, not in async arrival order.
+- **If the provider's rate limit penalizes you.** Three parallel calls can saturate your quota while three sequential ones don't. Know your limits.
+
+### Graph shape
+
+```
+            [classify]
+                ↓
+        ┌───────┼───────┐
+        ↓       ↓       ↓
+    [tech]  [people]  [severity]   ← parallel, all wait on classify
+        └───────┼───────┘
+                ↓
+          [recommend]                ← fan-in: waits for all 3 above
+                ↓
+           [digest]                  ← close
+```
+
+> Thinking of chains as **graphs**, not lists, is what separates the novice designer from the expert. A list is a special case of a graph (when there's only one path). The graph gives you parallelism for free when dependencies allow it.
+
+### Your exercise
+
+On the right: six steps of the captain's digest. Some are parallel (their detail says so), some aren't. Order them respecting real dependencies. When two steps can run at the same time, put them consecutively in the order indicated by their numbers. The runtime will fire them together.

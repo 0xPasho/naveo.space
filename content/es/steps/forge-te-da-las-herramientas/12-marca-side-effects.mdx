@@ -1,0 +1,77 @@
+---
+title: "Marcá lectura vs efecto: el agente actúa distinto"
+order: 12
+estimatedMinutes: 8
+exercise:
+  kind: tool-description
+  toolName: send_broadcast
+  context: |
+    {
+      "name": "send_broadcast",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": ["all_decks", "engineering", "medical", "bridge"]
+          },
+          "message": { "type": "string", "maxLength": 280 },
+          "priority": {
+            "type": "string",
+            "enum": ["info", "warning", "alert"]
+          }
+        },
+        "required": ["channel", "message", "priority"]
+      }
+    }
+  starter: |
+    Manda un mensaje por un canal.
+  requiredPhrases:
+    - "side effect"
+    - "no es reversible"
+    - "confirmá con el usuario"
+hints:
+  - "Esta tool MANDA un mensaje a humanos. Cualquier llamada implica que alguien va a ver una notificación. Eso es un side effect, y el agente tiene que saberlo."
+  - "Mencioná las tres ideas: (a) es un side effect externo, (b) no es reversible (no podés 'desnotificar'), (c) antes de invocar conviene confirmar con el usuario el contenido + canal."
+  - "Para alert/priority, agregá guía: 'usar alert solo cuando hay riesgo inminente'. El modelo respeta esa guía si está escrita."
+teaches:
+  - tool-side-effect-marking
+requires:
+  - tool-description-craft
+---
+
+## "Lo que la tool hace" no es solo lo que devuelve
+
+Dos categorías mentales que el agente necesita reconocer:
+
+- **Tools de lectura (read-only).** Consultan estado, no lo modifican. Invocarlas mil veces es equivalente a invocarlas una. `lookup_crewmate`, `list_inventory_items`, `get_shift_status`. Bajo riesgo: en la duda, el agente las puede invocar de más sin daño.
+
+- **Tools de efecto (side-effect).** Modifican estado, mandan notificaciones, gastan plata, crean cosas que después hay que limpiar. `assign_shift`, `transfer_credits`, `send_broadcast`, `delete_user`. Alto riesgo: el agente tiene que **saber que son destructivas** o costosas para tratarlas con cuidado (confirmar antes, no reintentar a ciegas).
+
+El problema: **el modelo no puede inferir cuál es cuál solo del nombre**. `send_broadcast` parece obvio para vos, pero "send" para el modelo puede ser tan inocente como `send_query` (consulta) o tan grave como `send_payment` (irreversible). La diferencia tenés que **escribirla en la description**.
+
+### Lo que tu description tiene que tener si la tool es de efecto
+
+1. **Decí explícito "side effect" / "modifica estado" / "envía a humanos"**. Esa frase es la señal que el modelo usa para tratar la llamada con más cautela.
+
+2. **Decí si es reversible o no.** "Esta acción no es reversible." cambia el comportamiento del agente: en vez de invocar a la primera, va a confirmar.
+
+3. **Sugerí confirmación con el usuario antes de invocar.** "Antes de invocar, confirmá con el usuario el contenido y el canal." es una instrucción que el modelo respeta. lo viste en Track 2 con DecisionFlow.
+
+4. **Limitá los disparadores.** "No usar como respuesta a preguntas hipotéticas o consultas. Solo cuando el usuario pide explícitamente broadcast." cierra la puerta a invocaciones erróneas.
+
+### Tu tarea
+
+A la derecha tenés `send_broadcast` con el schema completo. Solo te falta la description. Convencé al agente de que esto **no es una tool más**.
+
+El validador busca las tres frases clave:
+
+- **"side effect"**. capturás que tiene efecto externo.
+- **"no es reversible"**. capturás que no se puede deshacer.
+- **"confirmá con el usuario"**. capturás la instrucción de pedir OK explícito.
+
+### Caso bonus: el "dry-run" como alternativa
+
+Una técnica que paga: para tools de efecto serio, ofrecé un **dry-run flag**. Ej: `send_broadcast(..., dry_run: true)` retorna lo que se enviaría, sin enviar. El agente puede usarlo para verificar antes de comprometerse. Mencioná esto en la description y el agente lo va a aprovechar.
+
+> Regla del Track 3 que se traduce a producción: **toda tool destructiva debe ser obvia desde la description**. Si necesitás leer el código del handler para saber que es destructiva, ya perdiste.

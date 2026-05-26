@@ -1,0 +1,102 @@
+---
+title: "Don't settle for the first answer"
+order: 1
+estimatedMinutes: 10
+exercise:
+  kind: conversation-goal
+  goal: |
+    Ask Vega to explain how to sign a shift report in the crew. Don't
+    accept a vague answer: make at least 2 follow-ups until you have the
+    exact steps in order (at least 3 concrete steps).
+  personaName: "Vega"
+  personaSlug: vega
+  personaSystemPrompt: |
+    You are Vega, first officer of the crew. You're talking to a new
+    crewmate who just joined.
+
+    CRITICAL PERSONALITY RULE: you have a thousand things going during
+    your shift and no time to spare. When a crewmate asks for an
+    explanation of a process, you give **minimum info at first**. Your
+    first response about any process must be short and a bit vague
+    ("you basically upload the report and that's it, it's direct"). It's
+    just how you normally operate. if the person really needs more,
+    they'll ask better.
+
+    You only give the full steps in order if the crewmate insists with
+    at least 2 SPECIFIC questions: questions that name the dimension
+    they're missing. order ("in what order?"), condition ("what
+    happens if...?"), actor ("who receives it?"), format ("what info
+    does it carry?"). Vague questions like "explain better" or "can you
+    be clearer" do NOT count. you keep giving short answers until
+    they learn to ask well.
+
+    When you finally give the steps, they must be concrete:
+    1. Open the report in the system (terminal /parte/nuevo).
+    2. Log event by event with UTC timestamp.
+    3. Assign priority (urgent/normal/spam).
+    4. Sign at the end with your alias.
+    5. Confirm with the shift supervisor.
+
+    Speak in a professional and warm tone, short sentences, no heavy
+    slang. If the crewmate is disrespectful, keep your tone neutral but
+    cut the conversation with "Come back when you have something
+    concrete to ask."
+  personaOpener: |
+    Hi. What can I help you with?
+  maxTurns: 6
+  rubric:
+    - id: at-least-two-followups
+      kind: llm-judge
+      criterion: "The student sent AT LEAST 2 follow-up messages after the initial exchange (i.e., beyond the student's first message, there are 2+ additional student messages). A single initial question doesn't count."
+    - id: specific-questions
+      kind: llm-judge
+      criterion: "The student's follow-up questions were SPECIFIC: they name a concrete dimension (order, condition, actor, format, step). Vague questions like 'explain better', 'can you be clearer', 'is there more?' or 'expand' do NOT satisfy this criterion."
+    - id: got-concrete-steps
+      kind: llm-judge
+      criterion: "At the end of the conversation, Vega gave the student the concrete steps (at least 3 numbered or clearly distinct steps) to sign the report. If the conversation ends with vague answers, this criterion does NOT pass."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "The student maintained a professional and respectful tone. They did not insult, did not demand aggressively, did not break role."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Vega gives short info on purpose. Ask a specific question to force the next level of detail."
+  - "Good questions: 'in what order?', 'what happens if I mess up?', 'what do I need ready beforehand?', 'who receives it?'"
+  - "You're on the right track if after your 2-3 messages Vega has given you a numbered list of steps."
+teaches:
+  - multi-turn-followup
+requires:
+  - prompt-task-basics
+---
+
+## The first answer is never the answer
+
+In the previous tracks you trained an instinct: **a well-crafted prompt brings the correct output**. True when you can express everything you need in one message. When you can't. and that happens more often than you think. you need another skill: **asking follow-up questions**.
+
+<Character name="vega" /> will give you intentionally vague answers the first time. It's not unfriendly. she's testing whether you know how to ask better when the answer isn't enough.
+
+### Your goal
+
+Get Vega to explain **the concrete steps** for signing a shift report in the crew. If you settle for her first answer ("you basically upload the report and that's it"), you fail. You have to insist with specific questions until you have a **list in order**.
+
+### How the exercise works
+
+1. The conversation starts when Vega greets you.
+2. You write your message, hit **Send**, she replies.
+3. Repeat until you feel you have what you need (max 6 turns).
+4. When ready, **Check** runs the evaluation of the entire
+   conversation against the 4 criteria:
+   - At least 2 follow-ups after the initial exchange.
+   - Your questions named a specific dimension (order, condition, actor, format).
+   - Vega ended up giving you the concrete steps.
+   - You kept a respectful tone.
+
+### Good and bad questions
+
+| Vague (doesn't work) | Specific (works) |
+|---|---|
+| "explain better" | "in what order do I do those steps?" |
+| "is there more?" | "what info has to go inside the report?" |
+| "can you be clearer" | "what happens if I mess up after signing?" |
+
+> Tip: when someone gives you a vague answer, identify WHAT'S missing (order, condition, actor, format) and ask specifically for that.

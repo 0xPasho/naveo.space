@@ -1,0 +1,11 @@
+slug: tu-primera-conversacion
+title: "Your first conversation"
+order: 1
+narrativeHook: |
+  Atlas signed your first report. Now the crew starts pulling you into
+  real situations. and many can't be solved with a single instruction.
+  Twenty-four turns, seven units: sustaining the conversation, steering
+  dialogue, recovering from failures, handling memory and drift,
+  operator discipline, proven patterns, and negotiating with authority.
+  At the close, Atlas signs your second report.
+estimatedMinutes: 142

@@ -1,0 +1,64 @@
+---
+title: "When to close the conversation"
+order: 18
+estimatedMinutes: 4
+characters:
+  - echo
+exercise:
+  kind: prompt-AB
+  question: |
+    You're four turns into a brief with Echo. She gave you the manifest
+    mass (4.2 tons), the priority crate's deck (3), and the priority class
+    (A). On the fifth turn she starts to **repeat herself**. she restates
+    the deck, restates the mass, no new information. What do you do?
+  optionA: |
+    **Keep pushing for more.** Ask another follow-up. there might be
+    something you missed. Conversations get richer the more you sustain
+    them.
+  optionB: |
+    **Confirm what you have and end.** Repeat back the three values you
+    have, ask for a yes/no confirmation, and close the conversation. You
+    already extracted the signal. every extra turn now is noise (and
+    cost).
+  correct: B
+  explanation: |
+    Each turn costs **tokens and time**. Once the model is repeating
+    itself, you've extracted the signal in the conversation. Pushing for
+    more in that state usually does one of two things: (1) the model
+    confabulates new detail to satisfy you ("here are 3 more crates you
+    didn't ask about". were those real?), or (2) it drifts into a
+    contradiction with what it told you in earlier turns. Both make your
+    output **worse**, not better. The discipline of a good multi-turn
+    operator is **knowing when you're done**, restating the deliverable
+    in a confirm-the-numbers pass, and closing. The same rule applies to
+    a customer-support agent, to a research assistant, to a coding
+    helper. Once it's repeating, you're done. confirm and exit.
+teaches:
+  - multi-turn-closing-discipline
+requires:
+  - multi-turn-followup
+---
+
+## More turns isn't more value
+
+Track 1 taught you to be specific. The first half of this track taught you to insist when the answer is vague. Now you learn the inverse skill: **stop when you have the answer**.
+
+Beginners over-extend conversations because each turn *feels* productive. It isn't. Once the model is restating values it already gave you, three things can happen. none of them good:
+
+- **Confabulation.** The model invents new "facts" to keep the conversation alive. *"Oh and there are 3 more crates on deck 7 you should know about"*. were those crates ever real? No. The model just predicted that more numbers were the most probable continuation.
+- **Drift into contradiction.** The model loses thread of what it told you earlier. The mass it confirmed three turns ago becomes a different number.
+- **Token cost.** Every turn is a call. In production this is your bill.
+
+> A clean multi-turn operator ends every successful conversation the same way: *"To confirm: X = 4.2 tons, Y = deck 3, Z = class A. Anything off?"* Then they close.
+
+### The pattern
+
+```
+1. Open with a specific request.
+2. Follow up on dimensions that come back vague.
+3. Stop the moment new turns produce no new information.
+4. Restate the deliverable. Ask for a yes/no confirm.
+5. Exit.
+```
+
+Pick the right move for the situation on the right.

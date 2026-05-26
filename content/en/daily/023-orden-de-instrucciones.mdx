@@ -1,0 +1,134 @@
+---
+title: "Quick mission: instruction order"
+intro: |
+  Stating the format at the end is not the same as burying it in the middle. The order of the pieces saves the model parsing work.
+station: vega
+characters:
+  - echo
+  - vega
+scenes:
+  - kind: step-order-dnd
+    task: |
+      Echo puts together a new prompt and asks you to order the blocks
+      in the natural sequence to read them. Top to bottom.
+    steps:
+      - id: s1
+        label: "Role of the assistant."
+        detail: "Who it is and from which perspective it speaks."
+      - id: s2
+        label: "Domain context."
+        detail: "Data, jargon, and constraints that stay stable."
+      - id: s3
+        label: "Concrete task."
+        detail: "What it has to do in this particular request."
+      - id: s4
+        label: "Output format."
+        detail: "How you want the response back so you can use it later."
+      - id: s5
+        label: "Optional example."
+        detail: "A sample of the output style you expect, if it helps."
+  - kind: prompt-AB
+    question: |
+      Echo shows you two prompts with the same information. Which one
+      respects the natural order and makes reading easier for the model?
+    optionA: |
+      ```
+      Return a JSON with fields id, summary, and severity. Oh, and you
+      are an experienced shift analyst, incidents come in as INC-XXXX.
+      Summarize today's shift.
+      ```
+    optionB: |
+      ```
+      You are an experienced shift analyst.
+      Incidents come in as INC-XXXX, severity low/med/high/critical.
+      Summarize today's shift.
+      Return JSON with fields id, summary, and severity.
+      ```
+    correct: B
+    explanation: |
+      Option A opens with the format and squeezes the role as a side
+      note in the middle. The model reads "JSON with fields..." without
+      yet knowing who it is or what the incidents are. It has to rewind.
+
+      Option B follows the natural order: who you are, what you know,
+      what to do, how to deliver. Each block sets up context for the
+      next.
+
+      Rule: context before task, task before format. If you flip that,
+      the model has to assemble the puzzle on its own.
+  - kind: prompt-anatomy
+    task: |
+      Vega and Echo build a short, well-ordered prompt. Label each
+      block with the piece it corresponds to.
+    parts:
+      - id: role
+        label: "Role (goes first)"
+        text: "You are a release-notes editor for a technical team."
+      - id: context
+        label: "Context (goes near the top, before the task)"
+        text: "The team tags PRs with feat, fix, or chore in the title."
+      - id: task
+        label: "Task (goes in the middle)"
+        text: "Turn this list of merged PRs into a readable changelog."
+      - id: format
+        label: "Format (goes at the end)"
+        text: "Markdown with one h2 per tag and one-line bullets below."
+  - kind: slot-fill-dnd
+    task: |
+      Echo hands you five pieces of a prompt. Decide which ones go at
+      the start and which ones go at the end of the instruction block.
+    slots:
+      - id: start
+        label: "Goes at the start"
+      - id: end
+        label: "Goes at the end"
+    pieces:
+      - id: o1
+        label: "Role of the assistant."
+        correctSlot: start
+      - id: o2
+        label: "General constraints (never invent data, do not answer in English)."
+        correctSlot: start
+      - id: o3
+        label: "The concrete input to process (the text, the list, the JSON)."
+        correctSlot: end
+      - id: o4
+        label: "The expected output format."
+        correctSlot: end
+      - id: o5
+        label: "Domain context (jargon, IDs, severities)."
+        correctSlot: start
+  - kind: prompt-AB
+    question: |
+      Same request, different spot for the format. Which of these
+      prompts produces more stable outputs?
+    optionA: |
+      ```
+      Summarize the sales. Return a CSV with columns region, total, and
+      ranking, in descending order. The regions are LATAM, NA, and EU.
+      Use last quarter's data.
+      ```
+    optionB: |
+      ```
+      Use last quarter's data. The regions are LATAM, NA, and EU.
+      Summarize the sales.
+      Format: CSV with columns region, total, and ranking, in descending order.
+      ```
+    correct: B
+    explanation: |
+      In A the format shows up in the second sentence, before the
+      context about regions. The model reads "CSV with columns..."
+      without yet knowing which regions exist, then has to backtrack.
+
+      In B the format closes the prompt. By the time it gets to that
+      line, the model already knows the data, the regions, and the
+      task. The format is the last instruction and stays fresh when
+      generating.
+
+      Trick: put the format as close as possible to the moment of
+      generating the output. Usually that means at the end.
+---
+
+Order matters: role and context up top, task in the middle, format
+and input at the end. The model reads top to bottom, you do not need
+to make it rewind.

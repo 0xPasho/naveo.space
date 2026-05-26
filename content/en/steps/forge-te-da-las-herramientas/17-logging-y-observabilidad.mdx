@@ -1,0 +1,149 @@
+---
+title: "Logging for tools: the trace that saves you in production"
+order: 17
+estimatedMinutes: 8
+exercise:
+  kind: tool-handler-implement
+  toolName: assign_shift
+  toolSchema: |
+    {
+      "name": "assign_shift",
+      "description": "Assigns a crewmate to a shift with a specific role. Write operation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "crewmate_alias": { "type": "string" },
+          "shift_id": { "type": "string" },
+          "role": { "type": "string", "enum": ["lead", "engineer", "medic", "comms", "support"] }
+        },
+        "required": ["crewmate_alias", "shift_id", "role"]
+      }
+    }
+  starter: |
+    // assign_shift handler, with no logging.
+    // Available:
+    //   logger.info(event, payload), logger.warn(event, payload), logger.error(event, payload)
+    //   db.crewmates.get(alias) → {alias, role_eligibility:[]} | null
+    //   db.shifts.get(shift_id) → {shift_id, max_per_role:{}} | null
+    //   db.assignments.create({crewmate_alias, shift_id, role}) → {assignment_id}
+    //
+    // Your job: add enough logging so that tomorrow, looking at logs,
+    // you can reconstruct EVERY invocation: what was asked, what
+    // happened, how long it took, and why it failed if it failed.
+
+    async function handle({ crewmate_alias, shift_id, role }) {
+      const crewmate = await db.crewmates.get(crewmate_alias);
+      if (!crewmate) return { ok: false, error: { code: "crewmate_not_found", message: `Alias ${crewmate_alias} not found.` } };
+
+      const shift = await db.shifts.get(shift_id);
+      if (!shift) return { ok: false, error: { code: "shift_not_found", message: `Shift ${shift_id} not found.` } };
+
+      if (!crewmate.role_eligibility.includes(role)) {
+        return { ok: false, error: { code: "role_not_eligible", message: `${crewmate_alias} is not eligible for role ${role}.` } };
+      }
+
+      const assignment = await db.assignments.create({ crewmate_alias, shift_id, role });
+      return { ok: true, assignment_id: assignment.assignment_id };
+    }
+  language: javascript
+  scenarios:
+    - description: "Happy path: assignment created. Logs should include start, success, and approximate duration."
+      expected: "Three logs (start, success) with a correlating request_id, sanitized payload, and duration. No secrets logged."
+    - description: "Crewmate not found. Logs should mark the error with code + request payload."
+      expected: "One warn log with code='crewmate_not_found' and the params (crewmate_alias, shift_id, role)."
+    - description: "Role not eligible. Same error log pattern."
+      expected: "One warn log with code='role_not_eligible' and the relevant params."
+  rubric:
+    - id: logs-tool-invocation-start
+      kind: llm-judge
+      criterion: "At the start of the handler, there's a log (info) recording the invocation with: the tool name, the received parameters, and a correlation identifier (e.g. request_id, trace_id, or invocation_id generated at the start)."
+    - id: logs-on-success
+      kind: llm-judge
+      criterion: "On the happy path, before the final return, there's a log (info) recording success with the relevant result (assignment_id) and the duration (calculated with Date.now() or equivalent in ms)."
+    - id: logs-on-each-error-path
+      kind: llm-judge
+      criterion: "On EACH error path (crewmate_not_found, shift_not_found, role_not_eligible), there's a log (warn or error) including the error code and the relevant params. NOT just the message."
+    - id: correlation-id-shared
+      kind: llm-judge
+      criterion: "The start, success, and error logs use the SAME correlation id (request_id or similar) so in production you can filter all lines related to a specific invocation."
+    - id: no-secret-logging
+      kind: llm-judge
+      criterion: "The handler does NOT log sensitive data. In this case there's no password/token, but the principle applies: code doesn't log the WHOLE unfiltered object; it logs selected fields. If there were sensitive fields, ideally it'd mask them (e.g. token: '***')."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Generate an `invocation_id` or `request_id` at the start (could be a timestamp + random). Use it in all logs from the same handler call so filtering by that id brings you the full trace."
+  - "Basic pattern: `const startedAt = Date.now(); logger.info('tool.start', { tool: 'assign_shift', request_id, params: {...} });` ... `logger.info('tool.success', { tool, request_id, duration_ms: Date.now() - startedAt, result_summary })`."
+  - "Errors also get duration and request_id. That lets you answer questions like 'how long do validation errors take vs DB errors' in production."
+teaches:
+  - tool-observability
+requires:
+  - mcp-error-handling
+---
+
+## In production, logs are your only window into the agent
+
+An MCP in production is **a black box** from the end client's point of view. The agent decides, invokes, reads the result, decides again. when something goes wrong, the only way to understand what happened is the log trace you left behind.
+
+If you log nothing, in 3 days you'll have a ticket: _"the agent didn't assign Em's shift to the rendezvous"_. And you won't know:
+
+- Was the tool invoked?
+- With what parameters?
+- Did it fail by validation? by DB?
+- How long did it take? (a silent timeout has identical symptoms to a crash)
+- Was it invoked twice?
+
+Good logging answers all of those in 30 seconds.
+
+### The three logs every tool handler should have
+
+1. **`tool.start`** on entry. records name, params, correlation request_id.
+2. **`tool.success`** right before the happy-path return. records key result, duration.
+3. **`tool.error`** on each error path. records code, params, duration.
+
+```js
+async function handle(params) {
+  const request_id = crypto.randomUUID();
+  const startedAt = Date.now();
+  logger.info("tool.start", { tool: "assign_shift", request_id, params });
+
+  // ... logic ...
+
+  if (failure) {
+    logger.warn("tool.error", {
+      tool: "assign_shift",
+      request_id,
+      duration_ms: Date.now() - startedAt,
+      code: "...",
+      params,
+    });
+    return { ok: false, error: { code, message } };
+  }
+
+  logger.info("tool.success", {
+    tool: "assign_shift",
+    request_id,
+    duration_ms: Date.now() - startedAt,
+    result_summary: { assignment_id },
+  });
+  return { ok: true, assignment_id };
+}
+```
+
+### The `request_id`: what makes the log usable
+
+Without `request_id`, the logs from concurrent invocations interleave and you can't reconstruct any trace. With `request_id` (generated at the start and propagated through the handler), a `grep request_id=abc123` brings you **the entire story of that specific invocation**.
+
+Advanced bonus: if your system has distributed tracing (OpenTelemetry, etc.), `request_id` can be a `trace_id` that connects with logs from your downstream services (DB, external APIs). That correlation is the holy grail of debugging in distributed systems.
+
+### What NOT to log
+
+- **Secrets.** Tokens, passwords, API keys, card data. If they're in `params`, redact them: `{ token: "***" }`.
+- **Heavy PII.** Emails, document numbers. Only if the domain requires it and with clear policies.
+- **Huge bodies.** Base64 images, 10MB JSONs. Log a summary, not the whole thing.
+
+### Your task
+
+On the right you have `assign_shift` with validations but **no logging**. Add start, success, and error logs on each path. Use a correlation `request_id`.
+
+> A handler with no logs is a handler you'll have to rewrite as soon as it fails in production. Low cost, high benefit, do it from day 1.

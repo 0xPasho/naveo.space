@@ -1,0 +1,9 @@
+slug: entrega-exacta
+title: "Que el modelo entregue lo que pediste"
+order: 2
+narrativeHook: |
+  Ya sabés hablarle a la crew. Ahora viene la otra mitad: que lo que el
+  modelo te devuelva sirva sin tener que limpiarlo a mano. Echo te lleva
+  por los fallos clásicos — inventa datos, se va por las ramas, rompe el
+  formato — y cómo blindarlos uno por uno.
+estimatedMinutes: 35

@@ -1,0 +1,68 @@
+---
+title: "What is a tool, exactly?"
+order: 1
+estimatedMinutes: 4
+exercise:
+  kind: prompt-AB
+  question: |
+    Forge needs the agent to be able to **look up a crewmate's info by alias**.
+    She has two ways to configure it. Which one gives the agent the real
+    ability to do it?
+  optionA: |
+    SYSTEM:
+    You are an assistant that helps Forge. You have access to the crew's
+    registry. When someone asks for a crewmate's info by alias, return
+    their name, role and contact.
+
+    USER:
+    Who is "Em"?
+  optionB: |
+    SYSTEM:
+    You are an assistant that helps Forge.
+
+    TOOLS:
+    - lookup_crewmate(alias: string): returns the crewmate's info
+      (name, role, contact) registered under that alias. Call it
+      when the user asks for crewmate data by alias.
+
+    USER:
+    Who is "Em"?
+  correct: B
+  explanation: |
+    In option A, the model has NO way to look anything up. it just has
+    the words "you have access to the registry". The registry doesn't
+    exist on the model's side, so it will **invent** a name, a role and
+    a contact. Guaranteed hallucination.
+
+    In option B, the model receives a **tool**: a real function with a
+    name (`lookup_crewmate`), a typed input (`alias: string`) and a
+    description of what it does and when to use it. The model doesn't
+    implement it. it only decides **when to invoke it**. When it does,
+    the system (you) runs the real function and returns the result.
+
+    That's the difference: a tool gives the model **real action capacity**
+    over your world, not just a promise.
+hints:
+  - "Where would the model get the registry data from in option A?"
+  - "A tool is a function. If it's not defined as a function, it doesn't exist."
+teaches:
+  - tool-vs-prompt
+requires:
+  - multi-turn-followup
+---
+
+## When talking is no longer enough
+
+The model is good at generating text. It has no access to your database, your API, the filesystem, or the internet. unless you give it **tools**.
+
+A tool is:
+
+- A **function** that exists in your code.
+- A **description** you give the model: what it's called, what inputs it takes, what it returns, when to use it.
+- A **decision**: the model chooses whether to invoke it, based on the conversation.
+
+When the model decides to invoke a tool, **you run the function** and return the result. The model continues the conversation with that result in hand.
+
+> Without tools, everything the model "knows" is what it learned in training or what you put in the prompt. With tools, it can query the real world on every turn.
+
+Look at the right pane. One option pretends to have a registry, the other actually gives it one. One is hallucination, the other is tool use.

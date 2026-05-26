@@ -1,0 +1,132 @@
+---
+title: "Misión exprés: qué es un prompt"
+intro: |
+  Antes de aprender trucos, conviene saber qué es un prompt. Es la instrucción que le das al modelo. Ni magia ni adivinanza.
+station: vega
+characters:
+  - vega
+scenes:
+  - kind: slot-fill-dnd
+    task: |
+      Vega te pasa cinco mensajes que alguien le tiró a un modelo. Decidí
+      cuáles cuentan como prompt válido y cuáles no le sirven al modelo
+      para hacer algo.
+    slots:
+      - id: valid
+        label: "Prompt válido"
+      - id: invalid
+        label: "No es un prompt"
+    pieces:
+      - id: p1
+        label: "Decime 3 ideas para nombrar a mi crew de soporte."
+        correctSlot: valid
+      - id: p2
+        label: "hola, todo bien?"
+        correctSlot: invalid
+      - id: p3
+        label: "(mensaje vacío)"
+        correctSlot: invalid
+      - id: p4
+        label: "ideas?"
+        correctSlot: invalid
+      - id: p5
+        label: "Hacé un resumen de este texto en 2 bullets cortos."
+        correctSlot: valid
+  - kind: prompt-AB
+    question: |
+      Estos dos prompts piden lo mismo. ¿Cuál tiene más chances de
+      devolver algo útil?
+    optionA: |
+      ```
+      Decime 3 ideas para llamar a mi crew de soporte.
+      ```
+    optionB: |
+      ```
+      ideas?
+      ```
+    correct: A
+    explanation: |
+      El modelo no te lee la mente. Si le tirás "ideas?" sin decirle
+      ideas de qué, te va a inventar cualquier cosa o pedir que aclares.
+
+      El A le dice tres cosas: cuántas ideas querés (3), de qué (nombrar
+      a tu crew) y para qué contexto (soporte). Con eso ya tenés un piso
+      decente.
+
+      Regla básica: si vos no podrías cumplir el pedido leyéndolo,
+      tampoco lo va a poder cumplir el modelo. Fijate que el prompt
+      cierre por sí solo.
+  - kind: prompt-anatomy
+    task: |
+      Vega arma un prompt sencillo paso a paso. Etiquetá cada pieza con
+      la categoría que le corresponde.
+    parts:
+      - id: who
+        label: "Quién soy yo"
+        text: "Soy líder de una crew chica de atención al cliente."
+      - id: what
+        label: "Qué quiero"
+        text: "Necesito tres ideas para nombrar al canal interno del equipo."
+      - id: how
+        label: "Cómo lo quiero"
+        text: "Cada nombre en una línea, máximo dos palabras."
+      - id: context
+        label: "Contexto"
+        text: "El equipo es informal y trabaja remoto desde Latam."
+  - kind: prompt-AB
+    question: |
+      Tenés que pedirle al modelo que te ayude con tres cosas distintas
+      sobre un mismo texto. ¿Cuál de estas formas le hace la vida más
+      fácil al modelo?
+    optionA: |
+      ```
+      Resumime este texto y traducilo al inglés y dame 3 ideas de
+      título y devolvémelo todo junto.
+      ```
+    optionB: |
+      ```
+      Tengo un texto. Necesito tres cosas:
+      1) Un resumen en 2 bullets.
+      2) Una traducción al inglés.
+      3) Tres ideas de título.
+      ```
+    correct: B
+    explanation: |
+      Los modelos no te leen la mente, pero sí leen estructura. Cuando
+      ponés "1, 2, 3" el modelo entiende que son tres entregables y los
+      separa.
+
+      En A todo va pegado con "y". Es fácil que el modelo se coma uno de
+      los pedidos o los mezcle en un solo bloque difícil de usar después.
+
+      Regla: si tu prompt pide más de una cosa, numerá. Si es una sola
+      cosa, una línea alcanza.
+  - kind: slot-fill-dnd
+    task: |
+      ¿Qué cosas le ayudan al modelo a entender lo que querés y qué
+      cosas lo confunden? Clasificá cada pieza.
+    slots:
+      - id: helps
+        label: "Ayuda al modelo"
+      - id: confuses
+        label: "Confunde al modelo"
+    pieces:
+      - id: q1
+        label: "Decirle qué rol jugar (\"Sos editor técnico\")."
+        correctSlot: helps
+      - id: q2
+        label: "Darle un ejemplo de cómo querés la salida."
+        correctSlot: helps
+      - id: q3
+        label: "Escribir \"hacé lo que quieras\"."
+        correctSlot: confuses
+      - id: q4
+        label: "Una pregunta vaga sin contexto."
+        correctSlot: confuses
+      - id: q5
+        label: "Pedir un formato concreto (bullets, JSON, tabla)."
+        correctSlot: helps
+---
+
+Un prompt es una instrucción. Si vos no la entenderías leída en frío,
+el modelo tampoco. Decile quién sos, qué querés y cómo lo querés.

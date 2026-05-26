@@ -1,0 +1,127 @@
+---
+title: "Pensar antes de responder: chain of thought"
+order: 6
+estimatedMinutes: 9
+exercise:
+  kind: prompt-task
+  task: |
+    Forge te pide ayuda diagnosticando síntomas de sistemas de la nave.
+    Para cada síntoma, querés que el modelo **razone paso a paso** y
+    **luego** dé la causa probable — no que dispare una causa al azar.
+
+    Escribe un prompt que produzca dos secciones claramente marcadas:
+    - `Análisis:` — razonamiento paso a paso (mínimo 2 pasos).
+    - `Causa probable:` — una sola línea con la causa más probable.
+
+    Donde vaya el síntoma, usá `{{input}}`.
+  starter: |
+    <task>
+      Diagnostica el siguiente síntoma de sistema. Razona paso a paso
+      antes de concluir.
+    </task>
+
+    <output_format>
+      Análisis:
+      1. <observación>
+      2. <implicación>
+      3. <hipótesis>
+
+      Causa probable: <una línea>
+    </output_format>
+
+    <symptom>
+      {{input}}
+    </symptom>
+  testCases:
+    - input: "El generador auxiliar arranca pero se apaga a los 10 segundos. La luz roja del panel parpadea 3 veces antes de cada apagado."
+    - input: "Las luces del corredor B oscilan en intensidad cada vez que alguien usa el comunicador en bay 2."
+    - input: "El reciclador de agua devuelve líquido con tinte amarillo solo entre las 02:00 y las 04:00."
+  rubric:
+    - id: has-analisis
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "an[áa]lisis\\s*:"
+        flags: "i"
+      criterion: "El output incluye una sección 'Análisis:'"
+    - id: has-causa
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "causa\\s+probable\\s*:"
+        flags: "i"
+      criterion: "El output incluye una sección 'Causa probable:'"
+    - id: stepwise-reasoning
+      kind: llm-judge
+      criterion: "La sección 'Análisis:' contiene razonamiento real paso a paso (al menos 2 observaciones o implicaciones encadenadas), no solo una afirmación sin desarrollo."
+    - id: plausible-cause
+      kind: llm-judge
+      criterion: "La 'Causa probable:' es plausible para el síntoma dado y consistente con el análisis presentado."
+  passThreshold:
+    rule: all-criteria-all-cases
+hints:
+  - "El truco no es _pedir_ razonamiento, es **darle estructura** al razonamiento. El `<output_format>` con `Análisis:` y `Causa probable:` ya te ayuda."
+  - "Si el modelo salta directo a la causa, agrega numeración explícita: 'Razona en 3 pasos: 1. ... 2. ... 3. ...'"
+  - "Pedile que **cite parte del síntoma** en su análisis. Eso ancla el razonamiento al input y reduce alucinación."
+teaches:
+  - chain-of-thought-basics
+requires:
+  - prompt-task-basics
+---
+
+## El modelo es más listo si lo dejás pensar
+
+Por defecto, los LLMs **adivinan rápido y pueden equivocarse**. Si le pedís
+"causa de este síntoma", suele tirar la primera hipótesis que se le ocurra.
+
+**Chain of thought** (CoT) es la técnica de pedirle que **muestre su
+razonamiento paso a paso antes** de la conclusión. No es magia: es darle al
+modelo el espacio (literalmente, tokens) para procesar.
+
+Funciona porque cada token que genera el modelo es un paso de cómputo. Si lo
+forzás a generar análisis primero, está "calentando" la respuesta antes de
+comprometerse a una conclusión.
+
+### El task
+
+<Character name="forge" /> mantiene los sistemas de la nave. Cuando un
+síntoma raro aparece, no quiere una corazonada — quiere ver **cómo** llegó
+el modelo a la conclusión, para poder verificarla.
+
+Tu prompt debe producir dos secciones marcadas:
+
+```
+Análisis:
+1. ...
+2. ...
+3. ...
+
+Causa probable: ...
+```
+
+El validador chequea:
+
+1. La sección `Análisis:` existe.
+2. La sección `Causa probable:` existe.
+3. El análisis es **realmente** paso a paso (no una sola afirmación).
+4. La causa es plausible para el síntoma.
+
+### El detalle clave
+
+Hay dos formas de pedir razonamiento:
+
+**Débil:** _"Piensa paso a paso antes de responder."_ (a veces funciona, a veces se ignora)
+
+**Fuerte:** mostrar el formato exacto en `<output_format>`:
+
+```
+Análisis:
+1. ...
+2. ...
+3. ...
+
+Causa probable: ...
+```
+
+El segundo siempre funciona porque el modelo trata el formato como un
+contrato. La estructura ES el chain of thought.

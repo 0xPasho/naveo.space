@@ -1,0 +1,38 @@
+---
+title: "Why the vague one didn't work"
+order: 2
+estimatedMinutes: 2
+demo:
+  id: prompt-dial
+  props:
+    before:
+      label: "Vague"
+      prompt: |
+       . explain better
+      output: |
+        Right, basically you upload the report and that's it. Pretty direct once you get the hang of it. If you get stuck come back and we'll go over it.
+    after:
+      label: "Specific"
+      prompt: |
+       . in what order do I do the steps, and what info goes in each?
+      output: |
+        OK, in order:
+
+        1. Open the report (`/parte/nuevo` in the terminal). You just need your alias and the shift.
+        2. Log event by event with UTC timestamp. Each line: time + what happened + who saw it.
+        3. Assign priority per event: urgent / normal / spam.
+        4. Sign at the end with your alias.
+        5. Confirm with the shift supervisor before closing.
+    note: |
+      The vague question "explain better" doesn't tell the model what the previous answer was missing. The specific question names exactly the missing dimension (order, content) and that's why it forces the concrete list.
+---
+
+## Same thing, two different questions
+
+You just went through the exercise with <Character name="vega" />. If your second question was **vague** ("explain better", "can you be clearer"), you stayed without the steps. If it was **specific** ("in what order?", "what info?"), Vega gave you the list.
+
+On the right you have both cases side by side. The difference isn't tone or length. the specific question is just as short. The difference is **which dimension it names**.
+
+> Before sending your next message to a model, pause for a second: if the previous answer was vague, what was it missing? Order, condition, actor, format. ask for that specific thing, not for "more".
+
+You'll use this skill in every track that follows. Whenever a model gives you a weak answer, your job is to name the missing dimension in one word and ask for that.

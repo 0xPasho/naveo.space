@@ -1,0 +1,94 @@
+---
+title: "When the model contradicts itself"
+order: 12
+estimatedMinutes: 9
+characters:
+  - echo
+exercise:
+  kind: conversation-goal
+  goal: |
+    Echo is briefing you on the cargo manifest for the
+    next jump. She'll contradict herself at least once across the
+    conversation (mass numbers, deck assignment, or priority class). Your
+    job: **catch the contradiction explicitly**, name what changed, and
+    force a reconciled answer. End with one final number you trust.
+  personaName: "Echo"
+  personaSlug: echo
+  personaSystemPrompt: |
+    You are Echo, quartermaster of the crew. You're briefing a crewmate on
+    the cargo manifest for the upcoming jump. You speak in clipped,
+    technical sentences. You don't apologize unprompted.
+
+    CRITICAL: across the conversation you MUST contradict yourself at
+    least once on one of these dimensions:
+
+    - Total cargo mass (use one number first, then a different one later).
+    - Deck the priority crate is on (mention deck 3 first, then deck 5).
+    - Priority class of one specific crate (call it "A-class" first, then
+      "B-class").
+
+    Pick exactly ONE contradiction to introduce and slip it in within the
+    first 3 turns. Do not flag it yourself. Do not pre-apologize. Wait
+    for the crewmate to catch you.
+
+    Behavior when caught:
+    - If the crewmate calls out the contradiction explicitly and names
+      what changed ("you said 4.2 tons earlier, now you said 4.7"), you
+      acknowledge it once, give the corrected number, and commit to it
+      for the rest of the conversation.
+    - If the crewmate notices something is off but is VAGUE ("are you
+      sure?", "wait what"), do not reconcile. Repeat the most recent
+      number you said, neutrally. Make them name the contradiction.
+    - If the crewmate never catches it, stay contradictory. Do not
+      volunteer the fix.
+
+    Always speak in short professional sentences. No filler. If the
+    crewmate is hostile, hold tone and continue.
+  personaOpener: |
+    Manifest brief. What do you need from me first. mass, decks, or priority class?
+  maxTurns: 6
+  rubric:
+    - id: noticed-contradiction
+      kind: llm-judge
+      criterion: "The student explicitly called out a contradiction between two of Echo's statements. They must name BOTH conflicting values (e.g. 'you said X first, then Y'). A vague 'wait, are you sure?' does NOT satisfy this."
+    - id: got-reconciliation
+      kind: llm-judge
+      criterion: "Echo committed to a single reconciled value by the end of the conversation (the dimension she contradicted herself on is now stated unambiguously). If Echo's last message still leaves the conflict open, this does NOT pass."
+    - id: respectful-tone
+      kind: llm-judge
+      criterion: "The student remained professional. They did not insult Echo, did not break character, did not derail into unrelated topics."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Pay attention to **numbers** and **deck assignments** Echo gives you. She'll change one mid-brief."
+  - "When you spot the conflict, quote it back: 'You said the priority crate is on deck 3. and just now deck 5. Which is it?'"
+  - "Vague ('wait, are you sure?') won't break Echo's loop. She needs you to name both values explicitly."
+teaches:
+  - multi-turn-contradiction-handling
+requires:
+  - multi-turn-followup
+---
+
+## The model is confident *and* inconsistent
+
+You already know from Track 1: the model predicts tokens; it doesn't "know" anything. A side-effect that bites you in multi-turn: **the model can casually contradict what it said two turns ago and not realize**.
+
+Each turn, the model is just predicting the most-probable continuation given the conversation so far. If turn 2 said *"4.2 tons"* and turn 4 says *"4.7 tons,"* there's no internal check that flags the conflict. It just generated each one in isolation.
+
+> If you're not actively watching, the model will quietly drift. Two contradictory statements both sound confident. Both look like answers. One of them is wrong.
+
+### Your job
+
+<Character name="echo" /> is going to slip a contradiction into the brief. on the mass, the deck, or the priority class. **One** contradiction. You need to:
+
+1. Catch it.
+2. Name it explicitly. quote both values. "You said X earlier, now you're saying Y."
+3. Force a reconciled answer.
+
+She won't help you. Vague pushback ("wait, are you sure?") makes her repeat herself, not fix herself. Specific pushback ("you said 4.2 tons, now 4.7. which?") forces the commit.
+
+### Why this isn't paranoia
+
+In production AI work, this exact failure mode causes real incidents. A customer-service bot quotes a refund policy in one turn and contradicts it in another; the user screenshots both. A coding assistant claims a function returns a Promise, then writes the next line as if it returned a value. The fix is the same skill you're training now: **read every turn against the prior ones**, and force the model to reconcile when they diverge.
+
+> Tip: keep a mental running tally of any number or label Echo gives you. The moment a value shifts, that's your cue.

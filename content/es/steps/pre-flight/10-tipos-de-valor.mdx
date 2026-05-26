@@ -1,0 +1,109 @@
+---
+title: "Tipos de valor: texto, número, verdadero/falso"
+order: 10
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    Seis valores que la nave tiene en distintas cajas. Clasificá cada uno
+    según su **tipo**. Cuidado con los que se parecen a otro tipo pero no
+    lo son.
+  slots:
+    - id: text
+      label: "Texto"
+    - id: number
+      label: "Número"
+    - id: bool
+      label: "Verdadero o falso"
+  pieces:
+    - id: name
+      label: "\"Forge\""
+      correctSlot: text
+    - id: int
+      label: "87"
+      correctSlot: number
+    - id: t
+      label: "verdadero"
+      correctSlot: bool
+    - id: float
+      label: "14.2"
+      correctSlot: number
+    - id: f
+      label: "falso"
+      correctSlot: bool
+    - id: num_text
+      label: "\"87\""
+      correctSlot: text
+hints:
+  - "Las comillas son la señal: lo que está **entre comillas** siempre es texto, no importa lo que haya adentro."
+  - "`verdadero` y `falso` son los únicos dos valores que entran en la columna de booleano."
+  - "`87` (sin comillas) es número. `\"87\"` (con comillas) es texto. Se parecen pero la nave los trata distinto."
+teaches:
+  - basic-data-types
+requires:
+  - variables-basics
+---
+
+## Tipos de valor: tres familias básicas
+
+Hasta acá las cajas guardaban "un valor". Pero los valores no son todos iguales. Una caja puede guardar **texto**, **un número**, o un **verdadero/falso**, y cada tipo se comporta distinto.
+
+### Las tres familias
+
+**Texto** son letras, palabras, frases. Lo que va entre comillas:
+
+```
+nombre = "Forge"
+rumbo = "042°NO"
+estado = "operativo"
+```
+
+**Número** se usa para contar, medir, comparar. Sin comillas:
+
+```
+combustible = 87
+oxigeno = 14.2
+tripulantes = 4
+```
+
+**Verdadero / falso** tiene solo dos valores posibles. Para decisiones binarias:
+
+```
+esclusa_cerrada = verdadero
+alarma_activa = falso
+```
+
+### Por qué importa: el tipo cambia qué podés hacer
+
+Sumar dos números tiene sentido. Sumar dos textos también, pero **es otra operación**:
+
+```
+3 + 5              → 8           (suma matemática)
+"hola" + "mundo"   → "holamundo" (concatenación de texto)
+```
+
+Si mezclás tipos, las cosas dejan de funcionar:
+
+```
+3 + "5"            → ¿8? ¿"35"? Depende del lenguaje. A veces error.
+"alarma" > 5       → no tiene sentido. Crash o resultado raro.
+```
+
+### El error clásico: confundir texto con número
+
+Estos dos se ven idénticos pero **NO son iguales**:
+
+```
+87        ← número. Podés sumar, comparar, dividir.
+"87"      ← texto. Son dos caracteres ('8' y '7') que parecen un número.
+```
+
+Si comparás `87 == "87"`, en la mayoría de los lenguajes serios el resultado es **falso**. Para el sistema un número y un texto son cosas distintas, aunque visualmente parezcan iguales.
+
+Esta es la fuente de un montón de bugs cuando los datos llegan de afuera (de un formulario, de una API). Vienen como texto. Vos pensás que son números. Hacés matemática. Sale cualquier cosa.
+
+> Cuando le hablás al modelo, también pasa: si el modelo te devuelve `"87"` (texto) y vos esperabas un número, no podés multiplicar. Por eso vas a ver tantos prompts diciendo *"devolvé un número, no un string"*.
+
+A la derecha, seis valores. Clasificalos por tipo. Cuidado con los que se parecen a otro tipo pero no lo son.

@@ -1,0 +1,782 @@
+{
+  "common": {
+    "appName": "the crew",
+    "header": {
+      "signIn": "Sign in",
+      "signUp": "Sign up"
+    },
+    "nav": {
+      "bridge": "Bridge",
+      "tracks": "Tracks",
+      "profile": "Profile"
+    },
+    "languageSwitcher": {
+      "label": "Language",
+      "es": "Español",
+      "en": "English"
+    },
+    "hud": {
+      "logoAlt": "The Crew",
+      "xpLabel": "XP",
+      "streakLabel": "Streak",
+      "streakAtRiskTitle": "Clear a step today so your streak survives.",
+      "gemsLabel": "Gems",
+      "heartsLabel": "Hearts",
+      "avatarFallback": "OF"
+    },
+    "userMenu": {
+      "openLabel": "Open account menu",
+      "profile": "My profile",
+      "signOut": "Sign out"
+    },
+    "sidebar": {
+      "sections": {
+        "onboard": "Onboard",
+        "bridge": "Bridge"
+      },
+      "items": {
+        "missionPath": "Mission Path",
+        "practice": "Practice",
+        "crew": "The Crew",
+        "workbench": "Workbench",
+        "leaderboard": "Leaderboard",
+        "shop": "Shop",
+        "profile": "Profile"
+      },
+      "daily": {
+        "label": "DAILY",
+        "streakTitle": "{days}-day streak",
+        "streakBody": "Don't break the chain"
+      }
+    }
+  },
+  "workbench": {
+    "eyebrow": "Workbench · Forge",
+    "title": "Your prompt bench.",
+    "body": "Free space to test prompts. No XP, no rubric, no penalty for retrying — just you, the model, and the loop. Forge keeps your last six runs so you can compare versions."
+  },
+  "comingSoon": {
+    "eyebrow": "Coming soon",
+    "ctaBack": "Back to the map",
+    "ctaDashboard": "View the bridge",
+    "practice": {
+      "title": "Practice replays.",
+      "body": "Echo is calibrating a review mode: past drills with fresh variations to keep your reflexes sharp. Not open yet — check back when Echo gives the green light."
+    },
+    "crew": {
+      "title": "Meet your crew.",
+      "body": "Soon you'll be able to read each member's full dossier — Vega, Atlas, Echo, Forge — backstory, specialty, recurring lines. For now you meet them inside the lessons."
+    },
+    "leaderboard": {
+      "title": "Fleet leaderboard.",
+      "body": "Atlas is crunching weekly rankings — who keeps their streak, who clears the most capstones, who hangs onto their hearts. First publish drops once there's enough fleet."
+    },
+    "shop": {
+      "title": "Base shop.",
+      "body": "Vega is haggling with the quartermaster: insignia cosmetics, heart refills, tokens for extra retries. Hold onto your gems — opens soon."
+    }
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "THE CREW · ONBOARDING",
+      "headingLead": "You're new on board.",
+      "headingAccent": "Learn to coordinate",
+      "headingTail": "with the crew.",
+      "subheading": "A team of humanoid robots is counting on you. Each one has a specialty — and they only understand you if you know how to talk to them. This is where you learn the protocol: prompt engineering, step by step.",
+      "ctaPrimary": "Start the onboarding",
+      "ctaSecondary": "View the brief",
+      "mascotAlt": "Vega — first officer"
+    },
+    "pillars": {
+      "eyebrow": "WHAT YOU LEARN ON BOARD",
+      "title": "Four disciplines, one shared protocol.",
+      "items": {
+        "prompts": {
+          "tag": "PROMPTS",
+          "title": "Talk to the model",
+          "body": "Structure, context, examples. The basics that separate a useful answer from a hallucination."
+        },
+        "tools": {
+          "tag": "TOOLS",
+          "title": "Give the model hands",
+          "body": "Functions, schemas, validation. The model stops guessing and starts acting."
+        },
+        "mcp": {
+          "tag": "MCP",
+          "title": "Wire it to the world",
+          "body": "MCP servers, resources, permissions. Your agent reads, writes, and queries real systems."
+        },
+        "agents": {
+          "tag": "AGENTS",
+          "title": "Make it coordinate itself",
+          "body": "Loops, memory, task splits. From an assistant that answers to one that ships."
+        }
+      }
+    },
+    "crewPreview": {
+      "eyebrow": "MEET",
+      "eyebrowAccent": "THE CREW",
+      "subtitle": "Four robots, four styles. Each one teaches part of the protocol and calls you out when you drift.",
+      "openDossiers": "OPEN DOSSIERS →",
+      "blurbs": {
+        "vega": "Welcomes you aboard. Teaches you to give an order that can't be misread.",
+        "echo": "Speaks in checklists. Verifies data and demands clean formats.",
+        "atlas": "Signs off your first report. Wants tight structure, no noise.",
+        "forge": "Builds the ship's tools. Explains exactly how every piece works."
+      }
+    },
+    "howItWorks": {
+      "eyebrow": "HOW IT WORKS",
+      "title": "Three steps per shift.",
+      "steps": {
+        "drill": {
+          "step": "STEP 01",
+          "title": "Quick drill",
+          "body": "Two minutes: mark what you know, reinforce what you don't. No blank screens, no loose theory."
+        },
+        "build": {
+          "step": "STEP 02",
+          "title": "Build the prompt",
+          "body": "Write, tune, test. Echo runs it against real cases and tells you exactly what failed."
+        },
+        "ship": {
+          "step": "STEP 03",
+          "title": "Capstone with the crew",
+          "body": "Put it all together on a real mission. The crew signs off your work and unlocks the next shift."
+        }
+      }
+    },
+    "finalCta": {
+      "eyebrow": "READY ROOM",
+      "title": "Ready for your first shift?",
+      "body": "Zero setup. Jump in, finish the first drill, and we'll see you on the bridge.",
+      "ctaPrimary": "Start now",
+      "ctaSecondary": "Browse the tracks"
+    }
+  },
+  "tracks": {
+    "list": {
+      "eyebrow": "TRAINING BAY · {count} ACTIVE TRACKS",
+      "headingLead": "Pick a track.",
+      "headingAccent": "Clear the shift.",
+      "subheading": "Each track is a series of steps with the crew member who owns that protocol. Mix freely — Echo's checklist is unlocked from your first hello.",
+      "empty": "No tracks published yet.",
+      "summary": {
+        "progressLabel": "YOUR PROGRESS",
+        "progressValue": "{done} / {total}",
+        "xpLabel": "XP BANKED",
+        "xpDelta": "+ {delta} this week",
+        "capstonesLabel": "CAPSTONES",
+        "capstonesValue": "{done} / {total}",
+        "capstonesDelta": "{remaining} to clear"
+      },
+      "chips": {
+        "all": "All tracks",
+        "prompting": "Prompting",
+        "mcp": "MCP & Tools",
+        "skills": "Skills",
+        "agents": "Agents",
+        "code": "Code with AI",
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "card": {
+        "unitLabel": "UNIT 0{unit} · {duration}",
+        "completed": "completed",
+        "stepsLabel": "{done}/{total} steps",
+        "xpLabel": "{xp} XP",
+        "boss": "Capstone",
+        "reportingOfficers": "Reporting officers",
+        "launch": "Launch shift →",
+        "review": "Review · Replay",
+        "continueAt": "Continue · Step {step}",
+        "lockedPrereq": "Clear \"{prereq}\" first"
+      },
+      "loadMore": "Load 3 more tracks",
+      "hint": "More units land every fortnight.",
+      "hintCta": "Suggest one →"
+    },
+    "detail": {
+      "backToTracks": "All tracks",
+      "eyebrow": "UNIT 0{unit} · {rank} · {steps} STEPS · {duration}",
+      "titlePrefix": "Hello, {mentor} —",
+      "tagDot": "•",
+      "summary": {
+        "runLabel": "YOUR RUN",
+        "runValue": "{done} / {total}",
+        "xpLabel": "XP BANKED",
+        "xpValue": "{done} / {total}",
+        "heartsLabel": "HEARTS",
+        "capstoneLabel": "CAPSTONE"
+      },
+      "ctaContinueAt": "Continue · Step {step} → {title}",
+      "ctaStart": "Start · Step 1",
+      "ctaMap": "Open mission map",
+      "progressLabel": "{pct}% completed",
+      "debrief": {
+        "eyebrow": "DEBRIEF",
+        "eyebrowAccent": "WHAT YOU'LL CLEAR",
+        "title": "By end of shift, you can —",
+        "officerRole": "SIGNS OFF ON THIS UNIT",
+        "points": [
+          "Read a model's mood from its first sentence",
+          "Pick the right role for the right turn",
+          "Write examples that actually teach",
+          "Spec a JSON schema Echo will sign off on",
+          "Diagnose why a 'good' prompt drifts",
+          "Clear a capstone with hearts to spare"
+        ]
+      },
+      "syllabus": {
+        "heading": "Course content",
+        "metaSummary": "{lessons} lessons · {capstones} capstone · ~ {duration}",
+        "kind": {
+          "read": "READ + DRILL",
+          "drill": "MULTI-CHOICE",
+          "build": "PROMPT BUILDER",
+          "verify": "FREE TEXT · ECHO RUN",
+          "chat": "MULTI-TURN",
+          "boss": "CAPSTONE"
+        },
+        "row": {
+          "stepsAndXp": "{steps} steps · {xp} XP",
+          "cleared": "Cleared",
+          "upNext": "Up next",
+          "locked": "Locked",
+          "pct": "{pct}%",
+          "replay": "Replay",
+          "resume": "Resume →",
+          "continue": "Continue →",
+          "tagBoss": "Clears unit",
+          "tagLocked": "Locked"
+        },
+        "expanded": {
+          "youllDo": "YOU'LL DO",
+          "youllUnlock": "YOU'LL UNLOCK",
+          "doItems": [
+            "Read a short scene — Vega vs. Echo on the bridge",
+            "Drag two examples into a prompt skeleton",
+            "Run the prompt; let Echo grade 3 cases"
+          ],
+          "unlockItems": [
+            "{xp} XP",
+            "1 ★ → 3 ★ on this step",
+            "Eligibility for the capstone"
+          ]
+        }
+      },
+      "capstones": {
+        "default": "Capstone",
+        "echoAudit": "Echo audit",
+        "atlasBrief": "Captain Atlas's brief"
+      }
+    }
+  },
+  "dashboard": {
+    "heading": "Your progress",
+    "summary": "You've completed {completed} of {total} steps.",
+    "signInToTrack": "Sign in to save your progress between sessions.",
+    "browseTracks": "Browse tracks"
+  },
+  "dashboardPath": {
+    "continue": {
+      "eyebrow": "UNIT 02 · PROMPTING · STEP 4 OF 8",
+      "title": "Pick up where you left off — ",
+      "titleAccent": "Few-shot examples",
+      "body": "Vega is waiting on the bridge. Two minutes of drill, then Echo runs your prompt against three cases.",
+      "progressFraction": "{pct} % · {done} / {total}",
+      "ctaContinue": "Continue shift →",
+      "ctaPath": "View path"
+    },
+    "stats": {
+      "xpThisWeek": "XP this week",
+      "xpDelta": "+{delta} vs last",
+      "streakLabel": "Streak",
+      "streakValue": "{days}d",
+      "streakBest": "best {best}",
+      "echoPassRate": "Echo pass-rate",
+      "echoDelta": "+{delta}%",
+      "capstones": "Capstones",
+      "capstonesValue": "{done} / {total}",
+      "capstonesRemaining": "{n} to go"
+    },
+    "missionPath": {
+      "title": "UNIT 02 · MISSION PATH",
+      "openMap": "Open full map →"
+    },
+    "quests": {
+      "title": "DAILY QUESTS",
+      "remaining": "{n} left",
+      "earnXp": "Earn 50 XP",
+      "earnXpSub": "{done} / {total}",
+      "passDrills": "Pass 3 drills with no hearts lost",
+      "passDrillsSub": "{done} / {total}",
+      "clearCapstone": "Clear 1 capstone",
+      "clearCapstoneSub": "{done} / {total}",
+      "practice": "Practice 5 minutes",
+      "practiceSub": "completed"
+    },
+    "fieldGuide": {
+      "title": "FIELD GUIDE",
+      "vegaRole": "Mentor — Few-shot",
+      "vegaTip": "Easy. Show the model two examples before asking. It will copy your shape — that's the whole trick.",
+      "masteryTitle": "MASTERY",
+      "masteryPrompts": "PROMPTS",
+      "masteryMcp": "MCP / TOOLS",
+      "masteryAgents": "AGENTS",
+      "tipEyebrow": "Today's tip · Vega",
+      "tipBody": "If the model invents a field, your prompt is leaking. Tighten the schema."
+    },
+    "pathLabels": {
+      "helloVega": "Hello, Vega",
+      "tokens": "Tokens",
+      "roles": "Roles",
+      "fewShot": "Few-shot",
+      "schemas": "Schemas",
+      "boss": "Boss · Echo"
+    }
+  },
+  "dashboardBridge": {
+    "banner": {
+      "eyebrow": "BRIDGE LOG · DAY 47",
+      "title": "Welcome back, Officer. {mentor} has prepped your shift.",
+      "mentorName": "Vega",
+      "statusOnline": "● ONLINE",
+      "statusBody": "Status: {online} · 3 quests pending · capstone in 2 steps",
+      "ctaResume": "Resume shift",
+      "ctaBrief": "Brief from Atlas"
+    },
+    "telemetry": {
+      "xp": "XP",
+      "streak": "STREAK",
+      "gems": "GEMS",
+      "hearts": "HEARTS",
+      "rank": "RANK",
+      "rankValue": "ENSIGN",
+      "nextLv": "NEXT LV",
+      "nextLvValue": "180 XP"
+    },
+    "crew": {
+      "title": "THE CREW",
+      "subtitle": "4 ROBOTS",
+      "openDossiers": "Open dossiers →"
+    },
+    "weekly": {
+      "title": "WEEKLY TELEMETRY",
+      "range": "7d · 30d · ALL",
+      "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    },
+    "streakBlock": {
+      "title": "12-DAY STREAK",
+      "freeze": "FORGE FREEZE · 1",
+      "noBreak": "Don't break it",
+      "noBreakBody": "Practice in {time} to lock today."
+    },
+    "practice": {
+      "title": "PRACTICE",
+      "shuffle": "MIX UP →",
+      "drill": "DRILL",
+      "drillLabel": "Fix 5 fuzzy prompts",
+      "build": "BUILD",
+      "buildLabel": "Stack a JSON prompt",
+      "chat": "CHAT",
+      "chatLabel": "Multi-turn with Vega",
+      "tool": "TOOL",
+      "toolLabel": "Call an MCP"
+    }
+  },
+  "bridge": {
+    "anon": {
+      "heading": "Bridge closed",
+      "body": "Sign in to access your bridge — your progress, your next shift, and the crew you'll work with all live there.",
+      "browseTracks": "Browse available tracks",
+      "status": "Guest access"
+    },
+    "defaultGreetingName": "officer",
+    "greet": {
+      "eyebrow": "VEGA · MENTOR · {time} SHIP TIME",
+      "morning": "Good morning, {name}.",
+      "afternoon": "Good afternoon, {name}.",
+      "evening": "Good evening, {name}.",
+      "messageInProgress": "You have <accent>a pending practice</accent> from yesterday — and I want it clean.",
+      "messageNextUp": "<accent>A new shift</accent> is queued on your path.",
+      "messageDone": "You've cleared everything available. <accent>Waiting on the next track</accent>.",
+      "ctaContinue": "Start ({minutes} min)",
+      "ctaStart": "Start the first shift",
+      "ctaMap": "Open the map →"
+    },
+    "cards": {
+      "continue": {
+        "eyebrow": "CONTINUE · UNIT 0{unit} · STEP {step}",
+        "minutesLeft": "{done} OF {total} · ~{minutes} MIN LEFT"
+      },
+      "daily": {
+        "eyebrow": "DAILY · LOSE NO HEARTS",
+        "title": "Spot the bug × 3",
+        "body": "Fix three fuzzy prompts before Echo flags them. Forge gives Forge-tokens.",
+        "reward": "+ 40 XP · + 1 GEM"
+      },
+      "capstone": {
+        "eyebrow": "CAPSTONE · LOCKED",
+        "title": "\"Talk your way past the bridge\"",
+        "body": "Atlas is waiting. Pass <b>Few-shot</b> and <b>Schemas</b> first.",
+        "unlocksIn": "UNLOCKS IN {steps} STEPS"
+      }
+    },
+    "crew": {
+      "title": "Your crew",
+      "switchMentor": "Switch mentor →",
+      "roles": {
+        "vega": "Mentor",
+        "echo": "Verifier",
+        "atlas": "Captain",
+        "forge": "Engineer"
+      },
+      "level": {
+        "prefix": "LV",
+        "suffix": " · {xp} XP",
+        "locked": "LOCKED"
+      }
+    },
+    "comms": {
+      "title": "Ship comms · live",
+      "messages": {
+        "echo": "Run #042 cleared. 4/4 criteria. Logged.",
+        "vega": "Ready whenever you are. No rush.",
+        "atlas": "Capstone armed. Brief on stand-by.",
+        "forge": "I'm wiring up tools. Don't break the bench."
+      }
+    },
+    "stats": {
+      "title": "Ship stats",
+      "xpTodayLabel": "XP TODAY",
+      "xpTodayDelta": "+{delta}",
+      "streakLabel": "STREAK",
+      "streakValue": "{days}d",
+      "streakDelta": "best {best}"
+    }
+  },
+  "activity": {
+    "empty": "No activity yet. Start a shift and it'll show up here."
+  },
+  "profile": {
+    "eyebrow": "Your profile",
+    "defaultName": "No name",
+    "hud": {
+      "rank": "Rank",
+      "crew": "Crew",
+      "sync": "Sync"
+    },
+    "stats": {
+      "heading": "Stats",
+      "completed": "Steps completed",
+      "attempts": "Total attempts",
+      "completion": "Completion",
+      "memberSince": "Member since"
+    },
+    "settings": {
+      "heading": "Settings",
+      "language": "Language",
+      "session": "Session",
+      "signOut": "Sign out"
+    },
+    "badges": {
+      "heading": "Crew badges",
+      "empty": "Close every step of a course to earn your first badge."
+    },
+    "journal": {
+      "heading": "Shift journal",
+      "empty": "Your journal is empty. Every closed shift gets logged here."
+    }
+  },
+  "lessons": {
+    "footer": {
+      "back": "Back",
+      "checkAnswer": "Check",
+      "checkAgain": "Check again",
+      "next": "Next"
+    },
+    "bar": {
+      "exit": "Exit",
+      "tutor": "AI TUTOR",
+      "tutorDot": "online"
+    },
+    "tutor": {
+      "title": "AI Tutor",
+      "personaName": "Vega",
+      "statusLabel": "STREAMING",
+      "closeAria": "Close tutor",
+      "openAria": "Open tutor",
+      "refsLabel": "RETRIEVED · 2 PIECES",
+      "ref1": "concept: few-shot-basics",
+      "ref2": "antipattern: preamble-before-answer",
+      "inputPlaceholder": "Ask anything about this step…",
+      "sendAria": "Send question",
+      "sample": {
+        "openerByPersona": "Hi. I'm here to help with this lesson. Ask anything — I can see the step and your prompt.",
+        "userQuestion": "Why does Echo sometimes respond with preamble instead of one word?",
+        "personaAnswer": "Classic behavior — \"preamble\". The model defaults to adding context before answering. Three ways to stop it:\n\n1. Tell it explicitly \"ONE word only\".\n2. End the prompt with an incomplete scaffold: Classification:\n3. Add a spam example — your prompt only has urgent and normal right now.\n\nThe cheapest fix is (2). Want me to show you how it looks?"
+      }
+    },
+    "foot": {
+      "hints": "HINTS",
+      "hintsCount": "{n}",
+      "stepsLeft": "{done} / {total}"
+    },
+    "badge": {
+      "earned": "Badge"
+    },
+    "hud": {
+      "activeModule": "Active module",
+      "missionControl": "Mission control",
+      "sync": "Sync",
+      "clear": "Clear",
+      "live": "Live",
+      "inputLock": "Input lock",
+      "trainingBay": "Training bay",
+      "missionCleared": "Mission cleared",
+      "readyToLaunch": "Ready to launch",
+      "awaitingInput": "Awaiting input",
+      "briefing": "Mission briefing",
+      "crewChannel": "Crew channel"
+    },
+    "errors": {
+      "unauthorized": "Sign in to save your attempts.",
+      "rateLimited": "Too many attempts today. Try again tomorrow.",
+      "notFound": "We couldn't find this exercise.",
+      "invalidInput": "The submitted answer is not valid.",
+      "modelError": "The model didn't respond. Try again.",
+      "network": "Something went wrong submitting your answer. Try again."
+    },
+    "assemble": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "kind": "A2 ASSEMBLE",
+      "label": "REORDER THE BLOCKS",
+      "task": "Reorder the blocks so Echo reads them top-to-bottom and knows what to do.",
+      "passed": "Clean run. Order is correct.",
+      "failed": "Echo found blocks out of place."
+    },
+    "anatomy": {
+      "kind": "A1 ANATOMY",
+      "label": "CLICK TO LABEL",
+      "question": "Tag each block of the prompt. Tap a slot to cycle the labels.",
+      "slotEmpty": "drop label",
+      "passed": "Labels are correct. Echo signs off.",
+      "failed": "Some labels aren't right yet."
+    },
+    "ab": {
+      "kind": "A7 A/B",
+      "label": "MCQ · NO COST",
+      "variantA": "Variant A",
+      "variantB": "Variant B",
+      "rubricEyebrow": "Why? — optional",
+      "rubricHint": "Look for: closed contract, explicit fallback, scaffold at the end."
+    },
+    "tagFill": {
+      "kind": "A3 TAG-FILL",
+      "label": "FILL THE SLOT · 1 HOLE",
+      "question": "Edit the content between the tags of the prompt.",
+      "validatorHeader": "VALIDATOR · 2 CHECKS",
+      "xmlOk": "XML well-formed",
+      "requiredTags": "Required tags: {tags}",
+      "pass": "PASS",
+      "fail": "FAIL"
+    },
+    "task": {
+      "kind": "A5 TASK",
+      "label": "YOUR PROMPT · {n} CASES",
+      "rubricHeader": "RUBRIC · {cases} CASES · {criteria} CRITERIA",
+      "criteriaHeader": "CRITERIA · {n} CHECKS",
+      "caseTag": "CASE {n}"
+    },
+    "toolDescExtra": {
+      "kind": "B2 TOOL-DESC",
+      "label": "DESCRIPTION ONLY",
+      "present": "PRESENT",
+      "missing": "MISSING",
+      "inDescription": "in description"
+    },
+    "mcpDebugExtra": {
+      "kind": "B6 MCP-DEBUG",
+      "label": "DIAGNOSE · 1 CAUSE"
+    },
+    "convo": {
+      "kind": "CONVERSATION-GOAL",
+      "label": "MULTI-TURN · LLM-JUDGE"
+    },
+    "runner": {
+      "evaluating": "Running {count} cases against the model...",
+      "console": {
+        "kicker": "Mission console",
+        "title": "Prompt terminal",
+        "ready": "Ready",
+        "evaluating": "Evaluating",
+        "passed": "Passed"
+      },
+      "task": {
+        "label": "Briefing",
+        "cases": "{count} cases"
+      },
+      "prompt": {
+        "label": "Your transmission",
+        "count": "{count} chars",
+        "hint": "use {token} where the input should go"
+      },
+      "crew": {
+        "label": "Echo diagnosis",
+        "promptTask": "The test is not checking whether the prompt sounds nice. It checks whether it produces consistent outputs across several cases. Change one thing per attempt and compare the telemetry.",
+        "promptTaskPassed": "Clean run. Echo logged every case."
+      },
+      "cases": {
+        "label": "Test cases",
+        "count": "{count} active",
+        "output": "Model output"
+      }
+    },
+    "playground": {
+      "console": {
+        "kicker": "Free simulator",
+        "title": "Prompt test bench",
+        "ready": "Ready",
+        "transmitting": "Transmitting"
+      },
+      "prompt": {
+        "label": "Prompt",
+        "count": "{count} chars",
+        "placeholder": "Write a prompt and run the transmission",
+        "hint": "edit, run, compare"
+      },
+      "output": {
+        "label": "Response",
+        "count": "{count} chars",
+        "emptyStatus": "no signal",
+        "pending": "Waiting for the model response...",
+        "empty": "Run a transmission to see the output.",
+        "latest": "latest response",
+        "viewingRun": "viewing run #{index}"
+      },
+      "actions": {
+        "run": "Run",
+        "reset": "Reset",
+        "copy": "Copy output"
+      },
+      "crew": {
+        "label": "Echo note",
+        "defaultNote": "Run several versions of the same prompt and compare what changed in the output. The real practice is noticing which part of your instruction caused each response."
+      },
+      "telemetry": {
+        "runs": "Runs",
+        "prompt": "Prompt",
+        "delta": "Delta"
+      },
+      "history": {
+        "label": "Transmission history",
+        "limit": "latest 6",
+        "empty": "No runs yet. Run the prompt to save a local version.",
+        "run": "Run #{index}",
+        "promptChars": "prompt {count}",
+        "outputChars": "output {count}"
+      }
+    },
+    "conversation": {
+      "goalLabel": "Your goal",
+      "defaultPersonaName": "Persona",
+      "turnsLeft": "{count} turns left",
+      "emptyTranscript": "The conversation starts when you send your first message.",
+      "typing": "{name} is typing...",
+      "send": "Send",
+      "inputPlaceholder": "Type your message and send with ⌘/Ctrl+Enter",
+      "noTurnsLeft": "No turns left. Check the conversation.",
+      "evaluation": "Conversation evaluation",
+      "errors": {
+        "unauthorized": "Sign in to send messages.",
+        "rate_limited": "Too many attempts today. Try again tomorrow.",
+        "not_found": "We couldn't find this exercise.",
+        "invalid_input": "The message is not valid.",
+        "model_error": "The model couldn't respond. Try again.",
+        "wrong_kind": "Unexpected exercise type.",
+        "max_turns_exceeded": "No turns left.",
+        "network": "Something went wrong sending the message. Try again."
+      }
+    },
+    "hints": {
+      "opener": "Need a hint?",
+      "heading": "Hints",
+      "show": "Show next ({remaining} left)",
+      "exhausted": "No more hints."
+    },
+    "debrief": {
+      "title": "Mission cleared.",
+      "eyebrow": "{track} · {course} · CLEARED",
+      "subtitle": "Good shift, officer. {officer} signed off — you rose from Ensign to Lieutenant Jr.",
+      "checklist": {
+        "title": "{officer} · CHECKLIST · {steps} STEPS",
+        "items": {
+          "allCleared": "All steps cleared",
+          "signed": "Signed off by {officer}",
+          "criteria": "Criteria all met",
+          "tracked": "XP banked"
+        },
+        "values": {
+          "steps": "{done}/{total} OK",
+          "signed": "OFFICIAL",
+          "criteria": "4/4",
+          "tracked": "+{xp} XP"
+        }
+      },
+      "rewards": {
+        "title": "REWARDS",
+        "xpVal": "+{xp} XP",
+        "xpLab": "BANK",
+        "gemsVal": "+{gems} GEMS",
+        "gemsLab": "SHOP",
+        "streakVal": "{days} DAYS",
+        "streakLab": "STREAK"
+      },
+      "ctaContinue": "Back to course",
+      "ctaNextTrack": "Next track →"
+    },
+    "toolDesc": {
+      "specHeader": "TOOL SPEC",
+      "editHeader": "YOUR DESCRIPTION",
+      "taskHeader": "REQUIREMENTS · {n} CHECKS",
+      "instruction": "Edit the description of {tool} so the agent knows when to call it.",
+      "passed": "Description approved by Echo.",
+      "failed": "Key phrases are missing from the description."
+    },
+    "mcpDebug": {
+      "specHeader": "TOOL SPEC",
+      "question": "Look at the spec. What's the most likely reason the agent never picks this tool?",
+      "causesHeader": "POSSIBLE CAUSES · {n}",
+      "explanationHeader": "EXPLANATION",
+      "passed": "Correct diagnosis. Forge confirms.",
+      "failed": "Echo points to a different root cause."
+    },
+    "checks": {
+      "json:invalid": "The output is not valid JSON.",
+      "json:not-object": "The JSON is not an object.",
+      "missing": "Missing fields: {keys}",
+      "regex:no-match": "The output format doesn't match what was expected.",
+      "regex:invalid-pattern": "Invalid regex pattern (config error).",
+      "regex:empty-pattern": "Empty regex pattern (config error).",
+      "contains:not-found": "The output doesn't contain the expected text.",
+      "contains:empty-needle": "Empty search text (config error).",
+      "length:too-short": "The output is shorter than expected ({len} characters).",
+      "length:too-long": "The output is longer than expected ({len} characters).",
+      "exec:empty-output": "The output is empty.",
+      "xml-malformed": "The XML is not well-formed (an unclosed tag).",
+      "wrong-choice": "That's not the right choice.",
+      "wrong-anatomy": "Some labels aren't correct.",
+      "kind-mismatch": "Unexpected response type.",
+      "task-model:error": "The model failed to produce an output. Try again.",
+      "judge:rate-limited": "The automated grader is overloaded. Try again in a minute.",
+      "judge:invalid-shape": "The automated grader returned an unexpected response.",
+      "judge:api-error": "The automated grader failed temporarily.",
+      "judge:unknown-error": "The automated grader had an unknown problem.",
+      "skipped:deterministic-failed": "Pending — fix the prior criteria first.",
+      "unknown-check": "Unknown criterion (config error)."
+    }
+  }
+}

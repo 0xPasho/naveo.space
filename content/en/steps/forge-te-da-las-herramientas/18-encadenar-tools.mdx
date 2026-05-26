@@ -1,0 +1,140 @@
+---
+title: "Chaining tools: when one isn't enough"
+order: 18
+estimatedMinutes: 10
+exercise:
+  kind: tool-schema-author
+  toolName: list_crewmates_on_shift + notify_crewmate
+  toolPurpose: |
+    Design TWO tools that an agent can use in sequence to solve requests
+    like "notify everyone on the night shift that there's a plan change".
+
+    Tool 1: `list_crewmates_on_shift(shift_id)`. returns an array of
+    aliases assigned to a shift.
+
+    Tool 2: `notify_crewmate(alias, message, channel)`. sends a message
+    to a crewmate via a specific channel (sms, comms, email).
+
+    The two tools must be designed so the output of one is a valid input
+    for the other (natural composition).
+  exampleInvocations:
+    - 'list_crewmates_on_shift(shift_id: "shift-2026-05-14-N1") → {crewmates: ["Em", "Ly", "Bru"]}'
+    - 'notify_crewmate(alias: "Em", message: "Plan change: rendezvous 23:00", channel: "comms") → {ok: true}'
+  starter: |
+    {
+      "tools": [
+        {
+          "name": "list_crewmates_on_shift",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "notify_crewmate",
+          "description": "",
+          "parameters": {
+            "type": "object",
+            "properties": {
+
+            },
+            "required": []
+          }
+        }
+      ]
+    }
+  language: json
+  rubric:
+    - id: json-valid
+      kind: deterministic
+      check: json-parse
+      criterion: "Schema is valid JSON"
+    - id: list-tool-defined
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"list_crewmates_on_shift\""
+      criterion: "Defines list_crewmates_on_shift"
+    - id: notify-tool-defined
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"name\"\\s*:\\s*\"notify_crewmate\""
+      criterion: "Defines notify_crewmate"
+    - id: list-has-shift-id
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "list_crewmates_on_shift[\\s\\S]{0,500}\"shift_id\""
+      criterion: "list_crewmates_on_shift has a shift_id parameter"
+    - id: notify-has-all-params
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "notify_crewmate[\\s\\S]{0,800}\"alias\"[\\s\\S]{0,800}\"message\"[\\s\\S]{0,800}\"channel\""
+      criterion: "notify_crewmate has the 3 parameters: alias, message, channel"
+    - id: channel-is-enum
+      kind: deterministic
+      check: regex-match
+      args:
+        pattern: "\"channel\"[\\s\\S]{0,200}\"enum\""
+      criterion: "channel uses enum (sms, comms, email)"
+    - id: composable-shapes
+      kind: llm-judge
+      criterion: "The two tools are designed to compose: the output of list_crewmates_on_shift (an array of aliases under a key like `crewmates`) can be iterated and each element used as `alias` in notify_crewmate. The agent doesn't need to transform the output between calls."
+    - id: descriptions-clear
+      kind: llm-judge
+      criterion: "The two descriptions explain what each tool does, when to use it, and mention the chained usage pattern (e.g. 'use after list_crewmates_on_shift to notify everyone on a shift'). The descriptions are not generic."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "For two tools to compose smoothly, **align the output names with the inputs**. If list returns `crewmates: [\"Em\", ...]`, notify accepts `alias: \"Em\"`. The agent connects the dots automatically if the types match."
+  - "For `channel`, use an enum with the three values. And mention in its description when to use each one (sms for emergencies, comms for normal use, email for formal records)."
+  - "In each tool's description, mention the OTHER tool. E.g. in notify_crewmate: 'Use after list_crewmates_on_shift when you want to notify everyone on a shift.'"
+teaches:
+  - mcp-multi-tool-design
+requires:
+  - tool-schema-author-basics
+  - tool-description-craft
+---
+
+## Two tools that talk to each other
+
+Most real problems aren't solved by one tool. they're solved by **a chain**. The agent decides to invoke a tool, reads its output, decides the next one, and so on.
+
+Your job: design two tools that **compose naturally**.
+
+### The scenario
+
+A user tells the crew: _"notify everyone on the night shift that the rendezvous moved to 23:00"_.
+
+To solve it, the agent has to:
+
+1. **List who's on** the night shift → `list_crewmates_on_shift(shift_id)`.
+2. **Notify each one** → `notify_crewmate(alias, message, channel)`.
+
+If the two tools are well designed, the agent composes the solution alone. If they're badly designed (output of one doesn't fit the input of the other, descriptions that don't mention the pattern), the agent falls short or invents intermediate steps that break.
+
+### The composition rule
+
+For two tools to chain without friction:
+
+1. **The output types fit the next tool's inputs.** If list returns `crewmates: ["Em", "Ly"]` and notify accepts `alias: string`, the agent iterates with zero transformation.
+2. **The descriptions reference each other.** In `notify_crewmate`'s description, mention it's used after `list_crewmates_on_shift` when there are multiple recipients.
+3. **The names are consistent.** If one tool uses `shift_id`, the other tool that returns shifts uses the same name, not `id_de_turno`.
+
+### How it's evaluated
+
+7 deterministic criteria + 2 llm-judge:
+
+- Valid JSON.
+- Both tools defined correctly with all parameters.
+- `channel` with enum.
+- The shapes are **composable** (output of list fits input of notify).
+- Descriptions are specific and reference each other.
+
+> The mental test: if I, reading only your schema (without having read this text), could understand how to compose these two tools to solve the rendezvous case, you passed.

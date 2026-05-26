@@ -1,0 +1,108 @@
+---
+title: "Listas: muchas cosas en una caja"
+order: 11
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    La nave tiene la crew guardada en una lista:
+
+    ```
+    crew = ["Vega", "Atlas", "Echo", "Forge"]
+    ```
+
+    Arrastrá cada nombre a la **posición** que ocupa en la lista.
+    Acordate: la primera posición es **0**, no 1.
+  slots:
+    - id: pos_0
+      label: "crew[0]"
+    - id: pos_1
+      label: "crew[1]"
+    - id: pos_2
+      label: "crew[2]"
+    - id: pos_3
+      label: "crew[3]"
+  pieces:
+    - id: vega
+      label: "\"Vega\""
+      correctSlot: pos_0
+    - id: atlas
+      label: "\"Atlas\""
+      correctSlot: pos_1
+    - id: echo
+      label: "\"Echo\""
+      correctSlot: pos_2
+    - id: forge
+      label: "\"Forge\""
+      correctSlot: pos_3
+hints:
+  - "La posición **0** es la primera, no la segunda. La última es `cantidad - 1`."
+  - "Leé la lista de izquierda a derecha. El primer nombre va en `crew[0]`."
+  - "Para una lista de 4 elementos, las posiciones válidas son 0, 1, 2 y 3. La posición 4 no existe."
+teaches:
+  - lists-basics
+requires:
+  - variables-basics
+  - basic-data-types
+---
+
+## Una caja con muchas cosas adentro
+
+Hasta acá las cajas guardaban un solo valor: un número, un texto, un verdadero/falso. Pero la nave necesita guardar **conjuntos** de cosas. La crew tiene cuatro miembros, no uno solo.
+
+Para eso existe la **lista**: una caja con varios valores adentro, en orden.
+
+```
+crew = ["Vega", "Atlas", "Echo", "Forge"]
+```
+
+Esa caja contiene cuatro textos en una secuencia. La lista preserva el **orden**: la posición importa, no es un conjunto desordenado.
+
+### Acceder por posición
+
+Para sacar un valor de la lista usás un número entre corchetes, la **posición**:
+
+```
+crew[0]  → "Vega"      ← el primero
+crew[1]  → "Atlas"
+crew[2]  → "Echo"
+crew[3]  → "Forge"     ← el cuarto y último
+```
+
+### El detalle que sorprende: empieza en 0
+
+En casi todos los lenguajes de programación, **la primera posición es 0, no 1**. La cuarta es 3, no 4. La última es siempre `cantidad - 1`.
+
+Para una crew de 4:
+
+- `crew[0]` es la primera (Vega)
+- `crew[3]` es la última (Forge)
+- `crew[4]` **no existe** (error o nulo, según el lenguaje)
+
+Es contraintuitivo al principio, pero hay una razón histórica y la vas a internalizar rápido.
+
+### Operaciones típicas
+
+Las listas tienen su propio vocabulario:
+
+- `len(crew)` cuenta cuántos hay (4)
+- `crew[0]` saca uno por posición ("Vega")
+- `crew.append("Orbit")` agrega al final: `["Vega", "Atlas", "Echo", "Forge", "Orbit"]`
+- `crew.remove("Vega")` saca uno por nombre: `["Atlas", "Echo", "Forge"]`
+
+### Listas + loops: la combinación más usada
+
+Las listas se llevan particularmente bien con los loops (lección 3):
+
+```
+PARA CADA tripulante EN crew:
+  verificar oxígeno del traje
+```
+
+El loop visita cada posición de la lista, una por una. Sin importar si la crew son 4 o 40, el código es el mismo. El loop ajusta solo.
+
+> Casi todo input estructurado a un LLM es una lista: lista de mensajes en una conversación, lista de bios para procesar, lista de tools disponibles. La idea de "muchos items en orden" es **omnipresente** apenas pasás de prompts triviales.
+
+A la derecha, la crew de 4 nombres. Asigná cada nombre a la posición que ocupa. Acordate: la primera es la 0.

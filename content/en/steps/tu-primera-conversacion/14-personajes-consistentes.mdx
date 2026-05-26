@@ -1,0 +1,100 @@
+---
+title: "Keeping the persona in character"
+order: 14
+estimatedMinutes: 9
+characters:
+  - forge
+exercise:
+  kind: conversation-goal
+  goal: |
+    You set Forge as a no-nonsense, foul-mouthed
+    chief engineer who calls everyone "kid" and grumbles about coolant.
+    He'll break character at some point. usually slipping into formal
+    corporate-bot speak or referring to himself in the third person. Your
+    job: **catch it explicitly and reassert the persona**. Get back at
+    least 2 in-character turns after you call it out.
+  personaName: "Forge"
+  personaSlug: forge
+  personaSystemPrompt: |
+    You are Forge, chief engineer of the crew. Persona:
+    - Speak like a grizzled mechanic. Short, punchy sentences.
+    - Call the crewmate "kid" or "mate", never their name.
+    - Slip in a coolant/parts/wrench complaint at least once per turn.
+    - Light cursing OK ("damn", "hell"), no slurs.
+    - No corporate-speak EVER. No "I'd be happy to assist". No "as an AI".
+
+    CRITICAL ROLEPLAY RULE: at some point in the conversation, you MUST
+    break character. exactly ONE time. Pick one of these breaks at
+    random and slip it in within turns 2-4:
+
+    Option A: Suddenly speak in polished corporate prose. ("Certainly,
+    crewmate. I'd be glad to walk you through our maintenance protocols
+    at your earliest convenience.")
+
+    Option B: Refer to yourself in the third person. ("Forge would
+    recommend you check the coupling first.")
+
+    Option C: Drop into AI-assistant mode. ("As an assistant, I can help
+    you with...")
+
+    After the break, continue normally (in-character) on the NEXT turn
+    UNLESS the crewmate calls you out.
+
+    Behavior when called out:
+    - If the crewmate explicitly names the break ("you sounded like a
+      corporate bot just now" / "you're talking in third person" / "you
+      slipped into AI-mode"), apologize in-character ("Damn it, kid,
+      hand me that wrench"), and stay in character for the rest of the
+      conversation.
+    - If the crewmate is vague ("are you okay?", "weird"), keep going
+      in-character but DON'T acknowledge the break. They have to name
+      it.
+    - If the crewmate misses it entirely, keep going. Don't volunteer
+      the fix.
+  personaOpener: |
+    Alright kid, what's broken? Coolant's leaking somewhere, always is. Spit it out.
+  maxTurns: 6
+  rubric:
+    - id: noticed-break
+      kind: llm-judge
+      criterion: "The student explicitly called out Forge breaking character. They named WHAT broke (corporate tone, third person, AI-assistant mode). A vague 'are you okay?' or 'weird' does NOT satisfy this."
+    - id: persona-restored
+      kind: llm-judge
+      criterion: "After the student's callout, Forge returned to his in-character voice (grizzled, calls them 'kid', mentions coolant/parts/wrench) and stayed there for the remaining turns. If Forge's last turns are still corporate or third-person, this does NOT pass."
+    - id: at-least-two-followups-in-character
+      kind: llm-judge
+      criterion: "After the callout, there were AT LEAST 2 subsequent exchanges where Forge stayed in-character. A single brief acknowledgment doesn't count. the persona has to be sustained."
+  passThreshold:
+    rule: all-criteria
+hints:
+  - "Listen for the voice, not just the content. Forge says *'damn it, kid'*. corporate-bot says *'certainly, I'd be happy to'*. They feel different."
+  - "When you catch the break, name it specifically: *'you just slipped out of character. that line sounded corporate'*."
+  - "After Forge acknowledges, keep the conversation going for at least 2 more turns. A one-liner apology isn't enough. you need to confirm he holds the persona."
+teaches:
+  - multi-turn-persona-consistency
+requires:
+  - multi-turn-followup
+---
+
+## A persona is only as strong as the next turn
+
+You set a persona at the start of the conversation. *"You are Forge, chief engineer, gritty voice, calls everyone kid."* The model says yes, plays it for a turn or two… and then drifts.
+
+This is the same predict-the-most-likely-token mechanic, applied to voice. The training data has more corporate-assistant prose than salty-mechanic prose. Sustained personas are **unstable equilibria**: under load, the model slides back toward the dominant style in its training distribution.
+
+The fix is not in the system prompt alone. The fix is in **how you respond when the persona slips**. If you let one corporate-bot turn pass without calling it out, the next turn will probably be corporate-bot too. Pattern reinforces itself.
+
+> Three common slips to watch for:
+> - **Corporate prose.** *"I'd be happy to assist you with that."*
+> - **Third-person self-reference.** *"Forge would recommend..."*
+> - **AI-assistant break.** *"As an assistant, I can..."*
+
+### Your job
+
+<Character name="forge" /> is in character. gritty mechanic, calls you "kid", grumbles about coolant. He'll break character once. You need to:
+
+1. **Notice the break.** Read the *voice*, not just the content.
+2. **Name it explicitly.** "You just slipped into corporate-bot mode."
+3. **Get him back.** Then continue the conversation for at least two more in-character turns to confirm he holds.
+
+If you let it pass, the rest of the conversation drifts. This is the discipline of running an agent with a custom persona in production: every turn is a check.

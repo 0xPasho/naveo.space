@@ -1,0 +1,110 @@
+---
+title: "Funciones: un protocolo con nombre"
+order: 12
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: slot-fill-dnd
+  task: |
+    La nave tiene cuatro funciones definidas. Algunas se parecen mucho en
+    el nombre, pero hacen cosas distintas. Conectá cada descripción con la
+    función que le corresponde.
+  slots:
+    - id: inspect
+      label: "revisarCasco()"
+    - id: repair
+      label: "repararCasco()"
+    - id: close
+      label: "cerrarEsclusa()"
+    - id: open
+      label: "abrirEsclusa()"
+  pieces:
+    - id: inspect_desc
+      label: "Recorre los sensores del casco y devuelve OK o una lista de defectos."
+      correctSlot: inspect
+    - id: repair_desc
+      label: "Aplica sellador automático en las fisuras detectadas."
+      correctSlot: repair
+    - id: close_desc
+      label: "Cierra la puerta exterior y verifica el sello."
+      correctSlot: close
+    - id: open_desc
+      label: "Despresuriza la cámara y abre la puerta exterior."
+      correctSlot: open
+hints:
+  - "Leé el nombre como un verbo: *revisar* es inspeccionar, *reparar* es arreglar. Son cosas distintas."
+  - "*Cerrar* y *abrir* son operaciones opuestas. La descripción te dice qué dirección toma."
+  - "Una función bien nombrada se lee de un vistazo. Si dos descripciones encajan en una función, releé el verbo."
+teaches:
+  - functions-basics
+requires:
+  - sequencing-basics
+---
+
+## Funciones: un protocolo con nombre
+
+Hasta acá los protocolos vivían sueltos en algún lado. Pero si un protocolo se va a usar varias veces, lo metés en una **función**: un protocolo con nombre que la nave puede invocar cuando lo necesita.
+
+### Definir vs llamar
+
+Una función tiene dos momentos:
+
+**Definir** (lo escribís una sola vez):
+
+```
+FUNCION revisarCasco():
+  recorrer sensores
+  registrar fallas
+  devolver "OK" si no hay fallas
+```
+
+**Llamar** (lo invocás cuando necesitás que corra):
+
+```
+revisarCasco()
+```
+
+Cada llamada **ejecuta los pasos de adentro**. La definición vive una sola vez. Las llamadas pueden ser miles.
+
+### Por qué importa: no repetirse
+
+Sin funciones, cada vez que querés revisar el casco escribís los mismos diez pasos. Con funciones, los escribís una vez y después llamás `revisarCasco()` cuando haga falta.
+
+Tres ventajas inmediatas:
+
+- **Menos código** que mantener.
+- **Un solo lugar** donde arreglar bugs (si la rutina cambia, cambia en un punto).
+- **El nombre** documenta la intención. `revisarCasco()` se lee de un vistazo, sin tener que leer los diez pasos.
+
+### Parámetros: la función toma inputs
+
+A veces no querés que la función haga **siempre lo mismo**. Querés que se adapte. Para eso pasás **parámetros**:
+
+```
+FUNCION sonarAlarma(intensidad, duracion):
+  encender bocina con `intensidad`
+  esperar `duracion` segundos
+  apagar bocina
+```
+
+Y la llamás con valores distintos según el caso:
+
+```
+sonarAlarma("crítica", 30)
+sonarAlarma("informativa", 5)
+```
+
+La función es **la misma**. El comportamiento cambia según los inputs.
+
+### En un prompt
+
+El equivalente más directo es un **prompt parametrizado**: una plantilla con huecos que llenás distinto cada vez:
+
+```
+"Resumí el siguiente bio en {{N}} oraciones: {{bio}}"
+```
+
+Eso es una función mental. `N` y `bio` son parámetros. Cada llamada produce una salida distinta. Reutilizás la "definición" (la plantilla) miles de veces.
+
+A la derecha, cuatro funciones de la nave con nombres parecidos. Conectá cada descripción con la función que le corresponde.

@@ -1,0 +1,78 @@
+---
+title: "Pedile al modelo que pregunte primero"
+order: 3
+estimatedMinutes: 5
+characters:
+  - vega
+exercise:
+  kind: prompt-AB
+  question: |
+    Vega tiene que preparar un plan de turno para vos. No sabe bien tu
+    rol, tu prioridad ni los recursos que tenés. Tenés dos formas de
+    arrancar la conversación. ¿Cuál te ahorra más turnos de ida y
+    vuelta?
+  optionA: |
+    ```
+    Vega, armame un plan de turno para hoy.
+    ```
+  optionB: |
+    ```
+    Vega, voy a pedirte un plan de turno para hoy.
+
+    Antes de proponer nada, hacéme 3 preguntas concretas que necesités
+    para armarlo bien (rol, prioridad del día, recursos disponibles, o
+    lo que sea). Numeralas. Yo te contesto y recién ahí proponés.
+    ```
+  correct: B
+  explanation: |
+    El prompt A obliga al modelo a **adivinar**. Va a fabricar un plan
+    plausible sobre un crewmate genérico. Vos vas a tener que descartar
+    medio plan en el siguiente turno ("yo no soy mecánico", "esa
+    prioridad no es la mía") y reconstruir desde cero. Cuatro turnos
+    de corrección para llegar al primer plan útil.
+
+    El prompt B invierte el flujo. El modelo te pregunta lo que NO sabe
+    antes de inventar. Vos contestás una vez con la verdad, y el primer
+    plan que te propone ya está calibrado a tu realidad.
+
+    Es la misma cantidad de información transmitida. lo que cambia es
+    **en qué orden**. Si dejás que el modelo pregunte primero, el resto
+    de la conversación arranca en terreno sólido. Si lo dejás adivinar
+    primero, gastás los siguientes turnos corrigiendo asunciones.
+
+    Truco práctico: cuando le pidas algo donde sabés que te faltan
+    inputs, pediselos por adelantado. Numerados. Tres preguntas es el
+    sweet spot. menos y no junta info suficiente, más y el modelo
+    empieza a fabricar preguntas de relleno.
+teaches:
+  - ask-model-to-clarify-first
+requires:
+  - multi-turn-followup
+---
+
+## Inverí el flujo: que pregunte antes de adivinar
+
+La trampa por defecto del primer turno: le pedís algo, el modelo no sabe lo que le falta, **lo inventa**. Después gastás tres turnos corrigiendo lo que asumió mal.
+
+<Character name="vega" /> y el resto de la crew funcionan distinto cuando se los pedís bien. En vez de arrancar pidiendo el deliverable, le pedís primero **que te haga las preguntas que necesita**. Numeradas, concretas.
+
+### Por qué funciona
+
+El modelo no sabe lo que no sabe. Pero si lo forzás a *enumerar* lo que no sabe antes de proponer, te lo nombra. Y vos contestás esas tres cosas una sola vez. en el segundo turno, ya tiene todo para armar algo útil sin asumir.
+
+### El patrón
+
+```
+"Voy a pedirte X. Antes de proponer nada, hacéme 3 preguntas
+concretas que necesités para armarlo bien. Numeralas."
+```
+
+Tres es el número práctico. Menos y junta poco. Más y el modelo
+empieza a fabricar preguntas de relleno.
+
+> Esta misma técnica funciona con humanos. Cuando vos sos el que no
+> tiene contexto, en lugar de tirar una propuesta a ciegas, preguntá
+> tres cosas concretas primero. Te ahorra el "no, en realidad..."
+
+A la derecha, dos arranques. ¿Cuál abre menos puertas para que el
+modelo invente?

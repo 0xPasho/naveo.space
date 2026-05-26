@@ -1,0 +1,94 @@
+---
+title: "The tool the agent ignores"
+order: 23
+estimatedMinutes: 6
+exercise:
+  kind: mcp-debug
+  toolSpec: |
+    {
+      "name": "do_thing",
+      "description": "Does a thing.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "thing_id": { "type": "string" },
+          "metadata": { "type": "object" },
+          "config": { "type": "object" },
+          "options": { "type": "object" },
+          "context": { "type": "object" }
+        },
+        "required": ["thing_id", "metadata", "config", "options", "context"]
+      }
+    }
+
+    Context: Forge registered this tool in the ship's MCP. In the agent's
+    last 50 turns, it was NEVER invoked. not even in scenarios where it
+    clearly should have been. What's the most likely cause?
+  candidates:
+    - id: vague-description
+      label: "The description is too vague. the model doesn't know when to invoke it."
+    - id: too-many-required
+      label: "Too many required parameters (5), many as untyped objects. the model gives up before invoking it."
+    - id: vague-name
+      label: "The name 'do_thing' doesn't communicate anything. the model doesn't associate the tool with any intent."
+    - id: all-of-the-above
+      label: "All three combined. the tool is broken at every layer."
+  correct: all-of-the-above
+  explanation: |
+    It's a textbook case where **the three causes reinforce each other**:
+
+    **1. Opaque name.** "do_thing" says nothing. The model picks tools by
+    association between user intent and name + description. If the name
+    adds nothing, it depends 100% on the description.
+
+    **2. Empty description.** "Does a thing" is equivalent to having no
+    description. The model has no when-YES, no when-NO, no what-it-returns.
+    By default, it doesn't invoke.
+
+    **3. Toxic parameters.** 5 required parameters, all `object` with no
+    `properties` defined. The model doesn't know what to put in
+    `metadata`, `config`, `options`, `context`. It's indistinguishable
+    from noise. When the model doesn't know how to build the arguments,
+    **it prefers not to invoke** rather than invoke wrong.
+
+    In production, any of the three by itself is enough for a tool to be
+    ignored. The three together are a classic case of "tool built without
+    thinking about the LLM as the consumer".
+
+    How to fix:
+
+    - **Concrete name.** If the tool files an incident, it's called
+      `file_incident_report`, not `do_thing`.
+    - **Description that says what, when YES, when NO** (step 5).
+    - **Minimal, typed parameters.** Only the essentials in `required`.
+      If you need an object, define its `properties` with descriptions.
+hints:
+  - "Think from the model's side: it reads ONLY the name + description + parameters. It has no access to the handler's code. What would you tell someone who only reads that?"
+  - "Each option is real. The question is whether one alone explains the problem or if it's several stacked."
+teaches:
+  - mcp-debug-ignored
+requires:
+  - tool-description-craft
+---
+
+## When the agent acts like your tool doesn't exist
+
+The symptom is always the same: the tool is registered, the handler works, but the agent **never invokes it**. Types of problems:
+
+- Under-invocation (low recall): should use it, doesn't.
+- Over-invocation (low precision): uses it when it shouldn't.
+- Invoked with bad arguments: breaks and gets discarded.
+
+Your job in this step: read a schema that's being ignored and pick the most likely root cause.
+
+### The three dimensions where a tool can fail
+
+1. **The name.** Does it communicate intent? `lookup_crewmate` vs `find_data`.
+2. **The description.** Does it say when YES, when NO, what it guarantees?
+3. **The parameters.** Are they minimal? Typed? Do they have `description`s?
+
+When a tool fails in one of these, it's already a candidate to be ignored. When it fails in all three, it's **practically invisible** to the agent.
+
+Look at the spec on the right and pick the most likely cause.
+
+> In production, this is the debugging of 80% of MCPs that "don't work": it's not broken code, it's **poorly documented for the LLM**.

@@ -1,0 +1,87 @@
+---
+title: "Ask it to argue against you"
+order: 10
+estimatedMinutes: 5
+characters:
+  - hex
+exercise:
+  kind: prompt-AB
+  question: |
+    You asked the model for a plan to reduce oxygen consumption
+    during an emergency. It returned a 4-step plan that sounds good.
+    Before executing, you want to stress-test it. Which follow-up
+    brings you real pushback?
+  optionA: |
+    ```
+    Are you sure? Verify the plan.
+    ```
+  optionB: |
+    ```
+    Now act as a skeptical senior engineer reviewing this plan. List
+    3 concrete reasons why this plan could fail in practice, and for
+    each one tell me what data you'd need to see to rule the risk
+    out.
+    ```
+  correct: B
+  explanation: |
+    Prompt A is the most common multi-turn trap. *"Are you sure?"*
+    gives the model two options: (a) ratify what it said ("yes, I'm
+    sure, the plan is good"), or (b) nervously rewrite and change
+    details at random. Neither gives you new information. You just
+    burned a turn.
+
+    Prompt B activates **devil's advocate** mode in a structured way.
+    Three components make it work:
+
+    1. **Specific role** ("skeptical senior engineer"). The model has
+       to take a different stance.
+    2. **Fixed number of findings** ("3 reasons"). It's forced to
+       pick the most important, not generate 15 trivial ones or none.
+    3. **Actionable next step** ("what data you'd need to see").
+       Not just critique. it gives you a test for each criticism.
+
+    The output is now processable: three concrete risks + three
+    pointed checks. You can decide which to run before executing.
+
+    This technique is one of the most underused in multi-turn. any
+    plan, recommendation, or decision the model proposes, before
+    executing, run it through a devil's advocate turn. If the plan
+    survives, it's worth more than the original. If not, you avoided
+    a production error.
+teaches:
+  - devils-advocate-pattern
+requires:
+  - drafter-reviewer-loop
+---
+
+## The model is never "sure" of anything useful
+
+If you ask the model *"are you sure?"* it'll answer one of two things: "yes" or "let me check". Both are noise. The model doesn't have an internal certainty thermostat. It's predicting the next token.
+
+What does work: ask it to **adopt an adversarial stance** and critique your plan from there.
+
+### The devil's advocate pattern
+
+```
+"Act as <specific skeptical role>. List 3 concrete reasons this
+could fail, and for each one tell me what data you'd need to see
+to rule the risk out."
+```
+
+Three elements:
+
+1. **Role** (not generic). "Skeptical senior engineer", "security auditor", "customer who has to sign the contract".
+2. **Fixed number** ("3"). Without a number, it brings 0 or 15.
+3. **Associated test** ("what data to verify"). Turns each criticism into an action.
+
+### Why raise the rigor before executing
+
+There are decisions where the cost of being wrong is high: a migration, a reply to an important customer, a production change. In those cases, **an extra devil's advocate turn costs little and prevents a lot**.
+
+> Variant with humans: the same question works in a meeting. *"Before we decide, someone play devil's advocate and tell us 3 reasons this could go wrong."* People good at this raise the quality of any group decision.
+
+### When NOT to use it
+
+For throwaway or low-risk outputs (an internal email, a quick summary), devil's advocate is overkill. You pay the cost on important decisions, not on every turn.
+
+On the right, two ways to stress-test a model's plan. Which one brings actionable critique?

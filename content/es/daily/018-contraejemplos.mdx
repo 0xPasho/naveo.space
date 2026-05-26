@@ -1,0 +1,160 @@
+---
+title: "Misión exprés: contraejemplos en few-shot"
+intro: |
+  A veces el ejemplo más útil es uno que muestra lo que NO querés. Eso sí, hay que escribirlo con cuidado.
+station: vega
+teaches:
+  - counter-examples
+  - negative-instruction-trap
+characters:
+  - forge
+  - vega
+scenes:
+  - kind: prompt-AB
+    question: |
+      Forge te muestra dos versiones de un few-shot para clasificar
+      mensajes como `acción requerida` o `informativo`. Le falla en
+      mensajes ambiguos. ¿Cuál de las dos lo arregla mejor?
+    optionA: |
+      ```
+      Ejemplos:
+      
+      Mensaje: "Necesito que apruebes el deploy antes del viernes." -> accion requerida
+      Mensaje: "El deploy de ayer salio sin problemas." -> informativo
+      Mensaje: "Cerre el ticket #42." -> informativo
+      ```
+    optionB: |
+      ```
+      Ejemplos:
+      
+      Mensaje: "Necesito que apruebes el deploy antes del viernes." -> accion requerida
+      Mensaje: "El deploy de ayer salio sin problemas." -> informativo
+      Mensaje: "Cerre el ticket #42." -> informativo
+      Mensaje: "Reviso esto cuando puedas, gracias." -> accion requerida (contraejemplo de "informativo": "cuando puedas" igual pide accion)
+      Mensaje: "Te quiero contar que cerramos el cliente." -> informativo (contraejemplo de "accion requerida": "te quiero contar" parece pedido pero no lo es)
+      ```
+    correct: B
+    explanation: |
+      El A muestra los casos centrales: cada label tiene un ejemplo
+      limpio. Funciona para casos claros. El problema son los bordes,
+      donde el lenguaje engaña: "cuando puedas" suena suave pero pide
+      acción, "te quiero contar" suena pedido pero es informativo.
+
+      El B agrega contraejemplos etiquetados explícitamente. La línea
+      "contraejemplo de informativo" marca que el caso parece de un
+      lado pero pertenece al otro. Eso le dice al modelo dónde está
+      el corte real, no el aparente.
+
+      Regla: un contraejemplo bueno no es "el opuesto". Es un caso que
+      cualquier persona razonable pondría del lado equivocado. Si vos
+      duraste 2 segundos en clasificarlo, es un contraejemplo útil.
+  - kind: slot-fill-dnd
+    task: |
+      Estás armando contraejemplos para un few-shot. Clasificá cada
+      candidato: ¿es un contraejemplo bien formado (enseña un corte)
+      o mal formado (no aporta o confunde)?
+    slots:
+      - id: good
+        label: "Bien formado"
+      - id: bad
+        label: "Mal formado"
+    pieces:
+      - id: p1
+        label: "'Suena casual pero es un pedido formal' con label `formal`. Borderline real."
+        correctSlot: good
+      - id: p2
+        label: "'Hola.' con label `formal`. Demasiado corto, podría ser cualquier label."
+        correctSlot: bad
+      - id: p3
+        label: "'Te paso el reporte cuando salga, gracias por la espera' con label `formal`. Tono casual, contexto laboral, marca la diferencia."
+        correctSlot: good
+      - id: p4
+        label: "'No es formal' con label `casual`. Le dice al modelo lo que NO es, no le muestra el caso."
+        correctSlot: bad
+      - id: p5
+        label: "'Loco, mandame el deck cuando puedas' con label `informal`. Caso facil, ya estaba claro."
+        correctSlot: bad
+      - id: p6
+        label: "'Solicito amablemente que me reenvies el archivo a la mayor brevedad' con label `formal`. Caso prototipico de formal."
+        correctSlot: bad
+  - kind: step-order-dnd
+    task: |
+      Ordená los pasos para construir un contraejemplo útil desde
+      cero. De arriba hacia abajo.
+    steps:
+      - id: s1
+        label: "Identificá un caso donde el modelo se equivocó."
+        detail: "El contraejemplo nace del error real, no de tu imaginación."
+      - id: s2
+        label: "Decidí cuál era el label correcto y por qué."
+        detail: "Si no podés explicar el corte vos, el modelo tampoco va a poder."
+      - id: s3
+        label: "Tomá el input que falló y verificá que sea borderline (alguien razonable lo clasificaría mal)."
+        detail: "Si el caso es trivial, no enseña un corte, enseña una obviedad."
+      - id: s4
+        label: "Sumalo al few-shot con el label correcto."
+        detail: "El contraejemplo se ve como cualquier otro ejemplo, no como una regla negativa."
+      - id: s5
+        label: "Opcional: agregá una nota muy breve aclarando el corte ('aunque dice X, sigue siendo Y')."
+        detail: "Solo si el caso es muy contraintuitivo. Sin sobreexplicar."
+  - kind: prompt-anatomy
+    task: |
+      Etiquetá las partes de un bloque few-shot que incluye un
+      contraejemplo bien armado. Un set sano tiene: instrucción,
+      ejemplo positivo de cada label, contraejemplo, y el input nuevo.
+    parts:
+      - id: instruction
+        label: "Instruccion (que tarea esta haciendo el modelo)"
+        text: "Clasifica cada mensaje como `accion requerida` o `informativo`."
+      - id: positive
+        label: "Ejemplo positivo (caso central de un label)"
+        text: "Mensaje: 'Necesito que apruebes el deploy antes del viernes.' -> accion requerida"
+      - id: counter
+        label: "Contraejemplo (suena al otro label pero pertenece a este)"
+        text: "Mensaje: 'Te quiero contar que cerramos el cliente.' -> informativo (no es pedido aunque empiece con 'te quiero')"
+      - id: input
+        label: "Input nuevo (a clasificar, sin respuesta)"
+        text: "Mensaje: 'Cuando tengas un rato me firmas el contrato?' -> "
+  - kind: prompt-AB
+    question: |
+      Vega tiene un prompt para generar mensajes para usuarios. El
+      modelo a veces incluye código de ejemplo sin que se lo pidan.
+      Le quiere indicar que no escriba código. ¿Cuál instrucción es
+      menos riesgosa?
+    optionA: |
+      ```
+      No incluyas codigo en la respuesta. No escribas codigo. Repito,
+      NO CODIGO. No bloques de codigo.
+      ```
+    optionB: |
+      ```
+      La respuesta es en prosa, dirigida al usuario final. Si tenes
+      que mencionar una idea tecnica, descríbela en palabras (ej:
+      "el sistema valida el formato del email"). Ejemplo del estilo
+      deseado:
+      
+      Pregunta: ¿cómo cambio mi contraseña?
+      Respuesta: Entrá a Ajustes > Cuenta > Cambiar contraseña.
+      Te va a pedir la actual y dos veces la nueva.
+      ```
+    correct: B
+    explanation: |
+      El A es la trampa clásica de la instrucción negativa. "No X"
+      mete el concepto X en el contexto del modelo. Algunos modelos
+      lo manejan, otros generan más X de lo que generarían sin la
+      instrucción. Vos terminás pidiendo lo que no querés.
+
+      El B reformula en positivo: dice qué SI hacer ("respuesta en
+      prosa", "describí en palabras"), muestra un ejemplo del estilo
+      deseado, y el código queda fuera por construcción. El modelo
+      no necesita "no hacer" nada, sigue el patrón.
+
+      Regla: cuando quieras evitar algo, no lo nombres como
+      prohibición. Mostrá lo que SÍ querés. Si tenés que aclarar lo
+      que no, hacelo con un contraejemplo etiquetado, no con un "no"
+      grande.
+---
+
+Misión del día: los contraejemplos enseñan dónde corta el label. Las
+prohibiciones grandes ("no hagas X") muchas veces hacen que el modelo
+haga más X.

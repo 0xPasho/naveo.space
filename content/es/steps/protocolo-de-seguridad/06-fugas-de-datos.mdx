@@ -1,0 +1,104 @@
+---
+title: "Fugas de datos: qué nunca va al modelo"
+order: 6
+estimatedMinutes: 9
+characters:
+  - atlas
+exercise:
+  kind: wiring-dnd
+  task: |
+    Hay seis piezas de datos de la bahía de carga en la nave. Tres
+    destinos podrían consumirlas: el **modelo a bordo** (tu prompt de
+    asistente), un **log externo** (enviado al servicio de analytics de
+    un proveedor), y una **bóveda interna** (encriptada, nunca sale de
+    la nave).
+
+    Conectá cada pieza de datos a **cada destino al que sea seguro
+    mandarla**. Sé estricto: si es PII, secretos o propietario, el
+    modelo NO es destino seguro. La bóveda siempre lo es.
+  sources:
+    - id: part-no
+      label: "Números de pieza del catálogo público"
+      detail: "ej. PN-4827-A. No sensible."
+    - id: cargo-mass
+      label: "Masa por caja en el manifiesto"
+      detail: "Dato operativo. No sensible."
+    - id: passenger-id
+      label: "Nombres + DNI de pasajeros"
+      detail: "PII. Regulada."
+    - id: api-key
+      label: "API key del servicio de rutas"
+      detail: "Secreto. Si se filtra, un atacante controla el routing."
+    - id: captain-token
+      label: "Token de sesión del capitán"
+      detail: "Secreto + identidad. Tratar como credencial de producción."
+    - id: schematic
+      label: "Geometría del schematic del casco"
+      detail: "Propietario. Ventaja para la competencia si se filtra."
+  targets:
+    - id: model
+      label: "Modelo a bordo"
+      detail: "El contexto del prompt del asistente. El modelo puede citar cualquier cosa que pongas acá."
+    - id: external-log
+      label: "Log externo / analytics del proveedor"
+      detail: "Sale de la nave. El proveedor no está bajo nuestro contrato."
+    - id: vault
+      label: "Bóveda interna (encriptada, en la nave)"
+      detail: "Se queda en la nave. Audit-logged."
+  correctConnections:
+    - from: part-no
+      to: model
+    - from: part-no
+      to: external-log
+    - from: part-no
+      to: vault
+    - from: cargo-mass
+      to: model
+    - from: cargo-mass
+      to: vault
+    - from: passenger-id
+      to: vault
+    - from: api-key
+      to: vault
+    - from: captain-token
+      to: vault
+    - from: schematic
+      to: vault
+hints:
+  - "**Los datos del catálogo público** (números de pieza) son seguros para los tres destinos. es la única pieza que lo es."
+  - "Cualquier cosa etiquetada *PII*, *secreto* o *propietario* va SOLO a la bóveda. No al modelo. No a logs externos."
+  - "*Masa de carga* es operativa. está bien en el modelo y la bóveda, pero el log externo agrega riesgo (fingerprinting operativo). Mantenela fuera de logs externos."
+teaches:
+  - data-classification-for-llms
+requires:
+  - prompt-injection-basics
+---
+
+## El modelo no es un lugar seguro para guardar secretos
+
+La regla que todos aprenden a las malas: **cada byte que metés en una llamada al modelo es potencialmente logueado, reproducido o devuelto en una respuesta**. Si el modelo puede leerlo, el modelo puede decirlo. Si el modelo puede decirlo, un atacante puede extraerlo.
+
+Modos de falla reales:
+
+- **Fuga por eco.** Ponés el email de un cliente en el system prompt para personalización. Otro usuario pregunta *"resumime lo que sabés de esta cuenta"* y el modelo vuelca el email que vio.
+- **Fuga al proveedor.** Muchos proveedores de modelos loguean los inputs para revisión de seguridad o fine-tuning. Aunque no lo hagan, tus inputs salen de tu red.
+- **Fuga cross-tenant.** Un asistente multi-tenant trae contexto de la base de datos del tenant A y accidentalmente lo sirve al tenant B porque el contexto no estaba scopeado por llamada.
+
+> La regla de Atlas: **clasificá tus datos antes de cablearlos**. El modelo es un empleado junior rapidísimo con una cuenta pública de Twitter. No le digas nada que no twittearías.
+
+### Cuatro clases de datos
+
+| Clase | Ejemplos | ¿Modelo OK? | ¿Log externo OK? |
+|---|---|---|---|
+| **Pública** | Catálogo público, copy de marketing | Sí | Sí |
+| **Operacional** | Masa, conteo, cubierta, ruta | Sí | Riesgoso |
+| **PII** | Nombres, emails, documentos | **No** | **No** |
+| **Secretos** | API keys, tokens, schematics | **No** | **No** |
+
+PII y secretos van a la **bóveda**. encriptada, audit-logged, nunca en el prompt. Si necesitás actuar sobre ellos, diseñá tools que hagan lookup por referencia (un id de token, no el token mismo) y ejecuten del lado confiable.
+
+### Tu ejercicio
+
+A la derecha: seis piezas de datos, tres destinos. Conectá cada pieza a **cada destino al que sea seguro mandarla**. La bóveda siempre es segura. está encriptada y se queda en la nave. El modelo y el log externo no siempre.
+
+Aprobás cuando tu set de aristas matchea exactamente el set seguro: sin conexiones seguras faltantes, sin extras inseguras.
