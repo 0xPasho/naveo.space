@@ -3,7 +3,8 @@ import { PLAYER_STATS_PLACEHOLDER } from "@/modules/users/placeholder-stats"
 import type { DashboardCrewMember, DashboardStats } from "./types"
 
 // Crew roster for the dashboard. Order matches Dashboard 3 in the design.
-// Forge starts locked because its content lands later in the curriculum.
+// Forge, Orbit, and Hex start locked because their content lands later in
+// the curriculum.
 export const DASHBOARD_CREW: readonly DashboardCrewMember[] = [
   {
     slug: "vega",
@@ -35,6 +36,22 @@ export const DASHBOARD_CREW: readonly DashboardCrewMember[] = [
     roleKey: "forge",
     color: "var(--stat-streak)",
     tone: "evals",
+    locked: true,
+  },
+  {
+    slug: "orbit",
+    name: "Orbit",
+    roleKey: "orbit",
+    color: "var(--track-tooling)",
+    tone: "tooling",
+    locked: true,
+  },
+  {
+    slug: "hex",
+    name: "Hex",
+    roleKey: "hex",
+    color: "var(--track-agents)",
+    tone: "agents",
     locked: true,
   },
 ] as const

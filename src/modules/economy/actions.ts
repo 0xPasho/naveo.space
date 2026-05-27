@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { headers } from "next/headers"
 import { z } from "zod"
 
 import { currentUser } from "@/server/auth"
@@ -103,14 +102,21 @@ export async function createGemCheckoutAction(input: {
   const pack = getGemPack(parsed.data.slug)
   if (!pack) return { ok: false, error: "invalid_input" }
 
-  // Build an absolute origin for success/cancel URLs from the request.
-  // `headers()` is request-scoped in Server Actions and gives us host +
-  // protocol without depending on a NEXT_PUBLIC_BASE_URL env that has to
-  // stay in sync with deploys.
-  const hdrs = await headers()
-  const host = hdrs.get("host") ?? "localhost:3000"
-  const proto = hdrs.get("x-forwarded-proto") ?? "https"
-  const origin = `${proto}://${host}`
+  // Origin for Stripe success/cancel URLs MUST come from an env var, not
+  // from request headers. A poisoned `Host` header on a misconfigured proxy
+  // would otherwise let an attacker craft a Checkout link whose redirect
+  // points at their domain — a high-credibility phishing vector since the
+  // user just paid. NEXT_PUBLIC_APP_URL is the canonical origin for the
+  // deploy and must be set before Stripe checkout is enabled.
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? null
+  if (!configuredUrl) {
+    console.error(
+      "[stripe] NEXT_PUBLIC_APP_URL not set; refusing to create Checkout",
+    )
+    return { ok: false, error: "stripe_not_configured" }
+  }
+  const origin = configuredUrl.replace(/\/+$/, "")
 
   // Stripe's Checkout Sessions API is form-encoded with bracket-notation
   // nested keys. Using `fetch` directly avoids adding the `stripe` SDK as

@@ -31,7 +31,9 @@ function XpChart({
       style={{ height: height + 28 }}
     >
       {days.map((day, i) => {
-        const pct = Math.max(2, (day.value / resolvedMax) * 100)
+        // Don't render a 2% nub on zero-XP days — it falsely signals
+        // activity. Only floor at 2% when the day actually earned XP.
+        const pct = day.value === 0 ? 0 : Math.max(2, (day.value / resolvedMax) * 100)
         return (
           <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
             <div

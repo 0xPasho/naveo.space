@@ -101,55 +101,74 @@ export async function recordAttemptForStep(args: {
   passed: boolean
 }): Promise<StepAttemptOutcome> {
   const { userId, stepId, stepLocale, passed } = args
-  // Read prior state inside the same tx as the upsert so two concurrent
-  // attempts can't both observe `firstCompletion: true`. The row we read
-  // is the pre-image; the upsert builds the post-image.
-  const { row, wasCompleted } = await db.$transaction(async (tx) => {
-    const prior = await tx.progress.findUnique({
-      where: { userId_stepId_stepLocale: { userId, stepId, stepLocale } },
-    })
-    // First-try is captured AT the moment of first completion and frozen
-    // there. A prior row with attempts=0 (never attempted) + passing on
-    // this call means firstTry=true. Any other path falls back to false.
-    const isFirstCompletionNow = passed && prior?.status !== "completed"
-    const firstTryAtCompletion =
-      isFirstCompletionNow && (prior?.attempts ?? 0) === 0
-    const upserted = await tx.progress.upsert({
-      where: { userId_stepId_stepLocale: { userId, stepId, stepLocale } },
-      create: {
+
+  // Two-step atomic completion under default READ COMMITTED:
+  //   1. Always upsert the attempts counter + bring the row into existence.
+  //      `firstTry: true` on create captures the "passing on attempt 1" case.
+  //   2. If this attempt passed, conditionally promote to status=completed
+  //      ONLY when the existing status is not already "completed". The
+  //      `updateMany.count` tells us whether THIS call was the one that
+  //      flipped the bit, so two concurrent passes can't both report
+  //      `firstCompletion: true`. (Postgres serializes the matching UPDATEs
+  //      on the same row; the second one sees status="completed" and skips.)
+  const now = new Date()
+
+  const row = await db.progress.upsert({
+    where: { userId_stepId_stepLocale: { userId, stepId, stepLocale } },
+    create: {
+      userId,
+      stepId,
+      stepLocale,
+      status: passed ? "completed" : "in_progress",
+      attempts: 1,
+      firstTry: passed,
+      completedAt: passed ? now : null,
+    },
+    update: {
+      attempts: { increment: 1 },
+    },
+  })
+
+  let firstCompletion = false
+  let firstTryAtCompletion = false
+  if (passed) {
+    // `firstTry` is captured based on the pre-image attempts count we just
+    // observed. We only honor it when this call wins the conditional
+    // promotion below.
+    const wasCompleted = row.status === "completed"
+    // After the upsert, `row.attempts` is the post-image count. The pre-image
+    // count is row.attempts - 1 (for an update path) or 1 (for create). We
+    // treat firstTry as "the winning call's pre-image attempts === 0".
+    const preAttempts = Math.max(0, row.attempts - 1)
+    firstTryAtCompletion = !wasCompleted && preAttempts === 0
+
+    const updated = await db.progress.updateMany({
+      where: {
         userId,
         stepId,
         stepLocale,
-        status: passed ? "completed" : "in_progress",
-        attempts: 1,
-        // Fresh row + pass = guaranteed first-try (attempts will be 1).
-        firstTry: passed,
-        completedAt: passed ? new Date() : null,
+        status: { not: "completed" },
       },
-      update: {
-        attempts: { increment: 1 },
-        // Promote in_progress -> completed only; never demote. Capture
-        // firstTry on that single transition and never overwrite it: if
-        // the user later replays a passed step and fails, firstTry stays
-        // true so the cleared/debrief XP keeps the 1.5x bonus.
-        ...(passed
-          ? {
-              status: "completed",
-              completedAt: new Date(),
-              ...(isFirstCompletionNow ? { firstTry: firstTryAtCompletion } : {}),
-            }
-          : {}),
+      data: {
+        status: "completed",
+        completedAt: now,
+        // Freeze firstTry at the moment of first completion. Subsequent
+        // replays never overwrite this (the predicate excludes them).
+        firstTry: firstTryAtCompletion,
       },
     })
-    return { row: upserted, wasCompleted: prior?.status === "completed" }
-  })
+    firstCompletion = updated.count === 1
+  }
 
-  const progress = toStepProgress(row)
-  const firstCompletion = passed && !wasCompleted
-  // `firstTry` here is the LIVE first-try flag (frozen on first completion
-  // and never updated again). For the runForUser caller this only matters
-  // when firstCompletion is true.
-  const firstTry = firstCompletion && row.firstTry
+  // Re-read so the returned row reflects the conditional update above.
+  const final = firstCompletion
+    ? await db.progress.findUniqueOrThrow({
+        where: { userId_stepId_stepLocale: { userId, stepId, stepLocale } },
+      })
+    : row
+
+  const progress = toStepProgress(final)
+  const firstTry = firstCompletion && final.firstTry
   return { progress, firstCompletion, firstTry }
 }
 

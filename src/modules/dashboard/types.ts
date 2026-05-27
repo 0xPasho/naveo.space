@@ -1,4 +1,5 @@
 import type { ContentLocale } from "@/modules/content/types"
+import type { StreakWeekDay } from "@/modules/gamification/service"
 import type { NextStepRef } from "@/modules/users/types"
 
 export type DashboardMascotSlug =
@@ -68,6 +69,15 @@ export type DashboardCapstone = {
   stepsAway: number
 }
 
+export type DashboardWeek = {
+  // Per-day XP buckets for Mon..Sun of the current ISO week (UTC).
+  xpByDay: number[]
+  // Per-day streak state for the same week. Index 0 = Monday, 6 = Sunday.
+  streak: StreakWeekDay[]
+  // Index (0..6) of "today" inside the week.
+  todayIdx: number
+}
+
 export type Dashboard = {
   locale: ContentLocale
   greetingName: string
@@ -80,6 +90,8 @@ export type Dashboard = {
   capstone: DashboardCapstone | null
   crew: DashboardCrewMember[]
   stats: DashboardStats
+  // 7-day XP + streak rollup for the current Mon..Sun week. All-zero for anon.
+  week: DashboardWeek
   // Lead character of the active step (the one the Continue CTA points to).
   // Drives the mascot avatar at the top of the bridge. Defaults to "vega"
   // when no step is in progress or the active step has no character signal.

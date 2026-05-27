@@ -292,10 +292,16 @@ export async function getRecentActivity(
 const toUtcDay = (d: Date): Date =>
   new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
 
-// 12 weekly XP buckets, oldest → newest. Real XP grants per week — joins
-// completed Progress with ContentPiece.frontMatter and runs xpForFrontmatter
-// (same formula awardXp uses). Orphan stepIds (content rebuilt, slug gone)
-// contribute 0.
+// 12 weekly XP buckets, oldest → newest. Real XP grants per week. Combines
+// two sources, matching what awardXp actually credits to User.xp:
+//   1. Step completions — joins Progress.completedAt with ContentPiece
+//      frontmatter and runs xpForFrontmatter (first-try bonus + per-step xp
+//      overrides + per-kind defaults). Orphan stepIds (content rebuilt,
+//      slug gone) contribute 0.
+//   2. Daily-quest passes — DailyQuestAssignment.completedAt with the flat
+//      DAILY_QUEST_XP_PASS reward. Without this, a user whose XP comes from
+//      dailies sees an empty chart while their cumulative XP HUD pill is
+//      non-zero.
 export async function getWeeklyXp(
   userId: string,
   locale: ContentLocale,
@@ -307,15 +313,26 @@ export async function getWeeklyXp(
   const firstWeekStart = new Date(currentWeekStart)
   firstWeekStart.setUTCDate(firstWeekStart.getUTCDate() - 7 * 11)
 
-  const progress = await db.progress.findMany({
-    where: {
-      userId,
-      stepLocale: locale,
-      status: "completed",
-      completedAt: { gte: firstWeekStart },
-    },
-    select: { stepId: true, firstTry: true, completedAt: true },
-  })
+  const [progress, dailyPasses] = await Promise.all([
+    db.progress.findMany({
+      where: {
+        userId,
+        stepLocale: locale,
+        status: "completed",
+        completedAt: { gte: firstWeekStart },
+      },
+      select: { stepId: true, firstTry: true, completedAt: true },
+    }),
+    db.dailyQuestAssignment.findMany({
+      where: {
+        userId,
+        questLocale: locale,
+        passed: true,
+        completedAt: { gte: firstWeekStart },
+      },
+      select: { completedAt: true },
+    }),
+  ])
 
   const buckets = Array.from({ length: 12 }, (_, i) => {
     const start = new Date(firstWeekStart)
@@ -323,28 +340,37 @@ export async function getWeeklyXp(
     return { weekStart: start, xp: 0 }
   })
 
-  if (progress.length === 0) return buckets
-
-  const stepIds = [...new Set(progress.map((p) => p.stepId))]
-  const pieces = await db.contentPiece.findMany({
-    where: { OR: stepIds.map((id) => ({ id, locale })) },
-    select: { id: true, frontMatter: true },
-  })
-  const fmById = new Map(
-    pieces.map((p) => [p.id, p.frontMatter as { exercise?: { kind?: string }; xp?: number }]),
-  )
-
-  for (const p of progress) {
-    if (!p.completedAt) continue
-    const fm = fmById.get(p.stepId)
-    if (!fm) continue
-    const earned = xpForFrontmatter(fm, p.firstTry)
-    if (earned === 0) continue
-    const day = toUtcDay(p.completedAt)
-    const idx = Math.floor(
-      (day.getTime() - firstWeekStart.getTime()) / (1000 * 60 * 60 * 24 * 7),
+  const weekIdxOf = (when: Date) =>
+    Math.floor(
+      (toUtcDay(when).getTime() - firstWeekStart.getTime()) /
+        (1000 * 60 * 60 * 24 * 7),
     )
-    if (idx >= 0 && idx < 12) buckets[idx]!.xp += earned
+
+  if (progress.length > 0) {
+    const stepIds = [...new Set(progress.map((p) => p.stepId))]
+    const pieces = await db.contentPiece.findMany({
+      where: { OR: stepIds.map((id) => ({ id, locale })) },
+      select: { id: true, frontMatter: true },
+    })
+    const fmById = new Map(
+      pieces.map((p) => [p.id, p.frontMatter as { exercise?: { kind?: string }; xp?: number }]),
+    )
+
+    for (const p of progress) {
+      if (!p.completedAt) continue
+      const fm = fmById.get(p.stepId)
+      if (!fm) continue
+      const earned = xpForFrontmatter(fm, p.firstTry)
+      if (earned === 0) continue
+      const idx = weekIdxOf(p.completedAt)
+      if (idx >= 0 && idx < 12) buckets[idx]!.xp += earned
+    }
+  }
+
+  for (const p of dailyPasses) {
+    if (!p.completedAt) continue
+    const idx = weekIdxOf(p.completedAt)
+    if (idx >= 0 && idx < 12) buckets[idx]!.xp += DAILY_QUEST_XP_PASS
   }
 
   return buckets

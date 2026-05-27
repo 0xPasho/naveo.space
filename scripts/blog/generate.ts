@@ -9,6 +9,7 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { z } from "zod"
 
 import { PrismaClient } from "../../src/generated/prisma/client"
+import { sanitizeBlogHtml } from "../../src/modules/blog/lib"
 
 import { buildSystemPrompt, buildUserPrompt, type GenLocale } from "./prompts"
 import { generateTopics, type BlogTopic } from "./topics"
@@ -253,6 +254,11 @@ async function main(): Promise<void> {
     try {
       const post = await callModel(router, args.model, job.topic, job.locale)
 
+      // Sanitize at write time so a prompt-injected generation can never
+      // plant `<script>` / `onerror=` / `javascript:` payloads in the DB.
+      // BlogProse also sanitizes at render time, but defense in depth.
+      const safeContent = sanitizeBlogHtml(post.content)
+
       if (!args.dry) {
         await prisma.blogPost.upsert({
           where: {
@@ -263,7 +269,7 @@ async function main(): Promise<void> {
             slug: job.topic.slug,
             title: post.title,
             excerpt: post.excerpt,
-            content: post.content,
+            content: safeContent,
             category: job.topic.category,
             tags: post.tags,
             metaTitle: post.metaTitle,
@@ -275,7 +281,7 @@ async function main(): Promise<void> {
           update: {
             title: post.title,
             excerpt: post.excerpt,
-            content: post.content,
+            content: safeContent,
             tags: post.tags,
             metaTitle: post.metaTitle,
             metaDescription: post.metaDescription,

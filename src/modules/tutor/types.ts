@@ -13,7 +13,7 @@ export type AskTutorInput = {
 }
 
 export type AskTutorResult =
-  | { ok: true; reply: TutorMessage }
+  | { ok: true; reply: TutorMessage; gemsAfter: number }
   | {
       ok: false
       error:
@@ -22,6 +22,7 @@ export type AskTutorResult =
         | "not_found"
         | "invalid_input"
         | "model_error"
+        | "no_gems"
     }
 
 export type PersonaSlug = "vega" | "atlas" | "echo" | "forge" | "orbit" | "hex"

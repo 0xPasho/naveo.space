@@ -17,6 +17,10 @@ type Props = {
   // anon users — they're not yet bound by the economy. StepShell uses this
   // to disable Comprobar when the wallet is empty.
   hearts: number
+  // Live gems count for the signed-in user. `Number.POSITIVE_INFINITY` for
+  // anon users. TutorDrawer uses it to disable Send when the user can't
+  // afford a tutor question.
+  gems: number
   // Anon users can still browse and interact with the lesson UI, but
   // submitting an attempt requires auth. StepShell uses this to swap
   // Comprobar from a server-action submit into a sign-in modal trigger.
@@ -29,7 +33,13 @@ const stepHref = (
   stepSlug: string,
 ) => `/tracks/${trackSlug}/${courseSlug}/${stepSlug}`
 
-export function LessonPlayerView({ data, locale, hearts, isSignedIn }: Props) {
+export function LessonPlayerView({
+  data,
+  locale,
+  hearts,
+  gems,
+  isSignedIn,
+}: Props) {
   const {
     track,
     course,
@@ -63,6 +73,7 @@ export function LessonPlayerView({ data, locale, hearts, isSignedIn }: Props) {
       }}
       locale={locale}
       leadCharacter={leadCharacter}
+      gems={gems}
     >
       <div className="flex h-full flex-col bg-bg-deep text-ink-1">
         <LessonHeader

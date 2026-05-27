@@ -50,7 +50,7 @@ function ChatMarkdown({ content }: { content: string }) {
                 className,
               )}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               {...props}
             />
           ),

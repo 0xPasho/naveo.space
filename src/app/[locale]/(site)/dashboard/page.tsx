@@ -8,9 +8,12 @@ import {
   getTrackPathNodes,
 } from "@/modules/catalog/service"
 import type { ContentLocale } from "@/modules/content/types"
+import { CrewRow } from "@/modules/dashboard/components/crew-row"
 import { DashboardPathHeader } from "@/modules/dashboard/components/dashboard-path-header"
 import { MascotGreet } from "@/modules/dashboard/components/mascot-greet"
+import { StatsStrip } from "@/modules/dashboard/components/stats-strip"
 import { ThreeUp } from "@/modules/dashboard/components/three-up"
+import { WeeklyInsights } from "@/modules/dashboard/components/weekly-insights"
 import { getDashboard } from "@/modules/dashboard/service"
 import { currentUser } from "@/server/auth"
 
@@ -62,7 +65,10 @@ export default async function BridgePage({ params }: Props) {
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px]">
       <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-5 pb-12 pt-6 md:px-8">
         <MascotGreet dashboard={dashboard} />
+        <StatsStrip dashboard={dashboard} />
         <ThreeUp dashboard={dashboard} />
+        <WeeklyInsights dashboard={dashboard} />
+        <CrewRow members={dashboard.crew} />
         {showPath && activeDetail ? (
           <section className="flex flex-col gap-6">
             <DashboardPathHeader detail={activeDetail} />

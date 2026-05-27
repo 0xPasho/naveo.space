@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server"
 
 import { Button, Card, ChunkyProgress, Eyebrow, StatTile } from "@/common/components/ui"
 import { Link } from "@/common/i18n/navigation"
+import { DAILY_QUEST_XP_PASS } from "@/modules/daily-quest/data"
 
 import type { Dashboard } from "../types"
 
@@ -58,7 +59,7 @@ export async function ThreeUp({ dashboard }: Props) {
           variant="outline"
           tone="xp"
           label={t("daily.title")}
-          value={t("daily.reward")}
+          value={t("daily.reward", { xp: DAILY_QUEST_XP_PASS })}
           icon={<Bolt className="size-5" strokeWidth={2.5} />}
         />
         <p className="font-sans text-sm leading-relaxed text-ink-2">

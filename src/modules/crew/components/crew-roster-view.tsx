@@ -109,7 +109,7 @@ export async function CrewRosterView({ locale }: Props) {
 
   return (
     <SidebarShell>
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 pb-12 pt-6 md:px-8">
         <header className="flex flex-col gap-3">
           <Eyebrow className="text-primary">
             {t("eyebrow", { known, total })}

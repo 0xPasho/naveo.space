@@ -1,7 +1,7 @@
 "use client"
 
 import { SignInButton, useUser } from "@clerk/nextjs"
-import { LogIn, Send } from "lucide-react"
+import { Gem, LogIn, Send } from "lucide-react"
 import { useTranslations } from "next-intl"
 import {
   createContext,
@@ -22,10 +22,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/common/components/ui"
+import { useRouter } from "@/common/i18n/navigation"
 import { cn } from "@/common/lib/utils"
 import type { CharacterSlug } from "@/modules/content/types"
 import { CrewCharacter, toCrewSlug } from "@/modules/crew"
-import { askTutor } from "@/modules/tutor/actions"
+import { ASK_TUTOR_GEM_COST, askTutor } from "@/modules/tutor/actions"
 import type { TutorMessage } from "@/modules/tutor/types"
 
 // Tutor IA drawer — chat surface anchored to the right of the lesson player.
@@ -51,6 +52,12 @@ type TutorContextValue = {
   stepRef: StepRef
   locale: string
   personaSlug: CharacterSlug
+  // Live gem count from the server. `Number.POSITIVE_INFINITY` for anon
+  // viewers (they get bounced by the sign-in CTA before paying anyway).
+  gems: number
+  // Per-question cost in gems. Pulled from the action so server + client
+  // never disagree about how much a tutor question costs.
+  cost: number
 }
 
 const TutorContext = createContext<TutorContextValue | null>(null)
@@ -70,6 +77,7 @@ type ProviderProps = {
   // Lead character of the step, derived from frontmatter.characters[0] or
   // exercise.personaSlug upstream. Null when the step doesn't declare one.
   leadCharacter: CharacterSlug | null
+  gems: number
 }
 
 export function TutorProvider({
@@ -77,6 +85,7 @@ export function TutorProvider({
   stepRef,
   locale,
   leadCharacter,
+  gems,
 }: ProviderProps) {
   const [open, setOpen] = useState(false)
 
@@ -86,8 +95,18 @@ export function TutorProvider({
   const personaSlug = leadCharacter ?? DEFAULT_PERSONA
 
   const value = useMemo(
-    () => ({ open, setOpen, toggle, close, stepRef, locale, personaSlug }),
-    [open, toggle, close, stepRef, locale, personaSlug],
+    () => ({
+      open,
+      setOpen,
+      toggle,
+      close,
+      stepRef,
+      locale,
+      personaSlug,
+      gems,
+      cost: ASK_TUTOR_GEM_COST,
+    }),
+    [open, toggle, close, stepRef, locale, personaSlug, gems],
   )
 
   return <TutorContext.Provider value={value}>{children}</TutorContext.Provider>
@@ -140,7 +159,8 @@ export function TutorFab() {
 
 export function TutorDrawer() {
   const t = useTranslations("lessons.tutor")
-  const { open, setOpen, stepRef, locale, personaSlug } = useTutor()
+  const router = useRouter()
+  const { open, setOpen, stepRef, locale, personaSlug, gems, cost } = useTutor()
   const { user, isLoaded } = useUser()
   // We render the anon prompt only once Clerk has hydrated to avoid a flash
   // of the sign-in CTA for signed-in users on first paint.
@@ -155,7 +175,22 @@ export function TutorDrawer() {
   const [draft, setDraft] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Optimistic local gem count so the user sees the balance tick down right
+  // after a paid reply, without waiting for the next RSC refresh. When the
+  // server-side `gems` prop changes (step navigation, router.refresh),
+  // drop the override and trust the new authoritative value. Setting state
+  // during render is the React-recommended pattern for derived-from-prop
+  // resets.
+  const [optimisticGems, setOptimisticGems] = useState<number | null>(null)
+  const [lastSeenGems, setLastSeenGems] = useState(gems)
+  if (gems !== lastSeenGems) {
+    setLastSeenGems(gems)
+    setOptimisticGems(null)
+  }
+  const localGems = optimisticGems ?? gems
   const scrollRef = useRef<HTMLDivElement | null>(null)
+
+  const blockedByGems = !isAnon && localGems < cost
 
   // Auto-scroll on new messages or while a reply is in flight.
   useEffect(() => {
@@ -166,6 +201,7 @@ export function TutorDrawer() {
   const onSend = async () => {
     const text = draft.trim()
     if (!text || sending) return
+    if (blockedByGems) return
     const userMsg: TutorMessage = { role: "user", content: text }
     const next = [...transcript, userMsg]
     setTranscript(next)
@@ -180,10 +216,20 @@ export function TutorDrawer() {
       })
       if (res.ok) {
         setTranscript([...next, res.reply])
+        setOptimisticGems(res.gemsAfter)
+        // Sync the HUD's GemsPill on the next paint.
+        router.refresh()
       } else {
+        // Server refused. Roll the optimistic user message back so the
+        // transcript stays consistent with what the model actually saw.
+        setTranscript(transcript)
+        setDraft(text)
+        if (res.error === "no_gems") router.refresh()
         setError(t(`errors.${res.error}`))
       }
     } catch {
+      setTranscript(transcript)
+      setDraft(text)
       setError(t("errors.network"))
     } finally {
       setSending(false)
@@ -276,34 +322,56 @@ export function TutorDrawer() {
             </SignInButton>
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_auto] gap-2 border-t-2 border-line-strong p-3.5">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  onSend()
+          <div className="flex flex-col gap-2 border-t-2 border-line-strong p-3.5">
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault()
+                    onSend()
+                  }
+                }}
+                placeholder={
+                  blockedByGems
+                    ? t("inputPlaceholderNoGems")
+                    : t("inputPlaceholder")
                 }
-              }}
-              placeholder={t("inputPlaceholder")}
-              disabled={sending}
-              className={cn(
-                "rounded-md border-2 border-line-strong bg-bg-sunken px-3 py-2",
-                "font-mono text-[12.5px] text-ink-1 outline-none placeholder:text-ink-3",
-                "transition-colors duration-fast focus:border-primary",
-                "disabled:opacity-50",
-              )}
-            />
-            <Button
-              type="button"
-              size="icon"
-              onClick={onSend}
-              aria-label={t("sendAria")}
-              disabled={sending || draft.trim().length === 0}
-            >
-              <Send className="size-4" />
-            </Button>
+                disabled={sending || blockedByGems}
+                className={cn(
+                  "rounded-md border-2 border-line-strong bg-bg-sunken px-3 py-2",
+                  "font-mono text-[12.5px] text-ink-1 outline-none placeholder:text-ink-3",
+                  "transition-colors duration-fast focus:border-primary",
+                  "disabled:opacity-50",
+                )}
+              />
+              <Button
+                type="button"
+                size="icon"
+                onClick={onSend}
+                aria-label={t("sendAria")}
+                disabled={
+                  sending || draft.trim().length === 0 || blockedByGems
+                }
+              >
+                <Send className="size-4" />
+              </Button>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em]",
+                  blockedByGems ? "text-danger" : "text-stat-gem",
+                )}
+              >
+                <Gem className="size-3" strokeWidth={2.5} />
+                {t("cost", { cost })}
+              </span>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-ink-3 tabular-nums">
+                {t("balance", { gems: localGems })}
+              </span>
+            </div>
           </div>
         )}
       </SheetContent>

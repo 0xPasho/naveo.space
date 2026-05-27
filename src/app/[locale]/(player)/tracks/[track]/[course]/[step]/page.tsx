@@ -27,14 +27,17 @@ export default async function StepPage({ params }: Props) {
   const data = await getStepWithNeighbors(track, course, step, locale, userId)
   if (!data) notFound()
 
-  // Read the user's current hearts so StepShell can disable Comprobar
-  // when the wallet is empty. Anon users always pass — they're not yet
-  // bound by the hearts economy.
+  // Read the user's current wallet so StepShell can disable Comprobar
+  // when hearts are empty, and TutorDrawer can disable Send when the user
+  // can't afford a tutor question. Anon users always pass — they're not
+  // yet bound by the hearts / gems economy.
   let hearts = Number.POSITIVE_INFINITY
+  let gems = Number.POSITIVE_INFINITY
   if (clerkUser) {
     const user = await getOrCreateUser(clerkUser.id)
     const wallet = await getWallet(user.id)
     hearts = wallet.hearts
+    gems = wallet.gems
   }
 
   // The `key` forces a full remount of the lesson player tree whenever
@@ -49,6 +52,7 @@ export default async function StepPage({ params }: Props) {
       data={data}
       locale={locale}
       hearts={hearts}
+      gems={gems}
       isSignedIn={Boolean(clerkUser)}
     />
   )

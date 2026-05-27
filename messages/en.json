@@ -749,7 +749,7 @@
         "eyebrow": "DAILY · LOSE NO HEARTS",
         "title": "Daily quest",
         "body": "Fix three fuzzy prompts before Echo flags them. Forge gives Forge-tokens.",
-        "reward": "+ 40 XP",
+        "reward": "+ {xp} XP",
         "cta": "Start daily"
       },
       "capstone": {
@@ -782,7 +782,8 @@
     },
     "crew": {
       "title": "Your crew",
-      "openDossiers": "Open dossiers →",
+      "subtitle": "{count, plural, =1 {1 officer} other {# officers}}",
+      "openDossiers": "Open dossiers",
       "switchMentor": "Switch mentor →",
       "roles": {
         "vega": "Mentor",
@@ -793,6 +794,34 @@
         "hex": "Red team"
       },
       "locked": "LOCKED"
+    },
+    "statsStrip": {
+      "ariaLabel": "Activity summary",
+      "xpToday": "XP TODAY",
+      "xpThisWeek": "XP THIS WEEK",
+      "streak": "CURRENT STREAK",
+      "streakValue": "{days, plural, =0 {0d} =1 {1d} other {#d}}",
+      "streakBest": "Best: {best}d",
+      "nextStep": "NEXT STEP",
+      "nextStepEmpty": "Unassigned",
+      "nextStepProgress": "{pct}% of course",
+      "vsYesterday": "{delta} vs yesterday",
+      "flatVsYesterday": "Same as yesterday",
+      "vsLastWeek": "{delta} vs last week",
+      "flatVsLastWeek": "Same as last week"
+    },
+    "insights": {
+      "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+      "xp": {
+        "eyebrow": "XP THIS WEEK",
+        "unit": "TOTAL XP",
+        "range": "MON · SUN"
+      },
+      "streak": {
+        "eyebrow": "WEEKLY STREAK",
+        "activeDays": "{count, plural, =0 {0 active days} =1 {1 active day} other {# active days}}",
+        "foot": "Your best streak: {best, plural, =0 {none yet} =1 {1 day} other {# days}}."
+      }
     },
     "pathHeader": {
       "eyebrow": "UNIT {unit} · {tag} · {count, plural, =1 {1 LESSON} other {# LESSONS}}",
@@ -1191,10 +1220,13 @@
       "hint": "Got questions? Ask me",
       "hintAria": "Open the AI tutor",
       "inputPlaceholder": "Ask anything about this step…",
+      "inputPlaceholderNoGems": "Out of gems. Stop by the shop to top up.",
       "sendAria": "Send question",
       "opener": "I'm here. Step and exercise are open on my console. ask what you need.",
       "typing": "{name} is thinking…",
       "userLabel": "YOU",
+      "cost": "{cost, plural, =1 {Costs 1 gem} other {Costs # gems}}",
+      "balance": "{gems, plural, =0 {0 gems} =1 {1 gem} other {# gems}}",
       "anon": {
         "title": "Sign in to chat",
         "body": "The AI tutor is reserved for officers with an account. Create one in 30 seconds to start the conversation.",
@@ -1206,6 +1238,7 @@
         "not_found": "We couldn't load this step's context.",
         "invalid_input": "The message you sent isn't valid.",
         "model_error": "The tutor couldn't respond. Try again.",
+        "no_gems": "You're out of gems. Stop by the shop to top up.",
         "network": "Something went wrong sending your message. Try again."
       }
     },
@@ -1539,7 +1572,8 @@
         "cancel": "Cancel",
         "confirm": "Yes, spend 1 heart"
       },
-      "free": "Free (already completed)"
+      "free": "Free (already completed)",
+      "errorRetry": "Couldn't reveal the hint. Please try again."
     },
     "debrief": {
       "title": "Mission cleared.",
@@ -1674,7 +1708,8 @@
     },
     "footer": {
       "terms": "Terms and conditions",
-      "privacy": "Privacy policy"
+      "privacy": "Privacy policy",
+      "blog": "Blog"
     },
     "terms": {
       "meta": {

@@ -33,6 +33,11 @@ type Props = {
   // pay for hints anymore — revealing one becomes free. We pass this flag
   // from StepShell so the panel can skip the server roundtrip + dialog.
   alreadyPassed?: boolean
+  // When the user's wallet is empty AND the step hasn't been passed yet,
+  // paid reveals are disabled. The server enforces this too (useHint returns
+  // `no_hearts`); the prop is just the UX-level guard so the button reads
+  // inactive instead of failing on click.
+  blockedByHearts?: boolean
 }
 
 // Progressive hint reveal. Each reveal costs 1 heart server-side. To prevent
@@ -40,28 +45,55 @@ type Props = {
 // button — both share the word "siguiente" — every PAID reveal goes through
 // a confirmation dialog that explicitly states the cost. When the step is
 // already passed (alreadyPassed), hints are free and skip the dialog.
-export function HintsPanel({ hints, stepRef, locale, alreadyPassed }: Props) {
+export function HintsPanel({
+  hints,
+  stepRef,
+  locale,
+  alreadyPassed,
+  blockedByHearts,
+}: Props) {
   const t = useTranslations("lessons.hints")
   const router = useRouter()
   const [revealed, setRevealed] = useState(0)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [networkError, setNetworkError] = useState(false)
   const [, startTransition] = useTransition()
   const total = hints.length
   const remaining = total - revealed
+  // Free reveals stay clickable even when the wallet is empty. Paid reveals
+  // are gated on the same wallet check the server enforces.
+  const paidRevealDisabled = !alreadyPassed && blockedByHearts === true
 
   // Reveal the next hint locally + spend a heart server-side. Caller must
   // have already passed any confirmation flow for paid reveals.
   const performReveal = () => {
     const nextIndex = revealed
     if (nextIndex >= total) return
+    setNetworkError(false)
     setRevealed((r) => r + 1)
     if (alreadyPassed) return
     startTransition(async () => {
       try {
-        await consumeHint({ ...stepRef, locale, hintIndex: nextIndex })
+        const res = await consumeHint({
+          ...stepRef,
+          locale,
+          hintIndex: nextIndex,
+        })
+        // Server refused (e.g. wallet emptied in another tab between the
+        // disabled-button check and this click). Roll back the optimistic
+        // reveal so the hint stays hidden.
+        if (!res.ok) {
+          setRevealed((r) => Math.max(0, r - 1))
+          if (res.error === "no_hearts") router.refresh()
+          return
+        }
         router.refresh()
       } catch {
-        // ignore — best-effort
+        // Network failure: roll back the optimistic reveal AND surface the
+        // failure so the user knows to retry instead of assuming silent
+        // success.
+        setRevealed((r) => Math.max(0, r - 1))
+        setNetworkError(true)
       }
     })
   }
@@ -69,6 +101,7 @@ export function HintsPanel({ hints, stepRef, locale, alreadyPassed }: Props) {
   // Free reveals (alreadyPassed) skip the dialog. Paid reveals open the
   // confirmation so the user can never spend a heart without seeing the cost.
   const handleRevealClick = () => {
+    if (paidRevealDisabled) return
     if (alreadyPassed) {
       performReveal()
       return
@@ -126,6 +159,8 @@ export function HintsPanel({ hints, stepRef, locale, alreadyPassed }: Props) {
             variant="outline"
             size="sm"
             onClick={handleRevealClick}
+            disabled={paidRevealDisabled}
+            aria-disabled={paidRevealDisabled || undefined}
             className="normal-case tracking-normal"
           >
             <Lightbulb className="size-4 text-stat-xp" />
@@ -139,6 +174,14 @@ export function HintsPanel({ hints, stepRef, locale, alreadyPassed }: Props) {
             {alreadyPassed ? t("free") : t("openerCost")}
           </span>
         </div>
+        {networkError ? (
+          <p
+            role="status"
+            className="font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-danger"
+          >
+            {t("errorRetry")}
+          </p>
+        ) : null}
         {dialog}
       </>
     )
@@ -179,6 +222,8 @@ export function HintsPanel({ hints, stepRef, locale, alreadyPassed }: Props) {
               variant="outline"
               size="sm"
               onClick={handleRevealClick}
+              disabled={paidRevealDisabled}
+              aria-disabled={paidRevealDisabled || undefined}
               className="normal-case tracking-normal"
             >
               <Lightbulb className="size-4 text-stat-xp" />

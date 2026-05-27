@@ -5,6 +5,7 @@ import { db } from "@/server/db"
 // transaction parameter type below.
 
 import type { Step } from "@/modules/content/types"
+import { DAILY_QUEST_XP_PASS } from "@/modules/daily-quest/data"
 
 import {
   BADGE,
@@ -263,9 +264,10 @@ export function xpForStep(step: Step, firstTry: boolean): number {
   return xpForFrontmatter(step.frontMatter, firstTry)
 }
 
-// Sum the real XP a user has earned from their completed Progress rows in a
-// time window. Reads Progress.completedAt and joins to ContentPiece for the
-// frontmatter (kind / xp override). Same approximation caveats as
+// Sum the real XP a user has earned in a time window. Combines two sources:
+// step completions (Progress.completedAt, scored via xpForFrontmatter) and
+// daily-quest passes (DailyQuestAssignment.completedAt, flat
+// DAILY_QUEST_XP_PASS each). Same approximation caveats as
 // xpFromCompletedSteps — replay-failures undercount the first-try bonus.
 export async function getRealXpInWindow(args: {
   userId: string
@@ -296,41 +298,63 @@ export async function getRealXpByUserInWindow(args: {
   userIds?: string[]
 }): Promise<Map<string, number>> {
   const { locale, start, endExclusive, userIds } = args
-  const completed = await db.progress.findMany({
-    where: {
-      status: "completed",
-      completedAt: { gte: start, lt: endExclusive },
-      ...(locale ? { stepLocale: locale } : {}),
-      ...(userIds && userIds.length > 0 ? { userId: { in: userIds } } : {}),
-    },
-    select: { userId: true, stepId: true, stepLocale: true, firstTry: true },
-  })
-  if (completed.length === 0) return new Map()
-
-  // Join on (stepId, stepLocale) because the same stepId exists in multiple
-  // locales and frontMatter can diverge (xp override, exercise.kind) per
-  // locale.
-  const pairs = [
-    ...new Map(
-      completed.map((c) => [`${c.stepId}::${c.stepLocale}`, c]),
-    ).values(),
-  ].map((c) => ({ id: c.stepId, locale: c.stepLocale }))
-  const pieces = await db.contentPiece.findMany({
-    where: { OR: pairs },
-    select: { id: true, locale: true, frontMatter: true },
-  })
-  const fmByIdLocale = new Map<string, XpFrontmatter>(
-    pieces.map((p) => [`${p.id}::${p.locale}`, p.frontMatter as XpFrontmatter]),
-  )
+  const [completed, dailyPasses] = await Promise.all([
+    db.progress.findMany({
+      where: {
+        status: "completed",
+        completedAt: { gte: start, lt: endExclusive },
+        ...(locale ? { stepLocale: locale } : {}),
+        ...(userIds && userIds.length > 0 ? { userId: { in: userIds } } : {}),
+      },
+      select: { userId: true, stepId: true, stepLocale: true, firstTry: true },
+    }),
+    db.dailyQuestAssignment.findMany({
+      where: {
+        passed: true,
+        completedAt: { gte: start, lt: endExclusive },
+        ...(locale ? { questLocale: locale } : {}),
+        ...(userIds && userIds.length > 0 ? { userId: { in: userIds } } : {}),
+      },
+      select: { userId: true },
+    }),
+  ])
+  if (completed.length === 0 && dailyPasses.length === 0) return new Map()
 
   const out = new Map<string, number>()
-  for (const c of completed) {
-    const fm = fmByIdLocale.get(`${c.stepId}::${c.stepLocale}`)
-    if (!fm) continue
-    const earned = xpForFrontmatter(fm, c.firstTry)
-    if (earned === 0) continue
-    out.set(c.userId, (out.get(c.userId) ?? 0) + earned)
+
+  if (completed.length > 0) {
+    // Join on (stepId, stepLocale) because the same stepId exists in multiple
+    // locales and frontMatter can diverge (xp override, exercise.kind) per
+    // locale.
+    const pairs = [
+      ...new Map(
+        completed.map((c) => [`${c.stepId}::${c.stepLocale}`, c]),
+      ).values(),
+    ].map((c) => ({ id: c.stepId, locale: c.stepLocale }))
+    const pieces = await db.contentPiece.findMany({
+      where: { OR: pairs },
+      select: { id: true, locale: true, frontMatter: true },
+    })
+    const fmByIdLocale = new Map<string, XpFrontmatter>(
+      pieces.map((p) => [`${p.id}::${p.locale}`, p.frontMatter as XpFrontmatter]),
+    )
+
+    for (const c of completed) {
+      const fm = fmByIdLocale.get(`${c.stepId}::${c.stepLocale}`)
+      if (!fm) continue
+      const earned = xpForFrontmatter(fm, c.firstTry)
+      if (earned === 0) continue
+      out.set(c.userId, (out.get(c.userId) ?? 0) + earned)
+    }
   }
+
+  // Fold in daily-quest passes. DailyQuestAssignment.completedAt is set at
+  // first pass and is the source of truth for "when did the user earn it".
+  // Same flat constant awardXp uses, so totals reconcile with User.xp.
+  for (const p of dailyPasses) {
+    out.set(p.userId, (out.get(p.userId) ?? 0) + DAILY_QUEST_XP_PASS)
+  }
+
   return out
 }
 
@@ -362,8 +386,9 @@ export function xpFromCompletedSteps(
 // Per-day XP buckets for chart rendering. Returns an array of length `days`
 // (oldest first). The first bucket is the UTC day containing `firstDayStart`
 // (defaults to `today - (days - 1)` so the last bucket is today). Each bucket
-// sums real XP earned that day via xpForFrontmatter (same formula awardXp
-// applies). One Progress query regardless of bucket count.
+// sums real XP earned that day from BOTH step completions (xpForFrontmatter)
+// and daily-quest passes (flat DAILY_QUEST_XP_PASS). One Progress query +
+// one DailyQuestAssignment query regardless of bucket count.
 export async function getRealXpPerDay(args: {
   userId: string
   locale: string
@@ -382,40 +407,63 @@ export async function getRealXpPerDay(args: {
   const endExclusive = new Date(firstDayStart)
   endExclusive.setUTCDate(endExclusive.getUTCDate() + days)
 
-  const completed = await db.progress.findMany({
-    where: {
-      userId,
-      stepLocale: locale,
-      status: "completed",
-      completedAt: { gte: firstDayStart, lt: endExclusive },
-    },
-    select: { stepId: true, firstTry: true, completedAt: true },
-  })
+  const [completed, dailyPasses] = await Promise.all([
+    db.progress.findMany({
+      where: {
+        userId,
+        stepLocale: locale,
+        status: "completed",
+        completedAt: { gte: firstDayStart, lt: endExclusive },
+      },
+      select: { stepId: true, firstTry: true, completedAt: true },
+    }),
+    db.dailyQuestAssignment.findMany({
+      where: {
+        userId,
+        questLocale: locale,
+        passed: true,
+        completedAt: { gte: firstDayStart, lt: endExclusive },
+      },
+      select: { completedAt: true },
+    }),
+  ])
 
   const buckets = Array.from({ length: days }, () => 0)
-  if (completed.length === 0) return buckets
+  if (completed.length === 0 && dailyPasses.length === 0) return buckets
 
-  const stepIds = [...new Set(completed.map((c) => c.stepId))]
-  const pieces = await db.contentPiece.findMany({
-    where: { OR: stepIds.map((id) => ({ id, locale })) },
-    select: { id: true, frontMatter: true },
-  })
-  const fmById = new Map<string, XpFrontmatter>(
-    pieces.map((p) => [p.id, p.frontMatter as XpFrontmatter]),
-  )
+  if (completed.length > 0) {
+    const stepIds = [...new Set(completed.map((c) => c.stepId))]
+    const pieces = await db.contentPiece.findMany({
+      where: { OR: stepIds.map((id) => ({ id, locale })) },
+      select: { id: true, frontMatter: true },
+    })
+    const fmById = new Map<string, XpFrontmatter>(
+      pieces.map((p) => [p.id, p.frontMatter as XpFrontmatter]),
+    )
 
-  for (const c of completed) {
-    if (!c.completedAt) continue
-    const fm = fmById.get(c.stepId)
-    if (!fm) continue
-    const earned = xpForFrontmatter(fm, c.firstTry)
-    if (earned === 0) continue
-    const day = toUtcDay(c.completedAt)
+    for (const c of completed) {
+      if (!c.completedAt) continue
+      const fm = fmById.get(c.stepId)
+      if (!fm) continue
+      const earned = xpForFrontmatter(fm, c.firstTry)
+      if (earned === 0) continue
+      const day = toUtcDay(c.completedAt)
+      const idx = Math.round(
+        (day.getTime() - firstDayStart.getTime()) / (1000 * 60 * 60 * 24),
+      )
+      if (idx >= 0 && idx < days) buckets[idx]! += earned
+    }
+  }
+
+  for (const p of dailyPasses) {
+    if (!p.completedAt) continue
+    const day = toUtcDay(p.completedAt)
     const idx = Math.round(
       (day.getTime() - firstDayStart.getTime()) / (1000 * 60 * 60 * 24),
     )
-    if (idx >= 0 && idx < days) buckets[idx]! += earned
+    if (idx >= 0 && idx < days) buckets[idx]! += DAILY_QUEST_XP_PASS
   }
+
   return buckets
 }
 

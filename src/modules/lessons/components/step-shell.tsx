@@ -360,6 +360,7 @@ export function StepShell({
                       stepRef={stepRef}
                       locale={locale as "es" | "en"}
                       alreadyPassed={passed}
+                      blockedByHearts={blockedByHearts}
                     />
                   ) : null}
                 </>

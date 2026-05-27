@@ -749,7 +749,7 @@
         "eyebrow": "DIARIO · SIN PERDER CORAZONES",
         "title": "Misión diaria",
         "body": "Arregla tres prompts borrosos antes de que Echo los marque. Forge regala Forge-tokens.",
-        "reward": "+ 40 XP",
+        "reward": "+ {xp} XP",
         "cta": "Empezar diaria"
       },
       "capstone": {
@@ -782,7 +782,8 @@
     },
     "crew": {
       "title": "Tu crew",
-      "openDossiers": "Ver dossiers →",
+      "subtitle": "{count, plural, =1 {1 oficial} other {# oficiales}}",
+      "openDossiers": "Ver dossiers",
       "switchMentor": "Cambiar mentor →",
       "roles": {
         "vega": "Mentor",
@@ -793,6 +794,34 @@
         "hex": "Red team"
       },
       "locked": "BLOQUEADO"
+    },
+    "statsStrip": {
+      "ariaLabel": "Resumen de actividad",
+      "xpToday": "XP DE HOY",
+      "xpThisWeek": "XP DE LA SEMANA",
+      "streak": "RACHA ACTUAL",
+      "streakValue": "{days, plural, =0 {0d} =1 {1d} other {#d}}",
+      "streakBest": "Mejor: {best}d",
+      "nextStep": "PRÓXIMO PASO",
+      "nextStepEmpty": "Sin asignar",
+      "nextStepProgress": "{pct}% del curso",
+      "vsYesterday": "{delta} vs ayer",
+      "flatVsYesterday": "Igual que ayer",
+      "vsLastWeek": "{delta} vs semana pasada",
+      "flatVsLastWeek": "Igual que la semana pasada"
+    },
+    "insights": {
+      "days": ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"],
+      "xp": {
+        "eyebrow": "XP DE LA SEMANA",
+        "unit": "XP TOTAL",
+        "range": "LUN · DOM"
+      },
+      "streak": {
+        "eyebrow": "RACHA SEMANAL",
+        "activeDays": "{count, plural, =0 {0 días activos} =1 {1 día activo} other {# días activos}}",
+        "foot": "Tu mejor racha: {best, plural, =0 {sin marca aún} =1 {1 día} other {# días}}."
+      }
     },
     "pathHeader": {
       "eyebrow": "UNIDAD {unit} · {tag} · {count, plural, =1 {1 LECCIÓN} other {# LECCIONES}}",
@@ -1191,10 +1220,13 @@
       "hint": "¿Tienes dudas? Pregúntame",
       "hintAria": "Abrir el tutor IA",
       "inputPlaceholder": "Pregunta lo que sea sobre este step…",
+      "inputPlaceholderNoGems": "Sin gemas para preguntar. Pasá por la tienda.",
       "sendAria": "Enviar pregunta",
       "opener": "Acá estoy. Tengo el step y el ejercicio abiertos en mi consola. preguntá lo que necesites.",
       "typing": "{name} está pensando…",
       "userLabel": "TÚ",
+      "cost": "{cost, plural, =1 {Cuesta 1 gema} other {Cuesta # gemas}}",
+      "balance": "{gems, plural, =0 {0 gemas} =1 {1 gema} other {# gemas}}",
       "anon": {
         "title": "Inicia sesión para chatear",
         "body": "El tutor IA está reservado para oficiales con cuenta. Crea una en 30 segundos para empezar la conversación.",
@@ -1206,6 +1238,7 @@
         "not_found": "No encontramos el contexto de este step.",
         "invalid_input": "El mensaje enviado no es válido.",
         "model_error": "El tutor no pudo responder. Intenta otra vez.",
+        "no_gems": "Te quedaste sin gemas. Pasá por la tienda para recargar.",
         "network": "Algo falló al enviar tu mensaje. Inténtalo otra vez."
       }
     },
@@ -1539,7 +1572,8 @@
         "cancel": "Cancelar",
         "confirm": "Sí, gastar 1 vida"
       },
-      "free": "Gratis (ya completaste)"
+      "free": "Gratis (ya completaste)",
+      "errorRetry": "No se pudo revelar la pista. Probá de nuevo."
     },
     "debrief": {
       "title": "Misión despejada.",
@@ -1674,7 +1708,8 @@
     },
     "footer": {
       "terms": "Términos y condiciones",
-      "privacy": "Política de privacidad"
+      "privacy": "Política de privacidad",
+      "blog": "Bitácora"
     },
     "terms": {
       "meta": {

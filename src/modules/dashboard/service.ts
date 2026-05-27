@@ -6,7 +6,10 @@ import type { ContentLocale } from "@/modules/content/types"
 import { listSteps, listTracks } from "@/modules/content/service"
 import {
   getRealXpInWindow,
+  getRealXpPerDay,
+  getStreakWeek,
   getXpSnapshot,
+  type StreakWeekDay,
 } from "@/modules/gamification/service"
 import {
   getCourseProgress,
@@ -70,9 +73,10 @@ export async function getDashboard(args: {
   let continueAt: Dashboard["continueAt"] = null
   let mascotSlug: Dashboard["mascotSlug"] = "vega"
   if (next) {
-    const [steps, progress] = await Promise.all([
+    const [steps, progress, tracks] = await Promise.all([
       listSteps(next.courseSlug, locale),
       getCourseProgress(userId, next.courseSlug, locale),
+      listTracks(locale),
     ])
     const stepNumber = Math.max(
       1,
@@ -81,9 +85,13 @@ export async function getDashboard(args: {
     const total = steps.length || progress.total
     const done = progress.completed
     const pct = total === 0 ? 0 : Math.min(100, Math.round((done / total) * 100))
+    // Track.order drives the "UNIDAD NN" eyebrow on the Continue card. Fall
+    // back to 1 only when the active track isn't found (curriculum drift).
+    const unitNumber =
+      tracks.find((t) => t.slug === next.trackSlug)?.order ?? 1
     continueAt = {
       next,
-      unitNumber: 1,
+      unitNumber,
       stepNumber,
       totalSteps: total,
       pct,
@@ -127,7 +135,14 @@ export async function getDashboard(args: {
   const prevWeekStart = new Date(weekStart)
   prevWeekStart.setUTCDate(prevWeekStart.getUTCDate() - 7)
 
-  const [xpToday, xpYesterday, xpThisWeek, xpPrevWeek] = userId
+  const [
+    xpToday,
+    xpYesterday,
+    xpThisWeek,
+    xpPrevWeek,
+    xpByDay,
+    streakWeek,
+  ] = userId
     ? await Promise.all([
         getRealXpInWindow({
           userId,
@@ -153,8 +168,39 @@ export async function getDashboard(args: {
           start: prevWeekStart,
           endExclusive: weekStart,
         }),
+        getRealXpPerDay({
+          userId,
+          locale,
+          days: 7,
+          firstDayStart: weekStart,
+        }),
+        getStreakWeek(userId),
       ])
-    : [0, 0, 0, 0]
+    : [
+        0,
+        0,
+        0,
+        0,
+        [0, 0, 0, 0, 0, 0, 0] as number[],
+        {
+          // Mon=0..Sun=6 to match getStreakWeek's indexing. Anon viewers still
+          // see the correct "today" column highlighted in WeeklyInsights.
+          days: ((): StreakWeekDay[] => {
+            const out: StreakWeekDay[] = [
+              "future",
+              "future",
+              "future",
+              "future",
+              "future",
+              "future",
+              "future",
+            ]
+            out[(todayStart.getUTCDay() + 6) % 7] = "today"
+            return out
+          })(),
+          todayIdx: (todayStart.getUTCDay() + 6) % 7,
+        },
+      ]
 
   const capstone = userId ? await resolveNextCapstone(userId, locale) : null
 
@@ -174,6 +220,11 @@ export async function getDashboard(args: {
       xpDelta: xpToday - xpYesterday,
       xpThisWeek,
       xpWeekDelta: xpThisWeek - xpPrevWeek,
+    },
+    week: {
+      xpByDay,
+      streak: streakWeek.days,
+      todayIdx: streakWeek.todayIdx,
     },
     mascotSlug,
   }

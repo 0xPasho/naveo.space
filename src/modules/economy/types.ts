@@ -29,6 +29,7 @@ export type GemReason =
   | "hearts-refill"
   | "hearts-pack"
   | "stripe-pack" // real-money gem pack purchased through Stripe Checkout
+  | "stripe-refund" // clawback after a Stripe refund or dispute
 
 // Why a heart was spent. Persisted on HeartTransaction.reason.
 export type HeartLossReason =

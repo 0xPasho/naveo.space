@@ -4,7 +4,22 @@ import crypto from "node:crypto"
 
 import type { NextRequest } from "next/server"
 
-import { creditGemsFromStripe } from "@/modules/economy/service"
+import {
+  creditGemsFromStripe,
+  refundGemsFromStripe,
+} from "@/modules/economy/service"
+import { GEM_PACKS } from "@/modules/economy/gem-packs"
+import { db } from "@/server/db"
+
+// Server-side catalog lookup. Stripe metadata is trusted only for ids
+// (pack_slug, user_id) — the gem amount itself must come from our own
+// catalog so a tampered or hand-crafted Checkout Session can't credit
+// arbitrary gems even with a valid signature.
+const gemsForPackSlug = (slug: string | null | undefined): number | null => {
+  if (!slug) return null
+  const pack = GEM_PACKS.find((p) => p.slug === slug)
+  return pack ? pack.gems : null
+}
 
 // Force Node.js runtime — the webhook needs `crypto.timingSafeEqual` and
 // `Buffer`, neither of which are exposed by Edge.
@@ -81,7 +96,7 @@ function verifySignature(args: {
 type StripeEvent = {
   id: string
   type: string
-  data: { object: StripeCheckoutSession }
+  data: { object: StripeCheckoutSession | StripeCharge | StripeDispute }
 }
 
 type StripeCheckoutSession = {
@@ -96,13 +111,28 @@ type StripeCheckoutSession = {
   } | null
 }
 
+type StripeCharge = {
+  id: string
+  payment_intent?: string | null
+  amount?: number
+  amount_refunded?: number
+  refunded?: boolean
+}
+
+type StripeDispute = {
+  id: string
+  charge?: string | null
+  payment_intent?: string | null
+  amount?: number
+}
+
 // Process a single Checkout Session that Stripe has confirmed as paid.
 // Stripe docs (Fulfill Checkout):
 //   "Only fulfill when payment_status is NOT 'unpaid'"
 // Returns 200 OK on success OR on already-processed; only verification
 // failures return 4xx so Stripe stops retrying obvious tampering.
 async function fulfillCheckout(event: StripeEvent): Promise<void> {
-  const session = event.data.object
+  const session = event.data.object as StripeCheckoutSession
   if (session.payment_status === "unpaid") {
     // ACH / bank transfers arrive `unpaid` on
     // checkout.session.completed; the async_payment_succeeded event will
@@ -112,16 +142,42 @@ async function fulfillCheckout(event: StripeEvent): Promise<void> {
 
   const userId =
     session.metadata?.user_id ?? session.client_reference_id ?? null
-  const gemAmountRaw = session.metadata?.gem_amount
-  const gems = gemAmountRaw ? Number.parseInt(gemAmountRaw, 10) : NaN
+  const packSlug = session.metadata?.pack_slug ?? null
+  // Prefer the server-side catalog. Fall back to metadata.gem_amount only
+  // when pack_slug is missing (legacy sessions), and clamp to a sane upper
+  // bound so a tampered metadata can't ever credit more than the largest
+  // real pack.
+  const catalogGems = gemsForPackSlug(packSlug)
+  const metaGemsRaw = session.metadata?.gem_amount
+  const metaGems = metaGemsRaw ? Number.parseInt(metaGemsRaw, 10) : NaN
+  const maxKnownGems = GEM_PACKS.reduce((m, p) => Math.max(m, p.gems), 0)
+  const gems =
+    catalogGems !== null
+      ? catalogGems
+      : Number.isFinite(metaGems) && metaGems > 0 && metaGems <= maxKnownGems
+        ? metaGems
+        : NaN
   if (!userId || !Number.isFinite(gems) || gems <= 0) {
     // Malformed session — likely created by something other than our
     // own checkout action. Log and bail without crediting.
-    console.error("[stripe] webhook: missing user_id / gem_amount", {
+    console.error("[stripe] webhook: missing user_id / pack_slug", {
       eventId: event.id,
       sessionId: session.id,
+      packSlug,
+      metaGems: metaGemsRaw,
     })
     return
+  }
+  if (catalogGems !== null && Number.isFinite(metaGems) && metaGems !== catalogGems) {
+    // Metadata disagreed with the catalog — log loudly so we notice
+    // tampering attempts, then trust the catalog.
+    console.error("[stripe] webhook: gem_amount mismatch — using catalog", {
+      eventId: event.id,
+      sessionId: session.id,
+      packSlug,
+      catalogGems,
+      metaGems,
+    })
   }
 
   const result = await creditGemsFromStripe({
@@ -140,6 +196,88 @@ async function fulfillCheckout(event: StripeEvent): Promise<void> {
     console.error("[stripe] webhook: creditGemsFromStripe failed", {
       eventId: event.id,
       sessionId: session.id,
+      error: result.error,
+    })
+  }
+}
+
+// Look up the original gem credit that matches a refunded/disputed charge so
+// we know whose wallet to claw back and by how much. We persisted
+// `stripePaymentIntent` on GemTransaction.meta at credit time; refunds and
+// disputes both reference the same payment_intent.
+async function findOriginalCredit(
+  paymentIntent: string,
+): Promise<{ userId: string; gems: number; packSlug: string | null } | null> {
+  // GemTransaction.meta is Json. We can't index it directly without a GIN
+  // index, but the volume of stripe-pack credits is bounded and the userId
+  // filter narrows the scan — still cheap on the index over (userId,
+  // createdAt). For now we accept a full scan filtered by reason; if this
+  // ever becomes a bottleneck, add a dedicated StripePurchase mapping.
+  const rows = await db.gemTransaction.findMany({
+    where: { reason: "stripe-pack" },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: { userId: true, delta: true, meta: true },
+  })
+  for (const row of rows) {
+    const meta = row.meta as { stripePaymentIntent?: string | null; packSlug?: string | null } | null
+    if (meta?.stripePaymentIntent === paymentIntent) {
+      return { userId: row.userId, gems: row.delta, packSlug: meta.packSlug ?? null }
+    }
+  }
+  return null
+}
+
+// Process a refund or chargeback. Stripe emits `charge.refunded` on partial
+// or full refunds, and `charge.dispute.funds_withdrawn` when a dispute pulls
+// funds. We claw back the gems by the same amount we originally credited.
+// Partial refunds: today we claw back the FULL pack; if/when partial gem
+// refunds matter, prorate by amount_refunded / amount.
+async function fulfillReversal(event: StripeEvent): Promise<void> {
+  let paymentIntent: string | null = null
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object as StripeCharge
+    paymentIntent = charge.payment_intent ?? null
+  } else if (
+    event.type === "charge.dispute.created" ||
+    event.type === "charge.dispute.funds_withdrawn"
+  ) {
+    const dispute = event.data.object as StripeDispute
+    paymentIntent = dispute.payment_intent ?? null
+  }
+  if (!paymentIntent) {
+    console.error("[stripe] webhook: reversal without payment_intent", {
+      eventId: event.id,
+      type: event.type,
+    })
+    return
+  }
+
+  const original = await findOriginalCredit(paymentIntent)
+  if (!original) {
+    console.error("[stripe] webhook: reversal for unknown payment_intent", {
+      eventId: event.id,
+      paymentIntent,
+    })
+    return
+  }
+
+  const result = await refundGemsFromStripe({
+    eventId: event.id,
+    eventType: event.type,
+    userId: original.userId,
+    gems: original.gems,
+    meta: {
+      stripePaymentIntent: paymentIntent,
+      packSlug: original.packSlug,
+      reversalType: event.type,
+    },
+  })
+
+  if (!result.ok) {
+    console.error("[stripe] webhook: refundGemsFromStripe failed", {
+      eventId: event.id,
+      paymentIntent,
       error: result.error,
     })
   }
@@ -181,23 +319,25 @@ export async function POST(req: NextRequest): Promise<Response> {
     return new Response("Malformed JSON", { status: 400 })
   }
 
-  // Both events fulfill a paid Checkout Session: `completed` for instant
-  // payment methods, `async_payment_succeeded` for ACH / SEPA / boleto.
-  // Anything else we ack with 200 so Stripe doesn't retry, but we don't
-  // touch the wallet.
-  if (
-    event.type === "checkout.session.completed" ||
-    event.type === "checkout.session.async_payment_succeeded"
-  ) {
-    try {
+  try {
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
       await fulfillCheckout(event)
-    } catch (err) {
-      // A 5xx response triggers Stripe's retry policy. We bubble the
-      // failure so a transient DB error gets retried, but stay tight on
-      // the response body so Stripe's UI shows a readable failure.
-      console.error("[stripe] webhook: fulfillCheckout threw", err)
-      return new Response("Fulfillment failed", { status: 500 })
+    } else if (
+      event.type === "charge.refunded" ||
+      event.type === "charge.dispute.created" ||
+      event.type === "charge.dispute.funds_withdrawn"
+    ) {
+      await fulfillReversal(event)
     }
+  } catch (err) {
+    // A 5xx response triggers Stripe's retry policy. We bubble the
+    // failure so a transient DB error gets retried, but stay tight on
+    // the response body so Stripe's UI shows a readable failure.
+    console.error("[stripe] webhook: handler threw", { type: event.type, err })
+    return new Response("Fulfillment failed", { status: 500 })
   }
 
   return new Response(null, { status: 200 })

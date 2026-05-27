@@ -142,23 +142,129 @@ export async function creditGemsFromStripe(args: {
   })
   if (!userExists) return { ok: false, error: "no_user" }
 
-  // Claim the event id. PK collision = another worker / earlier delivery
-  // already processed it; bail without crediting again.
+  // Ensure the wallet row + daily refill ran before the atomic credit. This
+  // is the only outside-tx write; getWallet itself is idempotent.
+  await getWallet(args.userId)
+
+  // Atomic claim-and-credit: the StripeWebhookEvent insert, the wallet
+  // increment, and the GemTransaction ledger all live in one transaction so
+  // either every effect lands or none of them do. Previous design wrote the
+  // event row first and credited gems separately, which meant a crash
+  // between the two left the event marked processed with zero gems — paid,
+  // unfulfilled. The Stripe event id has @id (PK), so a duplicate insert
+  // raises P2002 which we narrow on and treat as "already processed".
   try {
-    await db.stripeWebhookEvent.create({
-      data: { id: args.eventId, type: args.eventType },
-    })
-  } catch {
-    return { ok: true, alreadyProcessed: true }
+    await db.$transaction([
+      db.stripeWebhookEvent.create({
+        data: { id: args.eventId, type: args.eventType },
+      }),
+      db.wallet.update({
+        where: { userId: args.userId },
+        data: { gems: { increment: args.gems } },
+      }),
+      db.gemTransaction.create({
+        data: {
+          userId: args.userId,
+          delta: args.gems,
+          reason: "stripe-pack",
+          meta: args.meta as never,
+        },
+      }),
+    ])
+  } catch (err) {
+    if (isPrismaUniqueViolation(err)) {
+      // Duplicate delivery — earlier worker already credited. Safe ack.
+      return { ok: true, alreadyProcessed: true }
+    }
+    throw err
   }
 
-  const wallet = await awardGems({
-    userId: args.userId,
-    amount: args.gems,
-    reason: "stripe-pack",
-    meta: args.meta,
+  return { ok: true, alreadyProcessed: false, wallet: await getWallet(args.userId) }
+}
+
+// Narrow guard for Prisma's known unique-constraint violation. We avoid
+// importing the full Prisma namespace just for the error class.
+function isPrismaUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code: unknown }).code === "P2002"
+  )
+}
+
+// ---------- Stripe refunds ----------
+//
+// Called by the Stripe webhook on `charge.refunded` / `charge.dispute.created`.
+// We decrement the user's gem balance by the refunded amount, capped at zero
+// so a user who already spent gems can't go negative. The reversal is keyed
+// by the Stripe event id (same StripeWebhookEvent table) so a retried
+// refund webhook is a no-op. The GemTransaction.meta carries the original
+// payment_intent / charge id for traceability.
+export type StripeRefundResult =
+  | { ok: true; alreadyProcessed: false; wallet: WalletSnapshot }
+  | { ok: true; alreadyProcessed: true }
+  | { ok: false; error: "no_user" | "no_credit" }
+
+export async function refundGemsFromStripe(args: {
+  eventId: string
+  eventType: string
+  userId: string
+  // How many gems to claw back. Webhook caller derives this from the original
+  // checkout session metadata (the pack the user bought) — not from a Stripe
+  // amount, since the gem-to-USD ratio isn't 1:1.
+  gems: number
+  meta: Record<string, unknown>
+}): Promise<StripeRefundResult> {
+  const userExists = await db.user.findUnique({
+    where: { id: args.userId },
+    select: { id: true },
   })
-  return { ok: true, alreadyProcessed: false, wallet }
+  if (!userExists) return { ok: false, error: "no_user" }
+
+  await getWallet(args.userId)
+
+  try {
+    const reversed = await db.$transaction(async (tx) => {
+      await tx.stripeWebhookEvent.create({
+        data: { id: args.eventId, type: args.eventType },
+      })
+      // Snapshot the current balance so the clawback can't go negative even
+      // if the user already spent most of the refunded gems.
+      const w = await tx.wallet.findUnique({
+        where: { userId: args.userId },
+        select: { gems: true },
+      })
+      if (!w) return 0
+      const clawback = Math.min(w.gems, args.gems)
+      if (clawback === 0) return 0
+      await tx.wallet.update({
+        where: { userId: args.userId },
+        data: { gems: { decrement: clawback } },
+      })
+      await tx.gemTransaction.create({
+        data: {
+          userId: args.userId,
+          delta: -clawback,
+          reason: "stripe-refund",
+          meta: { ...args.meta, requestedClawback: args.gems } as never,
+        },
+      })
+      return clawback
+    })
+
+    if (reversed === 0) return { ok: false, error: "no_credit" }
+    return {
+      ok: true,
+      alreadyProcessed: false,
+      wallet: await getWallet(args.userId),
+    }
+  } catch (err) {
+    if (isPrismaUniqueViolation(err)) {
+      return { ok: true, alreadyProcessed: true }
+    }
+    throw err
+  }
 }
 
 // ---------- Shop purchase ----------
@@ -187,67 +293,123 @@ export async function purchaseShopItem(args: {
   // Make sure wallet exists + daily refill is current before the tx runs.
   await getWallet(args.userId)
 
-  const result = await db.$transaction(async (tx) => {
-    const w = await tx.wallet.findUnique({ where: { userId: args.userId } })
-    if (!w) return { ok: false as const, error: "unknown_item" as const }
-    if (w.gems < cost) return { ok: false as const, error: "insufficient_gems" as const }
+  // Race-safe purchase under default READ COMMITTED. We do the side-effect
+  // FIRST with a conditional updateMany so its predicate can never race past
+  // a co-purchase (two concurrent heart-refills can't both increment past
+  // heartsMax, etc). Then we charge gems with another conditional
+  // updateMany; if THAT fails we throw to roll back the side-effect via the
+  // surrounding $transaction. Returning a non-throw "ok: false" only happens
+  // on `unknown_item` / `insufficient_gems` / `already_full` BEFORE any write.
+  type PurchaseTxResult =
+    | { ok: true; heartsDelta: number; heartsLedgerReason: HeartGainReason | null; freezesDelta: number }
+    | { ok: false; error: "insufficient_gems" | "already_full" }
 
-    let updateData: Record<string, unknown> = {}
-    let heartsDelta = 0
-    let heartsLedgerReason: HeartGainReason | null = null
-    let freezesDelta = 0
-    if (args.slug === "streak-freeze") {
-      updateData = { streakFreezes: { increment: 1 } }
-      freezesDelta = 1
-    } else if (args.slug === "heart-refill") {
-      if (w.hearts >= w.heartsMax) {
-        return { ok: false as const, error: "already_full" as const }
-      }
-      heartsDelta = 1
-      heartsLedgerReason = "shop-refill"
-      const nextHearts = w.hearts + 1
-      updateData = {
-        hearts: nextHearts,
-        // If this refill tops us up, stop the regen countdown.
-        ...(nextHearts >= w.heartsMax ? { nextHeartAt: null } : {}),
-      }
-    } else if (args.slug === "heart-pack") {
-      if (w.hearts >= w.heartsMax) {
-        return { ok: false as const, error: "already_full" as const }
-      }
-      heartsDelta = w.heartsMax - w.hearts
-      heartsLedgerReason = "shop-pack"
-      updateData = { hearts: w.heartsMax, nextHeartAt: null }
-    }
+  // Custom signal to roll back the tx when gem-charge loses the race AFTER
+  // we've already applied the side-effect. Caught at the call site.
+  class InsufficientGemsAfterEffect extends Error {}
 
-    await tx.wallet.update({
-      where: { userId: args.userId },
-      data: { ...updateData, gems: { decrement: cost } },
-    })
-    await tx.gemTransaction.create({
-      data: {
-        userId: args.userId,
-        delta: -cost,
-        reason,
-        meta: { item: args.slug } as never,
-      },
-    })
-    if (heartsDelta > 0 && heartsLedgerReason) {
-      await tx.heartTransaction.create({
-        data: { userId: args.userId, delta: heartsDelta, reason: heartsLedgerReason },
+  let result: PurchaseTxResult
+  try {
+    result = await db.$transaction(async (tx): Promise<PurchaseTxResult> => {
+      let heartsDelta = 0
+      let heartsLedgerReason: HeartGainReason | null = null
+      let freezesDelta = 0
+
+      if (args.slug === "streak-freeze") {
+        // No precondition. Increment is atomic on its own.
+        await tx.wallet.update({
+          where: { userId: args.userId },
+          data: { streakFreezes: { increment: 1 } },
+        })
+        freezesDelta = 1
+      } else if (args.slug === "heart-refill") {
+        // hearts MUST be strictly less than heartsMax. Field reference keeps
+        // the predicate atomic against concurrent refills + regen ticks.
+        const added = await tx.wallet.updateMany({
+          where: {
+            userId: args.userId,
+            hearts: { lt: db.wallet.fields.heartsMax },
+          },
+          data: { hearts: { increment: 1 } },
+        })
+        if (added.count === 0) {
+          return { ok: false, error: "already_full" }
+        }
+        // If this top-up filled us, stop the regen countdown.
+        await tx.wallet.updateMany({
+          where: {
+            userId: args.userId,
+            hearts: { equals: db.wallet.fields.heartsMax },
+          },
+          data: { nextHeartAt: null },
+        })
+        heartsDelta = 1
+        heartsLedgerReason = "shop-refill"
+      } else if (args.slug === "heart-pack") {
+        // Snapshot the delta we'll log, then push to max. The predicate keeps
+        // it idempotent if another writer raced us to full.
+        const current = await tx.wallet.findUnique({
+          where: { userId: args.userId },
+          select: { hearts: true, heartsMax: true },
+        })
+        if (!current || current.hearts >= current.heartsMax) {
+          return { ok: false, error: "already_full" }
+        }
+        const filled = await tx.wallet.updateMany({
+          where: {
+            userId: args.userId,
+            hearts: { lt: db.wallet.fields.heartsMax },
+          },
+          data: { hearts: current.heartsMax, nextHeartAt: null },
+        })
+        if (filled.count === 0) {
+          return { ok: false, error: "already_full" }
+        }
+        heartsDelta = current.heartsMax - current.hearts
+        heartsLedgerReason = "shop-pack"
+      }
+
+      // Charge gems atomically. If gems dropped below cost in flight (rare
+      // — another tx spent them concurrently), throw to roll back the side
+      // effect we just applied.
+      const charged = await tx.wallet.updateMany({
+        where: { userId: args.userId, gems: { gte: cost } },
+        data: { gems: { decrement: cost } },
       })
-    }
-    if (freezesDelta > 0) {
-      await tx.streakFreezeTransaction.create({
+      if (charged.count === 0) {
+        throw new InsufficientGemsAfterEffect()
+      }
+
+      await tx.gemTransaction.create({
         data: {
           userId: args.userId,
-          delta: freezesDelta,
-          reason: "bought" satisfies StreakFreezeReason,
+          delta: -cost,
+          reason,
+          meta: { item: args.slug } as never,
         },
       })
+      if (heartsDelta > 0 && heartsLedgerReason) {
+        await tx.heartTransaction.create({
+          data: { userId: args.userId, delta: heartsDelta, reason: heartsLedgerReason },
+        })
+      }
+      if (freezesDelta > 0) {
+        await tx.streakFreezeTransaction.create({
+          data: {
+            userId: args.userId,
+            delta: freezesDelta,
+            reason: "bought" satisfies StreakFreezeReason,
+          },
+        })
+      }
+      return { ok: true, heartsDelta, heartsLedgerReason, freezesDelta }
+    })
+  } catch (err) {
+    if (err instanceof InsufficientGemsAfterEffect) {
+      return { ok: false, error: "insufficient_gems" }
     }
-    return { ok: true as const }
-  })
+    throw err
+  }
 
   if (!result.ok) return result
   const wallet = await getWallet(args.userId)
@@ -337,26 +499,37 @@ export async function spendHeart(args: {
   await getWallet(args.userId)
 
   const now = new Date()
-  const decResult = await db.wallet.updateMany({
-    where: { userId: args.userId, hearts: { gt: 0 } },
-    data: { hearts: { decrement: 1 } },
-  })
-  if (decResult.count === 0) return 0
+  const nextAt = new Date(now.getTime() + HEART_REGEN_INTERVAL_MS)
 
-  // Read post-decrement state; arm `nextHeartAt` if this spend dropped us
-  // below heartsMax and no countdown was running yet.
-  const w = await db.wallet.findUnique({ where: { userId: args.userId } })
-  if (w && w.hearts < w.heartsMax && w.nextHeartAt === null) {
-    await db.wallet.update({
-      where: { userId: args.userId },
-      data: { nextHeartAt: new Date(now.getTime() + HEART_REGEN_INTERVAL_MS) },
-    })
-  }
+  // Single transaction: decrement hearts and arm `nextHeartAt` together so
+  // two concurrent spends can't race past the arming step. The arming
+  // updateMany is a no-op when nextHeartAt is already set (regen already
+  // ticking) or when this spend bottomed out at heartsMax (impossible post
+  // decrement, but the predicate keeps it correct if heartsMax shifts).
+  const [decResult] = await db.$transaction([
+    db.wallet.updateMany({
+      where: { userId: args.userId, hearts: { gt: 0 } },
+      data: { hearts: { decrement: 1 } },
+    }),
+    db.wallet.updateMany({
+      where: {
+        userId: args.userId,
+        nextHeartAt: null,
+        hearts: { lt: db.wallet.fields.heartsMax },
+      },
+      data: { nextHeartAt: nextAt },
+    }),
+  ])
+  if (decResult.count === 0) return 0
 
   await db.heartTransaction.create({
     data: { userId: args.userId, delta: -1, reason: args.reason },
   })
 
+  const w = await db.wallet.findUnique({
+    where: { userId: args.userId },
+    select: { hearts: true },
+  })
   return w?.hearts ?? 0
 }
 
@@ -365,6 +538,45 @@ export async function spendHeart(args: {
 export async function hasHearts(userId: string): Promise<boolean> {
   const wallet = await getWallet(userId)
   return wallet.hearts > 0
+}
+
+// Spend `amount` gems atomically. Race-safe via conditional updateMany so two
+// concurrent requests can't both succeed when the wallet is too low. Returns
+// the new gem count on success, or null when the wallet didn't have enough
+// (caller must surface this to the user — the deduct never happened). Logs a
+// GemTransaction on success only. Mirrors spendHeart.
+export async function spendGems(args: {
+  userId: string
+  amount: number
+  reason: GemReason
+  meta?: Record<string, unknown>
+}): Promise<number | null> {
+  const { userId, amount, reason, meta } = args
+  if (amount <= 0) throw new Error("spendGems: amount must be positive")
+
+  // Run daily refill on read first so a stale wallet doesn't refuse a spend
+  // it could otherwise afford.
+  await getWallet(userId)
+
+  const decResult = await db.wallet.updateMany({
+    where: { userId, gems: { gte: amount } },
+    data: { gems: { decrement: amount } },
+  })
+  if (decResult.count === 0) return null
+
+  const w = await db.wallet.findUnique({
+    where: { userId },
+    select: { gems: true },
+  })
+  await db.gemTransaction.create({
+    data: {
+      userId,
+      delta: -amount,
+      reason,
+      meta: meta ? (meta as never) : undefined,
+    },
+  })
+  return w?.gems ?? 0
 }
 
 // Award gems for a step transition. Callers (the exercises pipeline)

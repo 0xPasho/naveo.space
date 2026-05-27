@@ -171,6 +171,13 @@ export function Sidebar({
           className="flex flex-col gap-1 border-t-2 border-line-soft pt-3 font-sans text-xs font-semibold text-ink-3"
         >
           <Link
+            href="/blog"
+            onClick={() => setOpenMobile(false)}
+            className="rounded-xs px-1 py-0.5 transition-colors hover:text-ink-1"
+          >
+            {tLegal("blog")}
+          </Link>
+          <Link
             href="/terms"
             onClick={() => setOpenMobile(false)}
             className="rounded-xs px-1 py-0.5 transition-colors hover:text-ink-1"

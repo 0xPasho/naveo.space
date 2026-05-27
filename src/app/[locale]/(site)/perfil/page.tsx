@@ -548,13 +548,15 @@ function ProfileXpChart({ weeks }: { weeks: WeeklyXp[] }) {
   const values = weeks.map((w) => w.xp)
   const max = Math.max(1, ...values)
   return (
-    <div className="flex h-32 items-end gap-1.5">
+    <div className="flex items-end gap-1.5">
       {weeks.map((w, i) => {
         const isCurrent = i === weeks.length - 1
-        const h = (w.xp / max) * 100
+        // Non-zero weeks get a 4% floor so a small value (e.g. 1 XP against
+        // a 30-XP scale) still renders a visible nub. Zero weeks stay flat.
+        const h = w.xp === 0 ? 0 : Math.max(4, (w.xp / max) * 100)
         return (
-          <div key={i} className="flex flex-1 flex-col items-center justify-end gap-1">
-            <div className="relative flex w-full flex-1 flex-col justify-end overflow-hidden rounded-sm bg-bg-sunken shadow-elev-inset">
+          <div key={i} className="flex flex-1 flex-col items-center gap-1">
+            <div className="relative flex h-32 w-full flex-col justify-end overflow-hidden rounded-sm bg-bg-sunken shadow-elev-inset">
               <div
                 className={cn(
                   "w-full rounded-sm transition-[height] duration-slow ease-bounce",
